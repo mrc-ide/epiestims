@@ -1,0 +1,197 @@
+---
+title: "ccc"
+author: "Pierre Nouvellet"
+date: "2021-04"
+---
+
+```{r options, include = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+set.seed(1)
+# runif(1,0,1)
+library(knitr)
+
+opts_chunk$set(collapse = TRUE)
+
+opts_chunk$set(fig.path='figs/', fig.keep='high', 
+               dev=c('png'), cache=FALSE,
+               tidy=FALSE, warning=FALSE, fig.show="asis"
+)
+
+```
+
+# load data
+
+```{r}
+
+library(EpiEstim)
+data("Flu2009")
+
+SI <- EpiEstim::discr_si(0:20, 2.6, 1.5)
+t_start <- seq(2, nrow(Flu2009$incidence)-6) 
+t_end <- t_start + 6
+
+
+
+```
+
+# Rstan
+
+### preparing model
+
+```{r}
+
+
+# stan
+I <- Flu2009$incidence$I
+O_I <- EpiEstim::overall_infectivity(I,si_distr = SI)
+
+mI <- matrix(NA, nrow = length(t_start), ncol = t_end[1] - t_start[1]+1)
+m_O_I <- mI
+for(i in 1:nrow(mI)){
+  mI[i,] <- I[t_start[i]:t_end[i]]
+  m_O_I[i,] <- O_I[t_start[i]:t_end[i]]
+}
+useful <- (rep(1,ncol(mI)))
+
+```
+
+### running 1 model
+
+```{r}
+mean_prior <- c(1,4)
+std_prior <- c(1,5)
+
+
+i <- 2
+j <- 1
+
+param_gamma <- epitrix::gamma_mucv2shapescale(mu = mean_prior[i],
+                                              cv = std_prior[j]/mean_prior[i])
+
+res <- estimate_R(incid = Flu2009$incidence, 
+                  method = "non_parametric_si", 
+                  config = make_config(list(si_distr = SI,
+                                            t_start = t_start,
+                                            t_end = t_end,
+                                            mean_prior = mean_prior[i],
+                                            std_prior = std_prior[j])))
+
+
+## rstan
+standata <- list(nR = nrow(mI),
+                 tw = ncol(mI),
+                 I = mI,
+                 O_I = m_O_I,
+                 U = useful,
+                 prior_alpha = param_gamma$shape,
+                 prior_beta = 1/param_gamma$scale)
+
+fit <- rstan::stan(file = 'epi_estim.stan', data = standata)
+samples <- rstan::extract(fit)
+
+sum_Rt <- apply(samples$Rt,2,quantile,c(.5,.025,.975))
+
+
+# plot results
+# par(mar = c(bottom, left, top, right)), default  c(5.1, 4.1, 4.1, 2.1).
+par(mar = c(3,4,2,2),cex=1)
+
+
+x <- (res$R$t_start + res$R$t_end)/2
+x <- Flu2009$incidence$dates[x]
+
+plot(x, sum_Rt[1,], bty = 'n',
+     type = 'l',col = 'blue3',
+     ylim = c(0,4), bty='none',
+     xlab = '',ylab = 'R_t',
+     main = paste0('Prior: mean = ',mean_prior[i],', sd = ',std_prior[j]))
+polygon(c(x,rev(x)), 
+        c(sum_Rt[3,],rev(sum_Rt[2,])),
+        border = NA,col = rgb(0,0,1,.1))
+abline(h = 1, col = 'red3', lty = 2)
+
+lines(x, res$R$`Median(R)`,
+      type = 'l',col = 'red3')
+polygon(c(x,rev(x)), 
+        c(res$R$`Quantile.0.025(R)`,rev(res$R$`Quantile.0.975(R)`)),
+        border = NA,col = rgb(1,0,0,.1))
+
+legend('topright',c('stan','EpiEstim'),lwd=2,
+       bty = 'n', col= c('blue3','red3'))
+
+
+
+```
+
+
+### running models
+
+```{r,fig2}
+
+mean_prior <- c(1,4)
+std_prior <- c(1,5)
+
+layout(matrix(1:4,2,2))
+
+for(j in 1:length(std_prior)){
+
+  for(i in 1:length(mean_prior)){
+    
+    param_gamma <- epitrix::gamma_mucv2shapescale(mu = mean_prior[i],
+                                                  cv = std_prior[j]/mean_prior[i])
+    
+    res <- estimate_R(incid = Flu2009$incidence, 
+                      method = "non_parametric_si", 
+                      config = make_config(list(si_distr = SI,
+                                                t_start = t_start,
+                                                t_end = t_end,
+                                                mean_prior = mean_prior[i],
+                                                std_prior = std_prior[j])))
+    
+    
+    ## rstan
+    standata <- list(nR = nrow(mI),
+                     tw = ncol(mI),
+                     I = mI,
+                     O_I = m_O_I,
+                     U = useful,
+                     prior_alpha = param_gamma$shape,
+                     prior_beta = 1/param_gamma$scale)
+    
+    fit <- rstan::stan(file = 'epi_estim.stan', data = standata)
+    samples <- rstan::extract(fit)
+    
+    sum_Rt <- apply(samples$Rt,2,quantile,c(.5,.025,.975))
+    
+    
+    # plot results
+    # par(mar = c(bottom, left, top, right)), default  c(5.1, 4.1, 4.1, 2.1).
+    par(mar = c(3,4,2,2),cex=1)
+    
+    
+    x <- (res$R$t_start + res$R$t_end)/2
+    x <- Flu2009$incidence$dates[x]
+    
+    plot(x, sum_Rt[1,], bty = 'n',
+         type = 'l',col = 'blue3',
+         ylim = c(0,4), bty='none',
+         xlab = '',ylab = 'R_t',
+         main = paste0('Prior: mean = ',mean_prior[i],', sd = ',std_prior[j]))
+    polygon(c(x,rev(x)), 
+            c(sum_Rt[3,],rev(sum_Rt[2,])),
+            border = NA,col = rgb(0,0,1,.1))
+    abline(h = 1, col = 'red3', lty = 2)
+    
+    lines(x, res$R$`Median(R)`,
+          type = 'l',col = 'red3')
+    polygon(c(x,rev(x)), 
+            c(res$R$`Quantile.0.025(R)`,rev(res$R$`Quantile.0.975(R)`)),
+            border = NA,col = rgb(1,0,0,.1))
+    
+    legend('topright',c('stan','EpiEstim'),lwd=2,
+           bty = 'n', col= c('blue3','red3'))
+  }
+}
+
+
+
+```
