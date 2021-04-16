@@ -148,6 +148,10 @@ for(i in 1:(n_location)){
 
 x <- seq(1,ncol(sum_Rt[[1]]))
 
+#kload target Rt
+target <- readRDS('../simulations/target_Rt.rds')
+
+
 for (i in 1:(n_location)){
   
   plot(x, sum_Rt[[i]][1,], bty = 'n',
@@ -183,6 +187,13 @@ for (i in 1:(n_location)){
             rev(res[[index_epiepestim+1]]$R$`Quantile.0.975(R)`)),
           border = rgb(1,0,1), col = rgb(1,0,0,.05))
 
+  
+  # plot target
+  x_Rt <- (5):(T_max-7)
+  lines(x, target[[(i-1)*n_location+1]][x_Rt],
+        type = 'p',col = 'blue3')
+  lines(x, target[[(i-1)*n_location+2]][x_Rt],
+        type = 'p',col = 'red3')
   
 }
 
