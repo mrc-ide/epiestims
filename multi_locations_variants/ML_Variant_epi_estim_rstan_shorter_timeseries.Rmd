@@ -30,7 +30,7 @@ rm(list = ls())
 
 ```{r}
 
-T_max <- 30
+T_max <- 40
 data_incidence <- readRDS('../simulations/incidence.rds')
 data_incidence <- data_incidence[4:T_max,]
 SI_sim <- readRDS('../simulations/si.rds') 
