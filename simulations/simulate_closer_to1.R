@@ -109,4 +109,8 @@ incidence <- as.data.frame(cbind(inc1_loc1, inc1_loc2, inc2_loc1, inc2_loc2))
 names(incidence) <- c("strain1_loc1", "strain1_loc2", "strain2_loc1", "strain2_loc2")
 saveRDS(incidence, "incidence_min1.rds")
 # saveRDS(si, "si.rds")
-
+target_Rt = list(R1_loc1 = R1_loc1,
+              R2_loc1 = R2_loc1,
+              R1_loc2 = R1_loc2,
+              R2_loc2 = R2_loc2)
+saveRDS(target_Rt, 'target_Rt.rds')
