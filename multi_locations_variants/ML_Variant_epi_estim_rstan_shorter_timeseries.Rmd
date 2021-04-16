@@ -16,6 +16,7 @@ opts_chunk$set(fig.path='figs/', fig.keep='high',
                tidy=FALSE, warning=FALSE, fig.show="asis"
 )
 
+# rstan_options(auto_write = true)
 ```
 
 
@@ -30,9 +31,9 @@ rm(list = ls())
 
 ```{r}
 
-T_max <- 40
-data_incidence <- readRDS('../simulations/incidence.rds')
-data_incidence <- data_incidence[4:T_max,]
+T_max <- 60
+data_incidence <- readRDS('../simulations/incidence_min1.rds')
+
 SI_sim <- readRDS('../simulations/si.rds') 
 
 ```
@@ -44,12 +45,20 @@ n_location <- as.integer(2)
 n_variant <- as.integer(2)
 I <- data_incidence[,c(1,3,2,4)]
 
+
+
 t_start <- seq(2, nrow(I)-6) 
 t_end <- t_start + 6
 
 # preprocessed
 
 O_I <- apply(I,2,EpiEstim::overall_infectivity, si_distr = SI_sim)
+
+#eliminate early days
+I <- data_incidence[4:T_max,]
+O_I <- data_incidence[4:T_max,]
+
+# array formulation
 
 mI <- array(NA, dim = c( n_location*n_variant,
                          length(t_start),
@@ -94,7 +103,11 @@ standata <- list(nt = as.integer(dim(mI)[2]),
 
 
 
-fit <- rstan::stan(file = 'ML_epi_estim_v0.stan', data = standata)
+fit <- rstan::stan(file = 'ML_epi_estim_v0.stan',
+                   data = standata,
+                   control = list(max_treedepth = 15),
+                   chains = 1)
+
 samples <- rstan::extract(fit)
 
 sum_Rt <- list()
@@ -134,7 +147,7 @@ Hmisc::errbar(1:n_variant,
               ylim = c(0,2),xlim = c(.5,n_variant+.5))
 
 abline(h = 1, col = 'red3', lty = 2)
-# abline(h = 1.5, col = 'blue3', lty = 2)
+abline(h = 1.5, col = 'blue3', lty = 2)
 
 
 # 

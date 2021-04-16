@@ -95,7 +95,8 @@ standata <- list(nt = as.integer(dim(mI)[2]),
 
 fit <- rstan::stan(file = 'ML_epi_estim_v0.stan', 
                    data = standata,
-                   control = list(max_treedepth = 15))
+                   control = list(max_treedepth = 15),
+                   chains = 1)
 
 samples <- rstan::extract(fit)
 
