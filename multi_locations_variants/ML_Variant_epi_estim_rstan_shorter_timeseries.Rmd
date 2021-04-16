@@ -31,9 +31,9 @@ rm(list = ls())
 
 ```{r}
 
-T_max <- 60
-data_incidence <- readRDS('../simulations/incidence_min1.rds')
 
+data_incidence <- readRDS('../simulations/incidence_min1.rds')
+T_max <- nrow(data_incidence) # 60
 SI_sim <- readRDS('../simulations/si.rds') 
 
 ```
@@ -45,18 +45,18 @@ n_location <- as.integer(2)
 n_variant <- as.integer(2)
 I <- data_incidence[,c(1,3,2,4)]
 
-
-
-t_start <- seq(2, nrow(I)-6) 
-t_end <- t_start + 6
-
 # preprocessed
 
 O_I <- apply(I,2,EpiEstim::overall_infectivity, si_distr = SI_sim)
 
 #eliminate early days
-I <- data_incidence[4:T_max,]
-O_I <- data_incidence[4:T_max,]
+I <- I[5:T_max,]
+O_I <- O_I[5:T_max,]
+
+
+# time windows
+t_start <- seq(2, nrow(I)-6) 
+t_end <- t_start + 6
 
 # array formulation
 
@@ -118,11 +118,33 @@ sum_beta <- apply(samples$Beta,2,quantile,c(.5,.025,.975))
 
 ```
 
+# epiestim
+
+```{r}
+res <- list()
+for (i in 1:ncol(I)){
+  
+  res[[i]] <- EpiEstim::estimate_R(incid = I[,i],
+                    method = "non_parametric_si",
+                    config = EpiEstim::make_config(list(si_distr = SI_sim,
+                                              t_start = t_start,
+                                              t_end = t_end,
+                                              mean_prior = mean_prior,
+                                              std_prior = std_prior)))
+}
+```
+
+
+
 ## plot
 
 
 ```{r}
-
+sum_Rt_variant <- list()
+for(i in 1:(n_location)){
+  temp <- samples$Rt[,,i] * (samples$beta %*% matrix(1,nrow = 1,ncol = ncol( samples$Rt[,,i])) )
+  sum_Rt_variant[[i]] <- apply(temp,2,quantile,c(.5,.025,.975))
+}
 
 x <- seq(1,ncol(sum_Rt[[1]]))
 
@@ -135,8 +157,32 @@ for (i in 1:(n_location)){
   polygon(c(x,rev(x)), 
           c(sum_Rt[[i]][3,],rev(sum_Rt[[i]][2,])),
           border = NA,col = rgb(0,0,1,.1))
+  
+  # other variant
+  lines(x, sum_Rt_variant[[i]][1,], col = 'red3') 
+  
+  polygon(c(x,rev(x)), 
+          c(sum_Rt_variant[[i]][3,],rev(sum_Rt_variant[[i]][2,])),
+          border = NA,col = rgb(1,0,0,.1))
+  
   abline(h = 1, col = 'red3', lty = 2)
   
+  # plot epiestim
+  index_epiepestim <- (i-1)*n_location+1
+  lines(x, res[[index_epiepestim]]$R$`Median(R)`,
+        lty = 2,col = 'blue3')
+  polygon(c(x,rev(x)), 
+          c(res[[index_epiepestim]]$R$`Quantile.0.025(R)`,
+            rev(res[[index_epiepestim]]$R$`Quantile.0.975(R)`)),
+          border = rgb(0,0,1), col = rgb(0,0,1,.05))
+  
+  lines(x, res[[index_epiepestim+1]]$R$`Median(R)`,
+        lty = 2,col = 'red3')
+  polygon(c(x,rev(x)), 
+          c(res[[index_epiepestim+1]]$R$`Quantile.0.025(R)`,
+            rev(res[[index_epiepestim+1]]$R$`Quantile.0.975(R)`)),
+          border = rgb(1,0,1), col = rgb(1,0,0,.05))
+
   
 }
 
@@ -156,4 +202,5 @@ abline(h = 1.5, col = 'blue3', lty = 2)
 #   lines(data_incidence[,3+1])
 
 ```
+
 
