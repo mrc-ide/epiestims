@@ -7,7 +7,7 @@ set.seed(1)
 data_incidence <- readRDS('../simulations/incidence.rds')
 data_incidence <- data_incidence[4:99,]
 SI_sim <- readRDS('../simulations/si.rds')
-n_location <- 2L
+n_location <- 1
 # n_variant <- as.integer(2)
 I <- data_incidence[, 1:2]
 
@@ -54,8 +54,6 @@ standata <- list(nt = as.integer(dim(mI)[2]),
 fit <- stan(
   file = 'ML_NoVariant_epi_estim_v0.stan', data = standata, seed = 42
 )
-
-
 
 
 individual_fits <- map(
