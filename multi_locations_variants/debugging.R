@@ -7,7 +7,7 @@ set.seed(1)
 data_incidence <- readRDS('../simulations/incidence.rds')
 data_incidence <- data_incidence[4:99,]
 SI_sim <- readRDS('../simulations/si.rds')
-n_location <- 1
+n_location <- 2
 # n_variant <- as.integer(2)
 I <- data_incidence[, 1:2]
 
@@ -83,12 +83,12 @@ v2_samples <- rstan::extract(fit)
 
 p <- ggplot() +
   geom_density(
-    aes(v2_samples[["Rt"]][, 2, 1], fill = "blue"), alpha = 0.3,
+    aes(v2_samples[["Rt"]][, 2, 2], fill = "blue"), alpha = 0.3,
     col = NA
   ) +
   geom_density(
     aes(
-      individual_fit_samples[[1]][["Rt"]][, 2], fill = "red"
+      individual_fit_samples[[2]][["Rt"]][, 2], fill = "red"
     ), alpha = 0.3, col = NA
   ) +
   scale_fill_identity(
