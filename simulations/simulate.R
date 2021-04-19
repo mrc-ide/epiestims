@@ -50,7 +50,9 @@ set.seed(1)
 ## covid serial interval vaguely resembling this
 ## https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7448781/
 si <- EpiEstim::discr_si(0:30, mu = 5.40, sigma = 2) # I made up the sd
-plot(si, type = "h", xlab = "Day", ylab = "PMF of the SI")
+si_no_zero <- si[-1]
+plot(seq(0, length(si) - 1, 1), si, 
+     type = "h", xlab = "Day", ylab = "PMF of the SI")
 
 ## start with 5 infected individual
 initial_incidence <- incidence::incidence(rep(1, 5))
@@ -58,7 +60,7 @@ initial_incidence <- incidence::incidence(rep(1, 5))
 ## location 1 strain 1
 inc1_loc1 <- as.matrix(projections::project(initial_incidence, 
                      R = R1_loc1, 
-                     si = si,
+                     si = si_no_zero,
                      n_sim = 1,
                      n_days = ndays,
                      time_change = seq_len(length(R1_loc1) - 1)))
@@ -66,7 +68,7 @@ inc1_loc1 <- as.matrix(projections::project(initial_incidence,
 ## location 2 strain 1
 inc1_loc2 <- as.matrix(projections::project(initial_incidence, 
                                             R = R1_loc2, 
-                                            si = si,
+                                            si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays,
                                             time_change = seq_len(length(R1_loc2) - 1)))
@@ -74,7 +76,7 @@ inc1_loc2 <- as.matrix(projections::project(initial_incidence,
 ## location 1 strain 2
 inc2_loc1 <- as.matrix(projections::project(initial_incidence, 
                                             R = R2_loc1, 
-                                            si = si,
+                                            si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays,
                                             time_change = seq_len(length(R2_loc1) - 1)))
@@ -82,7 +84,7 @@ inc2_loc1 <- as.matrix(projections::project(initial_incidence,
 ## location 2 strain 2
 inc2_loc2 <- as.matrix(projections::project(initial_incidence, 
                                             R = R2_loc2, 
-                                            si = si,
+                                            si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays,
                                             time_change = seq_len(length(R2_loc2) - 1)))
