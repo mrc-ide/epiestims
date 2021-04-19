@@ -25,7 +25,11 @@ seas_loc2 <- calc_seasonality(date, seasonality_date_peak_loc2, seasonality_loc2
 # generate a time varying reproduction number for location 1
 R1_loc1 <- 2.5 * seas_loc1
 R1_loc2 <- 2.5 * seas_loc2
-  
+
+# bring min to 1
+R1_loc1 <- R1_loc1 - min(R1_loc1) +1
+R1_loc2 <- 2.5 * seas_loc2 - min(R1_loc2) +1
+
 transmission_advantage <- 1.5
 
 R2_loc1 <- transmission_advantage * R1_loc1
@@ -107,3 +111,9 @@ names(incidence) <- c("strain1_loc1", "strain1_loc2", "strain2_loc1", "strain2_l
 saveRDS(incidence, "incidence.rds")
 saveRDS(si, "si.rds")
 
+# target Rt
+target_Rt = list(R1_loc1 = R1_loc1,
+                 R2_loc1 = R2_loc1,
+                 R1_loc2 = R1_loc2,
+                 R2_loc2 = R2_loc2)
+saveRDS(target_Rt, 'target_Rt.rds')
