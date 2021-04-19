@@ -2,6 +2,11 @@
 ### Generating time varying reproduction numbers for 2 locations and 2 strains ###
 ##################################################################################
 
+source("./projections_code.R")
+
+type <- "SEASONAL"
+#type <- "CHANGEPOINT"
+
 calc_seasonality <- function(date, seasonality_date_peak, seasonality, 
                              period = 365) {
   delta <- ((date - seasonality_date_peak) %% period) / period
@@ -22,6 +27,7 @@ seasonality_loc2 <- 0.3 # do + / - 10% of the average at the peak
 seas_loc2 <- calc_seasonality(date, seasonality_date_peak_loc2, seasonality_loc2,
                               period = 100)
 
+if(type == "SEASONAL") {
 # generate a time varying reproduction number for location 1
 R1_loc1 <- 2.5 * seas_loc1
 R1_loc2 <- 2.5 * seas_loc2
@@ -29,6 +35,11 @@ R1_loc2 <- 2.5 * seas_loc2
 # bring min to 1
 R1_loc1 <- R1_loc1 - min(R1_loc1) +1
 R1_loc2 <- 2.5 * seas_loc2 - min(R1_loc2) +1
+} else if(type == "CHANGEPOINT"){
+  # generate a time varying reproduction number for location 1
+  R1_loc1 <- c(rep(2.5, round(ndays / 2)), rep(1.5, round(ndays / 2)))
+  R1_loc2 <- c(rep(2.5, round(ndays / 4)), rep(1.5, round(3 * ndays / 4)))
+}
 
 transmission_advantage <- 1.5
 
@@ -63,39 +74,47 @@ initial_incidence <- incidence::incidence(rep(1, 5))
 
 ## location 1 strain 1
 inc1_loc1 <- rbind(initial_incidence$counts,
-                   as.matrix(projections::project(initial_incidence, 
-                     R = R1_loc1, 
+                   as.matrix(#projections::project(initial_incidence,
+                     debug_project(initial_incidence,
+                     R = R1_loc1[-1], # R in the future so removing time of seeding
                      si = si_no_zero,
                      n_sim = 1,
                      n_days = ndays - 1,
-                     time_change = seq_len(length(R1_loc1) - 1))))
+                     time_change = seq_len(length(R1_loc1) - 2) - 1,
+                     instantaneous_R = TRUE)))
 
 ## location 2 strain 1
 inc1_loc2 <- rbind(initial_incidence$counts,
-                   as.matrix(projections::project(initial_incidence, 
-                                            R = R1_loc2, 
+                   as.matrix(#projections::project(initial_incidence,
+                     debug_project(initial_incidence,
+                                            R = R1_loc2[-1], 
                                             si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays - 1,
-                                            time_change = seq_len(length(R1_loc2) - 1))))
+                                            time_change = seq_len(length(R1_loc2) - 2) - 1,
+                                            instantaneous_R = TRUE)))
 
 ## location 1 strain 2
 inc2_loc1 <- rbind(initial_incidence$counts,
-                   as.matrix(projections::project(initial_incidence, 
-                                            R = R2_loc1, 
+                   as.matrix(#projections::project(initial_incidence,
+                     debug_project(initial_incidence,
+                                            R = R2_loc1[-1], 
                                             si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays - 1,
-                                            time_change = seq_len(length(R2_loc1) - 1))))
+                                            time_change = seq_len(length(R2_loc1) - 2) - 1,
+                                            instantaneous_R = TRUE)))
 
 ## location 2 strain 2
 inc2_loc2 <- rbind(initial_incidence$counts,
-                   as.matrix(projections::project(initial_incidence, 
-                                            R = R2_loc2, 
+                   as.matrix(#projections::project(initial_incidence,
+                     debug_project(initial_incidence,
+                                            R = R2_loc2[-1], 
                                             si = si_no_zero,
                                             n_sim = 1,
                                             n_days = ndays - 1,
-                                            time_change = seq_len(length(R2_loc2) - 1))))
+                                            time_change = seq_len(length(R2_loc2) - 2) - 1,
+                                   instantaneous_R = TRUE)))
 
 plot(log(1 + inc1_loc1[, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
 lines(log(1 + inc1_loc2[, 1]), col = "blue")
