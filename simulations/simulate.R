@@ -62,36 +62,40 @@ plot(seq(0, length(si) - 1, 1), si,
 initial_incidence <- incidence::incidence(rep(1, 5))
 
 ## location 1 strain 1
-inc1_loc1 <- as.matrix(projections::project(initial_incidence, 
+inc1_loc1 <- rbind(initial_incidence$counts,
+                   as.matrix(projections::project(initial_incidence, 
                      R = R1_loc1, 
                      si = si_no_zero,
                      n_sim = 1,
-                     n_days = ndays,
-                     time_change = seq_len(length(R1_loc1) - 1)))
+                     n_days = ndays - 1,
+                     time_change = seq_len(length(R1_loc1) - 1))))
 
 ## location 2 strain 1
-inc1_loc2 <- as.matrix(projections::project(initial_incidence, 
+inc1_loc2 <- rbind(initial_incidence$counts,
+                   as.matrix(projections::project(initial_incidence, 
                                             R = R1_loc2, 
                                             si = si_no_zero,
                                             n_sim = 1,
-                                            n_days = ndays,
-                                            time_change = seq_len(length(R1_loc2) - 1)))
+                                            n_days = ndays - 1,
+                                            time_change = seq_len(length(R1_loc2) - 1))))
 
 ## location 1 strain 2
-inc2_loc1 <- as.matrix(projections::project(initial_incidence, 
+inc2_loc1 <- rbind(initial_incidence$counts,
+                   as.matrix(projections::project(initial_incidence, 
                                             R = R2_loc1, 
                                             si = si_no_zero,
                                             n_sim = 1,
-                                            n_days = ndays,
-                                            time_change = seq_len(length(R2_loc1) - 1)))
+                                            n_days = ndays - 1,
+                                            time_change = seq_len(length(R2_loc1) - 1))))
 
 ## location 2 strain 2
-inc2_loc2 <- as.matrix(projections::project(initial_incidence, 
+inc2_loc2 <- rbind(initial_incidence$counts,
+                   as.matrix(projections::project(initial_incidence, 
                                             R = R2_loc2, 
                                             si = si_no_zero,
                                             n_sim = 1,
-                                            n_days = ndays,
-                                            time_change = seq_len(length(R2_loc2) - 1)))
+                                            n_days = ndays - 1,
+                                            time_change = seq_len(length(R2_loc2) - 1))))
 
 plot(log(1 + inc1_loc1[, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
 lines(log(1 + inc1_loc2[, 1]), col = "blue")
