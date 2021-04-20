@@ -6,8 +6,8 @@ data {
   int I[n_location, nt, tw]; //int I[n_location*n_variant, nt, tw];
   matrix<lower=0>[nt, tw] O_I[n_location]; //matrix<lower=0>[nt, tw] O_I[n_location*n_variant];
   row_vector[tw] U;
-  real<lower=0> prior_shape;
-  real<lower=0> prior_rate;
+  matrix<lower=0>[nt, n_location] prior_shape;
+  matrix<lower=0>[nt, n_location] prior_rate;
   // real<lower=0> prior_beta;
 }
 
@@ -35,7 +35,9 @@ transformed parameters {
 
 model{
   for(i in 1:(nt)){
-    Rt[i,] ~ gamma(prior_shape, prior_rate);
+    for(j in 1:n_location){
+      Rt[i,j] ~ gamma(prior_shape[i,j], prior_rate[i,j]);
+    }
   }
   // beta ~ uniform(0,prior_beta);
   
