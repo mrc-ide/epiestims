@@ -35,8 +35,8 @@ SI_sim <- data$SI_sim
 ## prepare data
 
 ```{r}
-n_location <- ncol(I)
-
+n_location <- ncol(I)/2
+n_variant <- ncol(I)/2
 
 t_window <- 7
 t_start <- seq(2, nrow(I)-(t_window-1)) 
@@ -44,11 +44,11 @@ t_end <- t_start + (t_window-1)
 
 # preprocessed
 O_I <- apply(I,2,EpiEstim::overall_infectivity, si_distr = SI_sim)
-mI <- array(NA, dim = c( n_location,
+mI <- array(NA, dim = c( n_location*n_variant,
                          length(t_start),
                          ncol = t_end[1] - t_start[1]+1) )
 m_O_I <- mI
-for(k in 1:(n_location)){
+for(k in 1:(n_location*n_variant)){
   for(i in 1:dim(mI)[2]){
     mI[k,i,] <- I[t_start[i]:t_end[i],k]
     m_O_I[k,i,] <- O_I[t_start[i]:t_end[i],k]
@@ -58,14 +58,27 @@ useful <- (rep(1,dim(mI)[3]))
 
 # prior
 param_Rt <- epitrix::gamma_mucv2shapescale(mu = data$mean_prior,
-                                                cv = data$std_prior/data$mean_prior)
+                                           cv = data$std_prior/data$mean_prior)
 
+prior_beta <- list(m_beta = 1, sd_beta = 1)
+
+prior_beta <- list(prior_beta,
+                   shsc = epitrix::gamma_mucv2shapescale(mu = prior_beta$m_beta,
+                                                         cv = prior_beta$sd_beta/
+                                                           prior_beta$m_beta) )
+
+plot(seq(0,3,length.out = 1e2),dgamma(x = seq(0,3,length.out = 1e2),
+                                      shape = prior_beta$shsc$shape,
+                                      scale = prior_beta$shsc$scale ))
+
+  
 
 
 ## rstan file
 standata <- list(nt = as.integer(dim(mI)[2]),
                  tw = as.integer(dim(mI)[3]),
                  n_location = n_location,
+                 n_variant = n_variant,
                  I = mI,
                  O_I = m_O_I,
                  U = useful,
@@ -74,7 +87,8 @@ standata <- list(nt = as.integer(dim(mI)[2]),
                                       ncol = n_location),
                  prior_rate = 1/matrix(param_Rt$shape,
                                        nrow = as.integer(dim(mI)[2]), 
-                                       ncol = n_location))
+                                       ncol = n_location),
+                 prior_beta = c(prior_beta$shsc$shape,1/prior_beta$shsc$scale))
 
 ```
 
@@ -83,14 +97,24 @@ standata <- list(nt = as.integer(dim(mI)[2]),
 ```{r}
 
 
-fit <- rstan::stan(file = 'Rstan/ML_NoVariant_epiestan.stan', data = standata, chain = 1)
+fit <- rstan::stan(file = 'Rstan/ML_Variant_epiestan.stan', data = standata, chain = 1)
 samples <- rstan::extract(fit)
 
 sum_Rt <- list()
 for(i in 1:(n_location)){
   sum_Rt[[i]] <- apply(samples$Rt[,,i],2,quantile,c(.5,.025,.975))
 }
+sum_beta <- apply(samples$Beta,2,quantile,c(.5,.025,.975))
 
+sum_Rt_variant <- list()
+for(i in 1:(n_location)){
+  temp <- samples$Rt[,,i] * (samples$beta %*% matrix(1,nrow = 1,ncol = ncol( samples$Rt[,,i])) )
+  sum_Rt_variant[[i]] <- apply(temp,2,quantile,c(.5,.025,.975))
+}
+
+
+sum_Rt <- list(sum_Rt[[1]],sum_Rt_variant[[1]],
+               sum_Rt[[2]],sum_Rt_variant[[2]])
 ```
 
 # check output
@@ -102,7 +126,7 @@ x_epi_start <- data$weekly_Rt_EpiEstim[[1]]$R$t_start
 x_epi_end <- data$weekly_Rt_EpiEstim[[1]]$R$t_end 
 x_epi_mid <- (x_epi_start + x_epi_end)/2 
 
-for (i in 1:(n_location)){
+for (i in 1:(n_location*n_variant)){
   
   # Plot weekly EpiEstan
   
@@ -153,6 +177,21 @@ for (i in 1:(n_location)){
 
 ```
 
+#check beta
+
+```{r}
+Hmisc::errbar(1:n_variant, 
+              y = sum_beta[1,],
+              yplus = sum_beta[2,], 
+              yminus = sum_beta[3,],
+              ylim = c(0,2),xlim = c(.5,n_variant+.5))
+
+abline(h = 1, col = 'red3', lty = 2)
+abline(h = 1.5, col = 'blue3', lty = 2)
+
+```
+
+
 # check vs Epiestim
 
 ```{r}
@@ -162,7 +201,7 @@ x_epi_start <- data$weekly_Rt_EpiEstim[[1]]$R$t_start
 x_epi_end <- data$weekly_Rt_EpiEstim[[1]]$R$t_end 
 x_epi_mid <- (x_epi_start + x_epi_end)/2 
 
-for (i in 1:(n_location)){
+for (i in 1:(n_location*n_variant)){
   
   # Plot weekly EpiEstan
   
@@ -223,8 +262,9 @@ SI_sim <- data$SI_sim
 ## prepare data
 
 ```{r}
-n_location <- ncol(I)
 
+n_location <- ncol(I)/2
+n_variant <- ncol(I)/2
 
 t_window <- 7
 t_start <- seq(2, nrow(I)-(t_window-1)) 
@@ -232,18 +272,17 @@ t_end <- t_start + (t_window-1)
 
 # preprocessed
 O_I <- apply(I,2,EpiEstim::overall_infectivity, si_distr = SI_sim)
-mI <- array(NA, dim = c( n_location,
+mI <- array(NA, dim = c( n_location*n_variant,
                          length(t_start),
                          ncol = t_end[1] - t_start[1]+1) )
 m_O_I <- mI
-for(k in 1:(n_location)){
+for(k in 1:(n_location*n_variant)){
   for(i in 1:dim(mI)[2]){
     mI[k,i,] <- I[t_start[i]:t_end[i],k]
     m_O_I[k,i,] <- O_I[t_start[i]:t_end[i],k]
   }
 }
 useful <- (rep(1,dim(mI)[3]))
-
 ```
 
 ```{r}
@@ -254,29 +293,46 @@ param_Rt <- list(mean = data.frame(matrix(NA,as.integer(dim(mI)[2]),n_location))
                  shape = data.frame(matrix(NA,as.integer(dim(mI)[2]),n_location)),
                  scale = data.frame(matrix(NA,as.integer(dim(mI)[2]),n_location)))
 
-
+param_beta <- matrix(NA,as.integer(dim(mI)[2]),n_location)
 
 for(i in 1:n_location){
-  param_Rt$mean[,i] <- data$weekly_Rt_EpiEstim[[i]]$R$`Mean(R)`
-  param_Rt$std[,i] <- data$weekly_Rt_EpiEstim[[i]]$R$`Std(R)`
-  temp <- epitrix::gamma_mucv2shapescale(mu = data$weekly_Rt_EpiEstim[[i]]$R$`Mean(R)`,
-                                         cv = data$weekly_Rt_EpiEstim[[i]]$R$`Std(R)`/
-                                           data$weekly_Rt_EpiEstim[[i]]$R$`Mean(R)`)
+  param_Rt$mean[,i] <- data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Mean(R)`
+  param_Rt$std[,i] <- data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Std(R)`
+  temp <- epitrix::gamma_mucv2shapescale(mu = data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Mean(R)`,
+                                         cv = data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Std(R)`/
+                                           data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Mean(R)`)
    param_Rt$shape[,i] <- temp$shape
    param_Rt$scale[,i] <- temp$scale
   
+   
+   param_beta[,i] <- data$weekly_Rt_EpiEstim[[(i-1)*n_variant+2]]$R$`Mean(R)`/
+     data$weekly_Rt_EpiEstim[[(i-1)*n_variant+1]]$R$`Mean(R)`
 }  
+
+
+prior_beta <- list(m_beta = mean(c(param_beta)), sd_beta = sd(c(param_beta)))
+              
+prior_beta <- list(prior_beta, 
+                   shsc = epitrix::gamma_mucv2shapescale(mu = prior_beta$m_beta,
+                                                         cv =prior_beta$sd_beta/
+                                                           prior_beta$m_beta) )
+
+# hist(c(param_beta))
+plot(seq(0,3,length.out = 1e2),dgamma(x = seq(0,3,length.out = 1e2),
+                                      shape = prior_beta$shsc$shape,
+                                      scale = prior_beta$shsc$scale ))
 
 ## rstan file
 standata <- list(nt = as.integer(dim(mI)[2]),
                  tw = as.integer(dim(mI)[3]),
                  n_location = n_location,
+                 n_variant = n_variant,
                  I = mI,
                  O_I = m_O_I,
                  U = useful,
                  prior_shape = param_Rt$shape,
-                 prior_rate = 1/param_Rt$scale)
-
+                 prior_rate = 1/param_Rt$scale,
+                 prior_beta = c(prior_beta$shsc$shape,1/prior_beta$shsc$scale))
 
 ```
 
@@ -285,16 +341,25 @@ standata <- list(nt = as.integer(dim(mI)[2]),
 ```{r}
 
 
-fit <- rstan::stan(file = 'Rstan/ML_NoVariant_epiestan.stan', data = standata, chain = 1)
+fit <- rstan::stan(file = 'Rstan/ML_Variant_epiestan.stan', data = standata, chain = 1)
 samples <- rstan::extract(fit)
 
 sum_Rt <- list()
 for(i in 1:(n_location)){
   sum_Rt[[i]] <- apply(samples$Rt[,,i],2,quantile,c(.5,.025,.975))
 }
+sum_beta <- apply(samples$Beta,2,quantile,c(.5,.025,.975))
 
+sum_Rt_variant <- list()
+for(i in 1:(n_location)){
+  temp <- samples$Rt[,,i] * (samples$beta %*% matrix(1,nrow = 1,ncol = ncol( samples$Rt[,,i])) )
+  sum_Rt_variant[[i]] <- apply(temp,2,quantile,c(.5,.025,.975))
+}
+
+
+sum_Rt <- list(sum_Rt[[1]],sum_Rt_variant[[1]],
+               sum_Rt[[2]],sum_Rt_variant[[2]])
 ```
-
 
 # check output
 
@@ -305,7 +370,7 @@ x_epi_start <- data$weekly_Rt_EpiEstim[[1]]$R$t_start
 x_epi_end <- data$weekly_Rt_EpiEstim[[1]]$R$t_end 
 x_epi_mid <- (x_epi_start + x_epi_end)/2 
 
-for (i in 1:(n_location)){
+for (i in 1:(n_location*n_variant)){
   
   # Plot weekly EpiEstan
   
@@ -356,6 +421,21 @@ for (i in 1:(n_location)){
 
 ```
 
+#check beta
+
+```{r}
+Hmisc::errbar(1:n_variant, 
+              y = sum_beta[1,],
+              yplus = sum_beta[2,], 
+              yminus = sum_beta[3,],
+              ylim = c(0,2),xlim = c(.5,n_variant+.5))
+
+abline(h = 1, col = 'red3', lty = 2)
+abline(h = 1.5, col = 'blue3', lty = 2)
+
+```
+
+
 # check vs Epiestim
 
 ```{r}
@@ -365,7 +445,7 @@ x_epi_start <- data$weekly_Rt_EpiEstim[[1]]$R$t_start
 x_epi_end <- data$weekly_Rt_EpiEstim[[1]]$R$t_end 
 x_epi_mid <- (x_epi_start + x_epi_end)/2 
 
-for (i in 1:(n_location)){
+for (i in 1:(n_location*n_variant)){
   
   # Plot weekly EpiEstan
   
@@ -409,5 +489,3 @@ for (i in 1:(n_location)){
 }
 
 ```
-
-
