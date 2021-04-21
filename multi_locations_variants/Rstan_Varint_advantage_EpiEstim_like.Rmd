@@ -71,13 +71,15 @@ plot(seq(0,3,length.out = 1e2),dgamma(x = seq(0,3,length.out = 1e2),
                                       shape = prior_beta$shsc$shape,
                                       scale = prior_beta$shsc$scale ))
 
-  
-temp <- matrix(param_Rt$shape,
-                                      nrow = as.integer(dim(mI)[2]), 
-                                      ncol = n_location)
 
-mean(rgamma(1e4,shape = prior_beta$shsc$shape,scale = prior_beta$shsc$scale))
-sd(rgamma(1e4,shape = prior_beta$shsc$shape,scale = prior_beta$shsc$scale))
+temp <- matrix(param_Rt$shape,
+               nrow = as.integer(dim(mI)[2]), 
+               ncol = n_location)
+temp <- 1/matrix(param_Rt$shape,
+                 nrow = as.integer(dim(mI)[2]), 
+                 ncol = n_location)
+# mean(rgamma(1e4,shape = param_Rt$shape,scale = param_Rt$scale))
+# sd(rgamma(1e4,shape = param_Rt$shape,scale = param_Rt$scale))
 
 ## rstan file
 standata <- list(nt = as.integer(dim(mI)[2]),
@@ -90,7 +92,7 @@ standata <- list(nt = as.integer(dim(mI)[2]),
                  prior_shape = matrix(param_Rt$shape,
                                       nrow = as.integer(dim(mI)[2]), 
                                       ncol = n_location),
-                 prior_rate = 1/matrix(param_Rt$shape,
+                 prior_rate = 1/matrix(param_Rt$scale,
                                        nrow = as.integer(dim(mI)[2]), 
                                        ncol = n_location),
                  prior_beta = c(prior_beta$shsc$shape,1/prior_beta$shsc$scale))
