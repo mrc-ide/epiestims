@@ -23,11 +23,11 @@ for each time step (1st dimension), location (2nd dimension) and
 pathogen/strain/variant (3rd dimension)}
 
 \item{lambda}{a multidimensional array containing values of the overall
-infectiousness for each time step (1st dimension), location (2nd dimension)
-and pathogen/strain/variant (3rd dimension). The overall infectiousness for
+infectivity for each time step (1st dimension), location (2nd dimension)
+and pathogen/strain/variant (3rd dimension). The overall infectivity for
 a given location and pathogen/strain/variant represents the sum of
 the incidence for that location and that pathogen/strain/variant at all
-previous time steps, weighted by the current infectiousness of those
+previous time steps, weighted by the current infectivity of those
 past incident cases. It can be calculated from the incidence \code{incid} and
 the distribution of the serial interval using function \code{compute_lambda})}
 
