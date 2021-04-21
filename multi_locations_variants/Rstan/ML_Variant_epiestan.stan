@@ -42,7 +42,8 @@ model{
   
   for(j in 1:(n_variant*n_location)){
     for (i in 1:nt){
-      I[j,i,] ~ poisson(lambda[j,i,]);
+      // I[j,i,] ~ poisson(lambda[j,i,]);
+      target += 1;
     }
   }
       

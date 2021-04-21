@@ -72,7 +72,12 @@ plot(seq(0,3,length.out = 1e2),dgamma(x = seq(0,3,length.out = 1e2),
                                       scale = prior_beta$shsc$scale ))
 
   
+temp <- matrix(param_Rt$shape,
+                                      nrow = as.integer(dim(mI)[2]), 
+                                      ncol = n_location)
 
+mean(rgamma(1e4,shape = prior_beta$shsc$shape,scale = prior_beta$shsc$scale))
+sd(rgamma(1e4,shape = prior_beta$shsc$shape,scale = prior_beta$shsc$scale))
 
 ## rstan file
 standata <- list(nt = as.integer(dim(mI)[2]),
@@ -139,22 +144,22 @@ for (i in 1:(n_location*n_variant)){
   polygon(c(x_epi_start,rev(x_epi_start)),
           c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
           border = NA, col = scales::alpha(col, 0.3))
-  
-  # end of time window
-  col <- 'gold'
-  lines(x_epi_end, sum_Rt[[i]][1,],
-        type = 'l', col = col)
-  polygon(c(x_epi_end,rev(x_epi_end)),
-          c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
-          border = NA, col = scales::alpha(col, 0.3))
-  
-  # mid of time window
-  col <- 'orange'
-  lines(x_epi_mid, sum_Rt[[i]][1,],
-        type = 'l', col = col)
-  polygon(c(x_epi_mid,rev(x_epi_mid)),
-          c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
-          border = NA, col = scales::alpha(col, 0.3))
+  # 
+  # # end of time window
+  # col <- 'gold'
+  # lines(x_epi_end, sum_Rt[[i]][1,],
+  #       type = 'l', col = col)
+  # polygon(c(x_epi_end,rev(x_epi_end)),
+  #         c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
+  #         border = NA, col = scales::alpha(col, 0.3))
+  # 
+  # # mid of time window
+  # col <- 'orange'
+  # lines(x_epi_mid, sum_Rt[[i]][1,],
+  #       type = 'l', col = col)
+  # polygon(c(x_epi_mid,rev(x_epi_mid)),
+  #         c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
+  #         border = NA, col = scales::alpha(col, 0.3))
 
   abline(h = 1, col = 'red3', lty = 2)
   
