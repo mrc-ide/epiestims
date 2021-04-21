@@ -1,11 +1,23 @@
 Package: MultiLocEpiEstim
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Estimating the transmission advantage of a new pathogen strain or variant
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R:
+    c(person(given = "Anne",
+           family = "Cori",
+           role = c("aut"),
+           email = "a.cori@imperial.ac.uk"))
+Maintainer: The package maintainer <a.cori@imperial.ac.uk>
+Description: Estimating the transmission advantage, measured as the relative 
+    instantaneous reproduction number, of a new pathogen strain or variant,
+    compared to a reference strain or variant, using incidence time series
+    of the two variants from one or multiple locations
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Imports:
+    EpiEstim
+Suggests:
+    testthat
+RoxygenNote: 7.1.1
+Roxygen: list(markdown = TRUE)
