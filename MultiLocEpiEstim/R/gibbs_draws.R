@@ -1,7 +1,8 @@
 default_priors <- function() {
   list(epsilon = list(shape = 1, scale = 1),
-       Rt = list(shape = 1, scale = 1))
+       R = list(shape = 1, scale = 1))
 }
+
 
 compute_lambda <- function(incid, w) {
   lambda <- array(NA, dim = dim(incid))
@@ -12,6 +13,7 @@ compute_lambda <- function(incid, w) {
   }
   lambda
 }
+
 
 draw_epsilon <- function(R, incid, lambda, priors,
                          t_min = 2, t_max = nrow(incid),
@@ -26,7 +28,16 @@ draw_epsilon <- function(R, incid, lambda, priors,
   rgamma(1, shape = shape, scale = scale)
 }
 
-## TODO: somewhere need to add:
-## dimension checks for incid, R, w
 
-
+draw_R <- function(epsilon, incid, lambda, priors,
+                   t_min = 2, t_max = nrow(incid),
+                   seed = NULL) {
+  ## TODO: check t_min and t_max are integers, >=2 and <= nrow(incid)
+  ## TODO: check seed is a numeric value
+  if (!is.null(seed)) set.seed(seed)
+  t <- seq(t_min, t_max, 1)
+  shape <- apply(incid[t, , ], c(1, 2), sum) + priors$R$shape
+  rate <- lambda[t, , 1] + epsilon * lambda[t, , 2] + 1 / priors$R$scale
+  scale <- 1 / rate
+  rgamma(length(t), shape = shape, scale = scale)
+}
