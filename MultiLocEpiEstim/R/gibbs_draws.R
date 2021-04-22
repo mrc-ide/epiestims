@@ -24,7 +24,7 @@ default_priors <- function() {
 #'   for each time step (1st dimension), location (2nd dimension) and
 #'   pathogen/strain/variant (3rd dimension)
 #'
-#' @param w a matrix with two columns, each containing the probability mass
+#' @param si_distr a matrix with two columns, each containing the probability mass
 #'   function for the discrete serial interval for each of the two
 #'   pathogen/strain/variants, starting with the probability mass function
 #'   for day 0 in the first row, which should be 0. each column in the matrix
@@ -50,16 +50,16 @@ default_priors <- function() {
 #' incid <- array(10, dim = c(T, n_loc, n_v))
 #' # arbitrary serial interval, same for both variants
 #' w_v <- c(0, 0.2, 0.5, 0.3)
-#' w <- cbind(w_v, w_v)
-#' lambda <- compute_lambda(incid, w)
-compute_lambda <- function(incid, w) {
-  ## TODO: check that w[1, ] == 0
-  ## TODO: check that all(colSums(w) == 1)
-  ## TODO: check that all(w >= 0)
+#' si_distr <- cbind(w_v, w_v)
+#' lambda <- compute_lambda(incid, si_distr)
+compute_lambda <- function(incid, si_distr) {
+  ## TODO: check that si_distr[1, ] == 0
+  ## TODO: check that all(colSums(si_distr) == 1)
+  ## TODO: check that all(si_distr >= 0)
   lambda <- array(NA, dim = dim(incid))
   for(l in seq_len(dim(incid)[2])) {
     for(v in seq_len(dim(incid)[3])) {
-      lambda[, l, v] <- EpiEstim::overall_infectivity(incid[, l, v], w[, v])
+      lambda[, l, v] <- EpiEstim::overall_infectivity(incid[, l, v], si_distr[, v])
     }
   }
   lambda
@@ -112,8 +112,8 @@ compute_lambda <- function(incid, w) {
 #' incid <- array(10, dim = c(T, n_loc, n_v))
 #' # arbitrary serial interval, same for both variants
 #' w_v <- c(0, 0.2, 0.5, 0.3)
-#' w <- cbind(w_v, w_v)
-#' lambda <- compute_lambda(incid, w)
+#' si_distr <- cbind(w_v, w_v)
+#' lambda <- compute_lambda(incid, si_distr)
 #' # Constant reproduction number of 1
 #' R <- matrix(1, nrow = T, ncol = n_loc)
 #' R[1, ] <- NA # no estimates of R on first time step
@@ -181,8 +181,8 @@ draw_epsilon <- function(R, incid, lambda, priors,
 #' incid <- array(10, dim = c(T, n_loc, n_v))
 #' # arbitrary serial interval, same for both variants
 #' w_v <- c(0, 0.2, 0.5, 0.3)
-#' w <- cbind(w_v, w_v)
-#' lambda <- compute_lambda(incid, w)
+#' si_distr <- cbind(w_v, w_v)
+#' lambda <- compute_lambda(incid, si_distr)
 #' # Epsilon = 1 i.e. no transmission advantage
 #' epsilon <- 1
 #' draw_R(epsilon, incid, lambda, priors, seed = 1)
@@ -216,7 +216,7 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'   for each time step (1st dimension), location (2nd dimension) and
 #'   pathogen/strain/variant (3rd dimension)
 #'
-#' @param w a matrix with two columns, each containing the probability mass
+#' @param si_distr a matrix with two columns, each containing the probability mass
 #'   function for the discrete serial interval for each of the two
 #'   pathogen/strain/variants, starting with the probability mass function
 #'   for day 0 in the first row, which should be 0. each column in the matrix
@@ -255,13 +255,13 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' incid <- array(10, dim = c(T, n_loc, n_v))
 #' # arbitrary serial interval, same for both variants
 #' w_v <- c(0, 0.2, 0.5, 0.3)
-#' w <- cbind(w_v, w_v)
+#' si_distr <- cbind(w_v, w_v)
 #'
 #' # Dummy initial values for the MCMC
 #' R_init <- matrix(5, nrow = T, ncol = n_loc)
 #' R_init[1, ] <- NA # no estimates of R on first time step
 #' epsilon_init <- 5
-#' x <- estimate_joint(incid, w, priors,
+#' x <- estimate_joint(incid, si_distr, priors,
 #'                     n_iter = 1000,
 #'                     burnin = 10)
 #' # Plotting to check outputs
@@ -279,7 +279,7 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' plot(x$R[30, 3, ], type = "l",
 #'      xlab = "Iteration", ylab = "R time 30 location 3")
 #'
-estimate_joint <- function(incid, w, priors,
+estimate_joint <- function(incid, si_distr, priors,
                            n_iter = 1100,
                            burnin = 10,
                            thin = 10,
@@ -290,25 +290,25 @@ estimate_joint <- function(incid, w, priors,
   ## TODO: check seed is a numeric value
   ## TODO: check epsilon_init >0
   ## TODO: check R_init >0
-  ## TODO: check w has the right format
+  ## TODO: check si_distr has the right format
   if (!is.null(seed)) set.seed(seed)
   t <- seq(t_min, t_max, 1)
 
   T <- nrow(incid)
   n_loc <- ncol(incid)
 
-  lambda <- compute_lambda(incid, w)
+  lambda <- compute_lambda(incid, si_distr)
 
   ## find clever initial values, based on ratio of reproduction numbers
   ## in first location
   R_init <- suppressWarnings(
     EpiEstim::estimate_R(incid[, 1, 1], method = "non_parametric_si",
-                         config = make_config(si_distr = w[, 1],
+                         config = make_config(si_distr = si_distr[, 1],
                                               t_start = t,
                                               t_end = t)))$R$'Mean(R)'
   R2_init <- suppressWarnings(
     EpiEstim::estimate_R(incid[, 1, 2], method = "non_parametric_si",
-                         config = make_config(si_distr = w[, 2],
+                         config = make_config(si_distr = si_distr[, 2],
                                               t_start = t,
                                               t_end = t)))$R$'Mean(R)'
   epsilon_init <- median(R2_init / R_init, na.rm = TRUE)

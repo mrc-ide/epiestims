@@ -62,8 +62,8 @@ priors <- default_priors()
 incid <- array(10, dim = c(T, n_loc, n_v))
 # arbitrary serial interval, same for both variants
 w_v <- c(0, 0.2, 0.5, 0.3)
-w <- cbind(w_v, w_v)
-lambda <- compute_lambda(incid, w)
+si_distr <- cbind(w_v, w_v)
+lambda <- compute_lambda(incid, si_distr)
 # Epsilon = 1 i.e. no transmission advantage
 epsilon <- 1
 draw_R(epsilon, incid, lambda, priors, seed = 1)

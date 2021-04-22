@@ -4,14 +4,14 @@
 \alias{compute_lambda}
 \title{Compute the overall infectivity}
 \usage{
-compute_lambda(incid, w)
+compute_lambda(incid, si_distr)
 }
 \arguments{
 \item{incid}{a multidimensional array containing values of the incidence
 for each time step (1st dimension), location (2nd dimension) and
 pathogen/strain/variant (3rd dimension)}
 
-\item{w}{a matrix with two columns, each containing the probability mass
+\item{si_distr}{a matrix with two columns, each containing the probability mass
 function for the discrete serial interval for each of the two
 pathogen/strain/variants, starting with the probability mass function
 for day 0 in the first row, which should be 0. each column in the matrix
@@ -39,6 +39,6 @@ priors <- default_priors()
 incid <- array(10, dim = c(T, n_loc, n_v))
 # arbitrary serial interval, same for both variants
 w_v <- c(0, 0.2, 0.5, 0.3)
-w <- cbind(w_v, w_v)
-lambda <- compute_lambda(incid, w)
+si_distr <- cbind(w_v, w_v)
+lambda <- compute_lambda(incid, si_distr)
 }

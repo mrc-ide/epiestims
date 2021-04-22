@@ -7,32 +7,23 @@ pathogen/strain/variant and the relative transmissibility of a
 "new" pathogen/strain/variant}
 \usage{
 estimate_joint(
-  epsilon_init,
-  R_init,
   incid,
-  w,
+  si_distr,
   priors,
-  n_iter = 1000,
+  n_iter = 1100,
   burnin = 10,
+  thin = 10,
   t_min = 2,
   t_max = nrow(incid),
   seed = NULL
 )
 }
 \arguments{
-\item{epsilon_init}{value at which epsilon will be initialised. Epsilon
-is the relative transmissibility of the "new"
-pathogen/strain/variant compared to the reference pathogen/strain/variant}
-
-\item{R_init}{a matrix with dimensions containing the initial values of the
-instantaneous reproduction number for each time step (row) and location
-(column), for the reference pathogen/strain/variant}
-
 \item{incid}{a multidimensional array containing values of the incidence
 for each time step (1st dimension), location (2nd dimension) and
 pathogen/strain/variant (3rd dimension)}
 
-\item{w}{a matrix with two columns, each containing the probability mass
+\item{si_distr}{a matrix with two columns, each containing the probability mass
 function for the discrete serial interval for each of the two
 pathogen/strain/variants, starting with the probability mass function
 for day 0 in the first row, which should be 0. each column in the matrix
@@ -47,6 +38,9 @@ time steps and all locations}
 
 \item{burnin}{the burnin to use; MCMC iterations will only be recorded after
 the burnin}
+
+\item{thin}{the thin to use; MCMC iterations will only be recorded after
+the burnin and every \code{thin} iteration}
 
 \item{t_min}{an integer >1 giving the minimum time step to consider in the
 estimation. Default value is 2 (as the estimation is conditional on
@@ -74,14 +68,13 @@ priors <- default_priors()
 incid <- array(10, dim = c(T, n_loc, n_v))
 # arbitrary serial interval, same for both variants
 w_v <- c(0, 0.2, 0.5, 0.3)
-w <- cbind(w_v, w_v)
+si_distr <- cbind(w_v, w_v)
 
 # Dummy initial values for the MCMC
 R_init <- matrix(5, nrow = T, ncol = n_loc)
 R_init[1, ] <- NA # no estimates of R on first time step
 epsilon_init <- 5
-x <- estimate_joint(epsilon_init, R_init,
-                    incid, w, priors,
+x <- estimate_joint(incid, si_distr, priors,
                     n_iter = 1000,
                     burnin = 10)
 # Plotting to check outputs

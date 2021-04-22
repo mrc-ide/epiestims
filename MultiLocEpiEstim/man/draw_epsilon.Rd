@@ -61,8 +61,8 @@ priors <- default_priors()
 incid <- array(10, dim = c(T, n_loc, n_v))
 # arbitrary serial interval, same for both variants
 w_v <- c(0, 0.2, 0.5, 0.3)
-w <- cbind(w_v, w_v)
-lambda <- compute_lambda(incid, w)
+si_distr <- cbind(w_v, w_v)
+lambda <- compute_lambda(incid, si_distr)
 # Constant reproduction number of 1
 R <- matrix(1, nrow = T, ncol = n_loc)
 R[1, ] <- NA # no estimates of R on first time step
