@@ -17,6 +17,33 @@ default_priors <- function() {
        R = list(shape = 1, scale = 1))
 }
 
+#' Set default for MCMC controls
+#'
+#' @return a list of default MCMC control parameters, containing:
+#'
+#' - n_iter: the number if iterations of the MCMC to perform
+#'
+#' - burnin: the burnin to use; MCMC iterations will only be recorded after
+#'   the burnin
+#'
+#' - thin: MCMC iterations will only be recorded after
+#'   the burnin and every `thin` iteration
+#'
+#'   Values can then be manually be edited as in the examples below.
+#'
+#' @export
+#'
+#' @examples
+#' mcmc_controls <- default_mcmc_controls
+#' # change to run for 10 times longer
+#' mcmc_controls$n_iter <- mcmc_controls$n_iter * 10
+#'
+default_mcmc_controls <- function() {
+  ## TODO: check n_iter, burnin, thin are positive integers
+  ## TODO: check n_iter > burnin + thin
+  list(n_iter = 1100, burnin = 10, thin = 10)
+}
+
 
 #' Compute the overall infectivity
 #'
@@ -280,17 +307,14 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'      xlab = "Iteration", ylab = "R time 30 location 3")
 #'
 estimate_joint <- function(incid, si_distr, priors,
-                           n_iter = 1100,
-                           burnin = 10,
-                           thin = 10,
+                           mcmc_control = default_mcmc_controls(),
                            t_min = 2, t_max = nrow(incid),
                            seed = NULL
 ) {
   ## TODO: check t_min and t_max are integers, >=2 and <= nrow(incid)
   ## TODO: check seed is a numeric value
-  ## TODO: check epsilon_init >0
-  ## TODO: check R_init >0
   ## TODO: check si_distr has the right format
+  ## TODO: check mcmc_control has the correct format
   if (!is.null(seed)) set.seed(seed)
   t <- seq(t_min, t_max, 1)
 
@@ -312,14 +336,14 @@ estimate_joint <- function(incid, si_distr, priors,
                                               t_start = t,
                                               t_end = t)))$R$'Mean(R)'
   epsilon_init <- median(R2_init / R_init, na.rm = TRUE)
-  epsilon_out <- rep(NA, n_iter + 1)
+  epsilon_out <- rep(NA, mcmc_control$n_iter + 1)
   epsilon_out[1] <- epsilon_init
-  R_init <- draw_R(n_iter, incid, lambda, priors,
+  R_init <- draw_R(mcmc_control$n_iter, incid, lambda, priors,
                    t_min = t_min, t_max = t_max)
-  R_out <- array(NA, dim= c(T, n_loc, n_iter + 1))
+  R_out <- array(NA, dim= c(T, n_loc, mcmc_control$n_iter + 1))
   R_out[, , 1] <- R_init
 
-  for (i in seq_len(n_iter)) {
+  for (i in seq_len(mcmc_control$n_iter)) {
     R_out[, , i + 1] <- draw_R(epsilon_out[i], incid, lambda, priors,
                                t_min = t_min, t_max = t_max)
     epsilon_out[i + 1] <- draw_epsilon(R_out[, , i + 1], incid, lambda, priors,
@@ -327,13 +351,15 @@ estimate_joint <- function(incid, si_distr, priors,
   }
 
   # remove burnin and thin
-  keep <- seq(burnin, n_iter, thin)
+  keep <- seq(mcmc_control$burnin, mcmc_control$n_iter, mcmc_control$thin)
   epsilon_out <- epsilon_out[keep]
   R_out <- R_out[, , keep]
 
   list(epsilon = epsilon_out, R = R_out)
 
 }
+
+
 
 ## TODO: check dimensions of objects is correct everywhere
 ## TODO: fix number of variants to be 2
