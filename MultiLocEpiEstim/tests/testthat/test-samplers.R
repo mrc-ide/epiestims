@@ -55,3 +55,59 @@ test_that("draw_R produces expected results", {
   ## so ignore fisrt timesteps
   expect_true(max(abs(x_mean[-c(1, 2, 3), ] - 1)) < 0.05)
 })
+
+
+test_that("estimate_joint produces expected results", {
+  n_v <- 2 # 2 variants
+  n_loc <- 3 # 3 locations
+  T <- 100 # 100 time steps
+
+  priors <- default_priors()
+
+  # constant incidence 10 per day everywhere
+  incid <- array(10, dim = c(T, n_loc, n_v))
+
+  # arbitrary serial interval
+  w_v <- c(0, 0.2, 0.5, 0.3)
+  w <- cbind(w_v, w_v)
+
+  # Dummy starting points
+  R_init <- matrix(5, nrow = T, ncol = n_loc)
+  R_init[1, ] <- NA # no estimates of R on first time step
+  epsilon_init <- 5
+
+  x <- estimate_joint(epsilon_init, R_init,
+                             incid, w, priors,
+                             n_iter = 1000,
+                      burnin = 10)
+
+  # ## plotting to check
+  # par(mfrow = c(2, 3))
+  # plot(x$epsilon, type = "l",
+  #      xlab = "Iteration", ylab = "epsilon")
+  # abline(h = 1, col = "red")
+  # plot(x$R[10, 1, ], type = "l",
+  #      xlab = "Iteration", ylab = "R time 10 location 1")
+  # abline(h = 1, col = "red")
+  # plot(x$R[10, 2, ], type = "l",
+  #      xlab = "Iteration", ylab = "R time 10 location 2")
+  # abline(h = 1, col = "red")
+  # plot(x$R[10, 3, ], type = "l",
+  #      xlab = "Iteration", ylab = "R time 10 location 3")
+  # abline(h = 1, col = "red")
+  # plot(x$R[50, 1, ], type = "l",
+  #      xlab = "Iteration", ylab = "R time 50 location 1")
+  # abline(h = 1, col = "red")
+  # plot(x$R[50, 2, ], type = "l",
+  #      xlab = "Iteration", ylab = "R time 50 location 2")
+  # abline(h = 1, col = "red")
+
+  ## epsilon should be approximately 1
+  expect_equal(mean(x$epsilon), 1, tolerance = 0.05)
+
+  ## R should be approximately 1
+  ## not exactly 1 because of the first few timesteps & because of priors
+  ## so ignore fisrt timesteps
+  mean_R <- apply(x$R, c(1, 2), mean)
+  expect_true(max(abs(mean_R[-c(1, 2, 3), ] - 1)) < 0.05)
+})

@@ -19,13 +19,26 @@ should sum to 1}
 }
 \value{
 a multidimensional array containing values of the overall
-infectiousness for each time step (1st dimension), location (2nd dimension)
-and pathogen/strain/variant (3rd dimension). The overall infectiousness for
+infectivity for each time step (1st dimension), location (2nd dimension)
+and pathogen/strain/variant (3rd dimension). The overall infectivity for
 a given location and pathogen/strain/variant represents the sum of
 the incidence for that location and that pathogen/strain/variant at all
-previous time steps, weighted by the current infectiousness of those
-past incident cases.
+previous time steps, weighted by the current infectivity of those
+past incident cases. Pre-calculating the overall infectivity makes the
+algorithm much faster
 }
 \description{
 Compute the overall infectivity
+}
+\examples{
+#'
+n_loc <- 3 # 3 locations
+T <- 100 # 100 time steps
+priors <- default_priors()
+# constant incidence 10 per day everywhere
+incid <- array(10, dim = c(T, n_loc, n_v))
+# arbitrary serial interval, same for both variants
+w_v <- c(0, 0.2, 0.5, 0.3)
+w <- cbind(w_v, w_v)
+lambda <- compute_lambda(incid, w)
 }
