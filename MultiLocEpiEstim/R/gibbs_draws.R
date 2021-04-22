@@ -212,14 +212,6 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'   pathogen/strain/variant and the relative transmissibility of a
 #'   "new" pathogen/strain/variant
 #'
-#' @param epsilon_init value at which epsilon will be initialised. Epsilon
-#'   is the relative transmissibility of the "new"
-#'   pathogen/strain/variant compared to the reference pathogen/strain/variant
-#'
-#' @param R_init a matrix with dimensions containing the initial values of the
-#'   instantaneous reproduction number for each time step (row) and location
-#'   (column), for the reference pathogen/strain/variant
-#'
 #' @param incid a multidimensional array containing values of the incidence
 #'   for each time step (1st dimension), location (2nd dimension) and
 #'   pathogen/strain/variant (3rd dimension)
@@ -249,6 +241,14 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'
 #' @param seed a numeric value used to fix the random seed
 #'
+#' @param epsilon_init Optional. Value at which epsilon will be initialised.
+#'   Epsilon is the relative transmissibility of the "new"
+#'   pathogen/strain/variant compared to the reference pathogen/strain/variant
+#'
+#' @param R_init Optional. A matrix with dimensions containing the initial
+#'   values of the instantaneous reproduction number for each time step (row)
+#'   and location (column), for the reference pathogen/strain/variant
+#'
 #' @return
 #' @export
 #'
@@ -267,8 +267,7 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' R_init <- matrix(5, nrow = T, ncol = n_loc)
 #' R_init[1, ] <- NA # no estimates of R on first time step
 #' epsilon_init <- 5
-#' x <- estimate_joint(epsilon_init, R_init,
-#'                     incid, w, priors,
+#' x <- estimate_joint(incid, w, priors,
 #'                     n_iter = 1000,
 #'                     burnin = 10)
 #' # Plotting to check outputs
@@ -286,12 +285,14 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' plot(x$R[30, 3, ], type = "l",
 #'      xlab = "Iteration", ylab = "R time 30 location 3")
 #'
-estimate_joint <- function(epsilon_init, R_init, # TODO: change so those are automatically set
-                           incid, w, priors,
+estimate_joint <- function(incid, w, priors,
                            n_iter = 1000,
                            burnin = 10,
                            t_min = 2, t_max = nrow(incid),
-                           seed = NULL) {
+                           seed = NULL,
+                           epsilon_init = 1, # TODO: change so those are automatically set
+                           R_init = NULL # TODO: change so those are automatically set
+) {
   ## TODO: check t_min and t_max are integers, >=2 and <= nrow(incid)
   ## TODO: check seed is a numeric value
   ## TODO: check epsilon_init >0
@@ -307,6 +308,10 @@ estimate_joint <- function(epsilon_init, R_init, # TODO: change so those are aut
 
   epsilon_out <- rep(NA, n_iter + 1)
   epsilon_out[1] <- epsilon_init
+  if (is.null(R_init)) {
+    R_init <- draw_R(n_iter, incid, lambda, priors,
+           t_min = t_min, t_max = t_max)
+  }
   R_out <- array(NA, dim= c(T, n_loc, n_iter + 1))
   R_out[, , 1] <- R_init
 

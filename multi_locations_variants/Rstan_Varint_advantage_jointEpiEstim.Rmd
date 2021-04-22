@@ -53,15 +53,11 @@ priors <- default_priors()
 w_v <- SI_sim
 w <- cbind(w_v, w_v)
 
-# Dummy initial values for the MCMC
-R_init <- matrix(1, nrow = n_t, ncol = n_loc)
-R_init[1, ] <- NA # no estimates of R on first time step
-epsilon_init <- 1
-
-res <- estimate_joint(epsilon_init, R_init,
-                    incid, w, priors,
-                    n_iter = 10000,
-                    burnin = 1000)
+system.time(
+res <- estimate_joint(incid, w, priors,
+                    n_iter = 8000,
+                    burnin = 3000)
+)
 
 par(mfrow = c(2, 2))
 plot(res$epsilon, type = "l", xlab = "Iterations", ylab = "Epsilon")
