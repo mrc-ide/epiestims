@@ -25,8 +25,8 @@ opts_chunk$set(fig.path='figs/', fig.keep='high',
 
 
 ```{r}
-data <- readRDS('EpiEstim.rds')
-data_incidence <- readRDS('../simulations/incidence.rds')
+#data <- readRDS('EpiEstim.rds')
+incid <- readRDS('../simulations/incidence.rds')
 SI_sim <- readRDS('../simulations/si.rds') 
 target <- readRDS('../simulations/target_Rt.rds')
 
@@ -43,35 +43,34 @@ devtools::load_all("../MultiLocEpiEstim/")
 ## prepare data
 
 ```{r}
-
-n_loc <- ncol(data_incidence)/2
-n_t <- nrow(data_incidence) # 100 time steps
-n_v <- ncol(data_incidence)/2
+n_t <- dim(incid)[1]
+n_loc <- dim(incid)[2]
+n_v <- dim(incid)[3]
 
 priors <- default_priors()
-# constant incidence 10 per day everywhere
-incid <- array(NA, dim = c(n_t, n_loc, n_v))
-incid[,,1] <- as.matrix(data_incidence[,c(1,2)])
-incid[,,2] <- as.matrix(data_incidence[,c(3,4)])
 
 # arbitrary serial interval, same for both variants
 w_v <- SI_sim
 w <- cbind(w_v, w_v)
 
 # Dummy initial values for the MCMC
-R_init <- matrix(5, nrow = n_t, ncol = n_loc)
+R_init <- matrix(1, nrow = n_t, ncol = n_loc)
 R_init[1, ] <- NA # no estimates of R on first time step
-epsilon_init <- 5
+epsilon_init <- 1
 
 res <- estimate_joint(epsilon_init, R_init,
                     incid, w, priors,
-                    n_iter = 1000,
-                    burnin = 100)
+                    n_iter = 10000,
+                    burnin = 1000)
 
-
-plot(res$epsilon)
-plot(res$R[50,1,])
-plot(res$R[75,1,])
+par(mfrow = c(2, 2))
+plot(res$epsilon, type = "l", xlab = "Iterations", ylab = "Epsilon")
+plot(res$R[50,1,], , type = "l",
+     xlab = "Iterations", ylab = "Rt time 50 location 1")
+plot(res$R[50,2,], , type = "l",
+     xlab = "Iterations", ylab = "Rt time 50 location 2")
+plot(res$R[50,3,], , type = "l",
+     xlab = "Iterations", ylab = "Rt time 50 location 3")
 
 ```
 

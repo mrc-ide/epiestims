@@ -127,8 +127,8 @@ draw_epsilon <- function(R, incid, lambda, priors,
   ## TODO: check R >=0
   if (!is.null(seed)) set.seed(seed)
   t <- seq(t_min, t_max, 1)
-  shape <- sum(incid[t, , 1]) + priors$epsilon$shape
-  rate <- sum(R[t, ] * lambda[t, , 1]) + 1 / priors$epsilon$scale
+  shape <- sum(incid[t, , 2]) + priors$epsilon$shape ## TODO: precalculate this
+  rate <- sum(R[t, ] * lambda[t, , 2]) + 1 / priors$epsilon$scale
   scale <- 1 / rate
   rgamma(1, shape = shape, scale = scale)
 }
@@ -195,8 +195,8 @@ draw_R <- function(epsilon, incid, lambda, priors,
   ## TODO: check epsilon >0
   if (!is.null(seed)) set.seed(seed)
   t <- seq(t_min, t_max, 1)
-  shape <- apply(incid[t, , ], c(1, 2), sum) + priors$R$shape
-  shape_flat <- as.numeric(shape)
+  shape <- apply(incid[t, , ], c(1, 2), sum) + priors$R$shape ## TODO: precalculate this
+  shape_flat <- as.numeric(shape) ## TODO: precalculate this
   rate <- lambda[t, , 1] + epsilon * lambda[t, , 2] + 1 / priors$R$scale
   scale <- 1 / rate
   scale_flat <- as.numeric(scale)
