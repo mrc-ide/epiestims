@@ -232,6 +232,9 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' @param burnin the burnin to use; MCMC iterations will only be recorded after
 #'   the burnin
 #'
+#' @param thin the thin to use; MCMC iterations will only be recorded after
+#'   the burnin and every `thin` iteration
+#'
 #' @param t_min an integer >1 giving the minimum time step to consider in the
 #'   estimation. Default value is 2 (as the estimation is conditional on
 #'   observations at time step 1 and can therefore only start at time step 2).
@@ -240,15 +243,6 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'   step to consider in the estimation. Default value is `nrow(incid)`.
 #'
 #' @param seed a numeric value used to fix the random seed
-#'
-#' @param epsilon_init Optional. Value at which epsilon will be initialised.
-#'   Epsilon is the relative transmissibility of the "new"
-#'   pathogen/strain/variant compared to the reference pathogen/strain/variant
-#'
-#' @param R_init Optional. A matrix with dimensions containing the initial
-#'   values of the instantaneous reproduction number for each time step (row)
-#'   and location (column), for the reference pathogen/strain/variant
-#'
 #' @return
 #' @export
 #'
@@ -286,12 +280,11 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'      xlab = "Iteration", ylab = "R time 30 location 3")
 #'
 estimate_joint <- function(incid, w, priors,
-                           n_iter = 1000,
+                           n_iter = 1100,
                            burnin = 10,
+                           thin = 10,
                            t_min = 2, t_max = nrow(incid),
-                           seed = NULL,
-                           epsilon_init = 1, # TODO: change so those are automatically set
-                           R_init = NULL # TODO: change so those are automatically set
+                           seed = NULL
 ) {
   ## TODO: check t_min and t_max are integers, >=2 and <= nrow(incid)
   ## TODO: check seed is a numeric value
@@ -306,12 +299,23 @@ estimate_joint <- function(incid, w, priors,
 
   lambda <- compute_lambda(incid, w)
 
+  ## find clever initial values, based on ratio of reproduction numbers
+  ## in first location
+  R_init <- suppressWarnings(
+    EpiEstim::estimate_R(incid[, 1, 1], method = "non_parametric_si",
+                         config = make_config(si_distr = w[, 1],
+                                              t_start = t,
+                                              t_end = t)))$R$'Mean(R)'
+  R2_init <- suppressWarnings(
+    EpiEstim::estimate_R(incid[, 1, 2], method = "non_parametric_si",
+                         config = make_config(si_distr = w[, 2],
+                                              t_start = t,
+                                              t_end = t)))$R$'Mean(R)'
+  epsilon_init <- median(R2_init / R_init, na.rm = TRUE)
   epsilon_out <- rep(NA, n_iter + 1)
   epsilon_out[1] <- epsilon_init
-  if (is.null(R_init)) {
-    R_init <- draw_R(n_iter, incid, lambda, priors,
-           t_min = t_min, t_max = t_max)
-  }
+  R_init <- draw_R(n_iter, incid, lambda, priors,
+                   t_min = t_min, t_max = t_max)
   R_out <- array(NA, dim= c(T, n_loc, n_iter + 1))
   R_out[, , 1] <- R_init
 
@@ -322,9 +326,10 @@ estimate_joint <- function(incid, w, priors,
                                        t_min = t_min, t_max = t_max)
   }
 
-  # remove burnin
-  epsilon_out <- epsilon_out[-seq_len(burnin)]
-  R_out <- R_out[, , -seq_len(burnin)]
+  # remove burnin and thin
+  keep <- seq(burnin, n_iter, thin)
+  epsilon_out <- epsilon_out[keep]
+  R_out <- R_out[, , keep]
 
   list(epsilon = epsilon_out, R = R_out)
 

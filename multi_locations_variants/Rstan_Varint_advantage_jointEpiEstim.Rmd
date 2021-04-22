@@ -40,9 +40,9 @@ devtools::load_all("../MultiLocEpiEstim/")
 ?estimate_joint
 ```
 
-## prepare data
+## perform the estimation
 
-```{r}
+```{r joint_estimate}
 n_t <- dim(incid)[1]
 n_loc <- dim(incid)[2]
 n_v <- dim(incid)[3]
@@ -53,97 +53,54 @@ priors <- default_priors()
 w_v <- SI_sim
 w <- cbind(w_v, w_v)
 
-system.time(
-res <- estimate_joint(incid, w, priors,
-                    n_iter = 8000,
-                    burnin = 3000)
+system.time( # currently 211s for 3 locations, 100 time steps, 2 variants
+  res <- estimate_joint(incid, w, priors,
+                        n_iter = 500000,
+                        burnin = 5000,
+                        thin = 100)
 )
 
-par(mfrow = c(2, 2))
-plot(res$epsilon, type = "l", xlab = "Iterations", ylab = "Epsilon")
-plot(res$R[50,1,], , type = "l",
-     xlab = "Iterations", ylab = "Rt time 50 location 1")
-plot(res$R[50,2,], , type = "l",
-     xlab = "Iterations", ylab = "Rt time 50 location 2")
-plot(res$R[50,3,], , type = "l",
-     xlab = "Iterations", ylab = "Rt time 50 location 3")
-
 ```
 
-# fit model
+```{r plot_traces}
 
-```{r}
+epsilon_target <- mean(target[, , 2] / target[, , 1])
 
+par(mfrow = c(3, 4))
+plot(res$epsilon, type = "l", xlab = "Iterations", ylab = "Epsilon",
+     col = "grey")
+abline(h = epsilon_target, col = "red")
 
-sum_Rt <- list()
-for(i in 1:(n_loc)){
-  sum_Rt[[i]] <- apply(res$R[,i,],1,quantile,c(.5,.025,.975),na.rm = TRUE)
-}
-sum_beta <- quantile(res$epsilon,c(.5,.025,.975))
-
-sum_Rt_variant <- list()
-for(i in 1:(n_loc)){
-  temp <-  t(res$R[,i,]) *(res$epsilon %*% matrix(1,nrow = 1,ncol = nrow( res$R[,i,])) )
-  sum_Rt_variant[[i]] <- apply(temp,2,quantile,c(.5,.025,.975),na.rm=TRUE)
-}
-
-
-sum_Rt <- list(sum_Rt[[1]],sum_Rt_variant[[1]],
-               sum_Rt[[2]],sum_Rt_variant[[2]])
-```
-
-# check output
-
-```{r}
-par(mfrow = c(2, 2))
-
-x_epi_start <- data$weekly_Rt_EpiEstim[[1]]$R$t_start 
-x_epi_end <- data$weekly_Rt_EpiEstim[[1]]$R$t_end 
-x_epi_mid <- (x_epi_start + x_epi_end)/2 
-x <- seq(1,nrow(data_incidence))
-
-for (i in 1:(n_loc*n_v)){
-  
-  # Plot weekly EpiEstan
-  
-  col <- 'red3'
-  plot(x, sum_Rt[[i]][1,],
-       type = 'l',col = col,
-       ylim = c(0,4), bty='none',
-       xlab = '',ylab = 'R_t',
-       main = names(data$target)[i])
-  polygon(c(x,rev(x)),
-          c(sum_Rt[[i]][2,],rev(sum_Rt[[i]][3,])),
-          border = NA, col = scales::alpha(col, 0.3))
-  
-
-  # mid of time window
-  col <- 'orange'
-  lines(x_epi_mid, data$weekly_Rt_EpiEstim[[i]]$R$`Median(R)`,
-        type = 'l', col = col)
-  polygon(c(x_epi_mid,rev(x_epi_mid)),
-          c(data$weekly_Rt_EpiEstim[[i]]$R$`Quantile.0.025(R)`,
-            rev(data$weekly_Rt_EpiEstim[[i]]$R$`Quantile.0.975(R)`)),
-          border = NA, col = scales::alpha(col, 0.3))
-
-  abline(h = 1, col = 'red3', lty = 2)
-  
-  
-  
-  ### Plot target
-  lines(1:length(data$target[[i]]), data$target[[i]],
-        lty = 2,col = 'black')
-  
-  if(i == 1) {
-    legend('topright',
-           c('target',
-             'new EpiEstim (variant)','Weekly EpiEstim (mid)'),
-           lty = c(2, 1, 1, 1, 1),
-           bty = 'n', col= c('black','red3', 'orange'))
+t_to_plot <- c(30, 60, 90)
+for (t in t_to_plot) {
+  for (l in 1:n_loc) {
+    plot(res$R[t,l,], , type = "l",
+         xlab = "Iterations", ylab = paste("Rt time", t, "location", l),
+         col = l)
+    abline(h = target[t, l, 1], col = "red")
   }
-  
-  
+  if(t != t_to_plot[length(t_to_plot)]) plot.new()
 }
 
 ```
+
+```{r plot_estimates}
+par(mfrow = c(2, 2))
+v <- 1
+
+for (l in 1:n_loc) {
+  R <- t(apply(res$R[,l,], 1, quantile, c(0.5, 0.025, 0.975), na.rm = TRUE))
+  plot(R[, 1], type = "l",
+       xlab = "Time", ylab = "R",
+       main = paste("R for variant 1, location", l))
+  Epi::matshade(1:nrow(R), R)
+  lines(target[, l, v], col = "red")
+}
+
+boxplot(res$epsilon, ylim = c(0, 2), ylab = "Epsilon", main = "Relative transmissibility of second variant")
+abline(h = epsilon_target, col = "red")
+
+```
+
+
 
