@@ -1,8 +1,8 @@
 context("Gibbs samplers")
 
 test_that("draw_epsilon produces expected results", {
-  n_v <- 2 # 2 variants
-  n_loc <- 3 # 3 locations
+  n_v <- 3 # 3 variants
+  n_loc <- 4 # 4 locations
   T <- 100 # 100 time steps
 
   priors <- default_priors()
@@ -12,8 +12,8 @@ test_that("draw_epsilon produces expected results", {
 
   # arbitrary serial interval
   w_v <- c(0, 0.2, 0.5, 0.3)
-  w <- cbind(w_v, w_v)
-  lambda <- compute_lambda(incid, w)
+  si_distr <- cbind(w_v, w_v, w_v)
+  lambda <- compute_lambda(incid, si_distr)
 
   # Constant reproduction number of 1
   R <- matrix(1, nrow = T, ncol = n_loc)
@@ -29,8 +29,8 @@ test_that("draw_epsilon produces expected results", {
 
 
 test_that("draw_R produces expected results", {
-  n_v <- 2 # 2 variants
-  n_loc <- 3 # 3 locations
+  n_v <- 3 # 3 variants
+  n_loc <- 4 # 4 locations
   T <- 100 # 100 time steps
 
   priors <- default_priors()
@@ -40,11 +40,11 @@ test_that("draw_R produces expected results", {
 
   # arbitrary serial interval
   w_v <- c(0, 0.2, 0.5, 0.3)
-  w <- cbind(w_v, w_v)
-  lambda <- compute_lambda(incid, w)
+  si_distr <- cbind(w_v, w_v, w_v)
+  lambda <- compute_lambda(incid, si_distr)
 
   # Epsilon = 1 i.e. no transmission advantage
-  epsilon <- 1
+  epsilon <- c(1, 1)
 
   set.seed(1)
   x <- lapply(1:1000, function(e) draw_R(epsilon, incid, lambda, priors))
@@ -69,17 +69,9 @@ test_that("estimate_joint produces expected results", {
 
   # arbitrary serial interval
   w_v <- c(0, 0.2, 0.5, 0.3)
-  w <- cbind(w_v, w_v)
+  si_distr <- cbind(w_v, w_v)
 
-  # Dummy starting points
-  R_init <- matrix(5, nrow = T, ncol = n_loc)
-  R_init[1, ] <- NA # no estimates of R on first time step
-  epsilon_init <- 5
-
-  x <- estimate_joint(epsilon_init, R_init,
-                             incid, w, priors,
-                             n_iter = 1000,
-                      burnin = 10)
+  x <- estimate_joint(incid, si_distr, priors, seed = 1)
 
   # ## plotting to check
   # par(mfrow = c(2, 3))
@@ -109,5 +101,5 @@ test_that("estimate_joint produces expected results", {
   ## not exactly 1 because of the first few timesteps & because of priors
   ## so ignore fisrt timesteps
   mean_R <- apply(x$R, c(1, 2), mean)
-  expect_true(max(abs(mean_R[-c(1, 2, 3), ] - 1)) < 0.05)
+  expect_true(max(abs(mean_R[-c(1, 2, 3), ] - 1)) < 0.1)
 })

@@ -17,6 +17,7 @@ default_priors <- function() {
        R = list(shape = 1, scale = 1))
 }
 
+
 #' Set default for MCMC controls
 #'
 #' @return a list of default MCMC control parameters, containing:
@@ -51,10 +52,10 @@ default_mcmc_controls <- function() {
 #'   for each time step (1st dimension), location (2nd dimension) and
 #'   pathogen/strain/variant (3rd dimension)
 #'
-#' @param si_distr a matrix with two columns, each containing the probability mass
-#'   function for the discrete serial interval for each of the two
+#' @param si_distr a matrix where each column contains the probability mass
+#'   function for the discrete serial interval for each of the
 #'   pathogen/strain/variants, starting with the probability mass function
-#'   for day 0 in the first row, which should be 0. each column in the matrix
+#'   for day 0 in the first row, which should be 0. Each column in the matrix
 #'   should sum to 1
 #'
 #' @return a multidimensional array containing values of the overall
@@ -126,20 +127,22 @@ compute_lambda <- function(incid, si_distr) {
 #'
 #' @param seed a numeric value used to fix the random seed
 #'
-#' @return a value of epsilon drawn from the marginal posterior distribution
+#' @return a value or vector of values for epsilon for each non reference
+#'   pathogen/strain/variant, drawn from the marginal posterior distribution
 #'
 #' @export
 #'
 #' @examples
 #'
-#' n_loc <- 3 # 3 locations
+#' n_loc <- 4 # 4 locations
+#' n_v <- 3 # 3 strains
 #' T <- 100 # 100 time steps
 #' priors <- default_priors()
 #' # constant incidence 10 per day everywhere
 #' incid <- array(10, dim = c(T, n_loc, n_v))
 #' # arbitrary serial interval, same for both variants
 #' w_v <- c(0, 0.2, 0.5, 0.3)
-#' si_distr <- cbind(w_v, w_v)
+#' si_distr <- cbind(w_v, w_v, w_v)
 #' lambda <- compute_lambda(incid, si_distr)
 #' # Constant reproduction number of 1
 #' R <- matrix(1, nrow = T, ncol = n_loc)
@@ -154,17 +157,19 @@ draw_epsilon <- function(R, incid, lambda, priors,
   ## TODO: check R >=0
   if (!is.null(seed)) set.seed(seed)
   t <- seq(t_min, t_max, 1)
-  shape <- sum(incid[t, , 2]) + priors$epsilon$shape ## TODO: precalculate this
-  rate <- sum(R[t, ] * lambda[t, , 2]) + 1 / priors$epsilon$scale
+  shape <- EpiEstim:::vnapply(seq(2, dim(lambda)[3]), function(e)
+    sum(incid[t, , e])) + priors$epsilon$shape
+  rate <- EpiEstim:::vnapply(seq(2, dim(lambda)[3]), function(e)
+    sum(R[t, ] * lambda[t, , e]) + 1 / priors$epsilon$scale)
   scale <- 1 / rate
-  rgamma(1, shape = shape, scale = scale)
+  rgamma(dim(lambda)[3] - 1, shape = shape, scale = scale)
 }
-
 
 #' Draw R from marginal posterior distribution
 #'
-#' @param epsilon the value of the relative transmissibility of the "new"
-#'   pathogen/strain/variant compared to the reference pathogen/strain/variant
+#' @param epsilon a value or vector of values for the relative transmissibility
+#'   of the "new" pathogen/strain/variant(s) compared to the reference
+#'   pathogen/strain/variant
 #'
 #' @param incid a multidimensional array containing values of the incidence
 #'   for each time step (1st dimension), location (2nd dimension) and
@@ -224,7 +229,8 @@ draw_R <- function(epsilon, incid, lambda, priors,
   t <- seq(t_min, t_max, 1)
   shape <- apply(incid[t, , ], c(1, 2), sum) + priors$R$shape ## TODO: precalculate this
   shape_flat <- as.numeric(shape) ## TODO: precalculate this
-  rate <- lambda[t, , 1] + epsilon * lambda[t, , 2] + 1 / priors$R$scale
+  rate <- lambda[t, , 1] + apply(epsilon * lambda[t, , -1], c(1, 2), sum) +
+    1 / priors$R$scale
   scale <- 1 / rate
   scale_flat <- as.numeric(scale)
   R_flat <- rgamma(length(shape_flat), shape = shape_flat, scale = scale_flat)
