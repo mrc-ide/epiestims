@@ -15,8 +15,9 @@ draw_R(
 )
 }
 \arguments{
-\item{epsilon}{the value of the relative transmissibility of the "new"
-pathogen/strain/variant compared to the reference pathogen/strain/variant}
+\item{epsilon}{a value or vector of values for the relative transmissibility
+of the "new" pathogen/strain/variant(s) compared to the reference
+pathogen/strain/variant}
 
 \item{incid}{a multidimensional array containing values of the incidence
 for each time step (1st dimension), location (2nd dimension) and
@@ -55,6 +56,7 @@ Draw R from marginal posterior distribution
 }
 \examples{
 
+n_v <- 2
 n_loc <- 3 # 3 locations
 T <- 100 # 100 time steps
 priors <- default_priors()

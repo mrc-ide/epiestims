@@ -8,7 +8,7 @@
 #' @export
 #'
 #' @examples
-#' priors <- default_priors
+#' priors <- default_priors()
 #' # change the prior for R to have a mean of 3
 #' priors$R$shape <- 3
 #'
@@ -35,7 +35,7 @@ default_priors <- function() {
 #' @export
 #'
 #' @examples
-#' mcmc_controls <- default_mcmc_controls
+#' mcmc_controls <- default_mcmc_controls()
 #' # change to run for 10 times longer
 #' mcmc_controls$n_iter <- mcmc_controls$n_iter * 10
 #'
@@ -70,7 +70,8 @@ default_mcmc_controls <- function() {
 #' @export
 #'
 #' @examples
-#' #'
+#'
+#' n_v <- 2
 #' n_loc <- 3 # 3 locations
 #' T <- 100 # 100 time steps
 #' priors <- default_priors()
@@ -129,6 +130,8 @@ compute_lambda <- function(incid, si_distr) {
 #'
 #' @return a value or vector of values for epsilon for each non reference
 #'   pathogen/strain/variant, drawn from the marginal posterior distribution
+#'
+#' @importFrom("stats", "median", "rgamma")
 #'
 #' @export
 #'
@@ -204,8 +207,11 @@ draw_epsilon <- function(R, incid, lambda, priors,
 #'
 #' @export
 #'
+#' @importFrom("stats", "median", "rgamma")
+#'
 #' @examples
 #'
+#' n_v <- 2
 #' n_loc <- 3 # 3 locations
 #' T <- 100 # 100 time steps
 #' priors <- default_priors()
@@ -260,13 +266,8 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'   `default_priors`. The prior for R is assumed to be the same for all
 #'   time steps and all locations
 #'
-#' @param n_iter the number if iterations of the MCMC to perform
-#'
-#' @param burnin the burnin to use; MCMC iterations will only be recorded after
-#'   the burnin
-#'
-#' @param thin the thin to use; MCMC iterations will only be recorded after
-#'   the burnin and every `thin` iteration
+#' @param mcmc_control a list of default MCMC control parameters, as obtained
+#'   for example from function `default_mcmc_controls`
 #'
 #' @param t_min an integer >1 giving the minimum time step to consider in the
 #'   estimation. Default value is 2 (as the estimation is conditional on
@@ -276,11 +277,25 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #'   step to consider in the estimation. Default value is `nrow(incid)`.
 #'
 #' @param seed a numeric value used to fix the random seed
-#' @return
+#'
+#' @return a list with two elements.
+#'   1) `epsilon` is a matrix containing the MCMC chain (thinned and after
+#'   burnin) for the relative transmissibility of the "new"
+#'   pathogen/strain/variant(s) compared to the reference
+#'   pathogen/strain/variant. Each row in the matrix is a "new"
+#'   pathogen/strain/variant and each column an iteration of the MCMC.
+#'   2) `R_out` is an array containing the MCMC chain (thinned and after
+#'   burnin) for the reproduction number for the reference
+#'   pathogen/strain/variant. The first dimension of the array is time,
+#'   the second location, and the third iteration of the MCMC.
+#'
 #' @export
+#'
+#' @importFrom("stats", "median", "rgamma")
 #'
 #' @examples
 #'
+#' n_v <- 2
 #' n_loc <- 3 # 3 locations
 #' T <- 100 # 100 time steps
 #' priors <- default_priors()
@@ -294,9 +309,7 @@ draw_R <- function(epsilon, incid, lambda, priors,
 #' R_init <- matrix(5, nrow = T, ncol = n_loc)
 #' R_init[1, ] <- NA # no estimates of R on first time step
 #' epsilon_init <- 5
-#' x <- estimate_joint(incid, si_distr, priors,
-#'                     n_iter = 1000,
-#'                     burnin = 10)
+#' x <- estimate_joint(incid, si_distr, priors)
 #' # Plotting to check outputs
 #' par(mfrow = c(2, 2))
 #' plot(x$epsilon, type = "l",
@@ -331,34 +344,31 @@ estimate_joint <- function(incid, si_distr, priors,
 
   ## find clever initial values, based on ratio of reproduction numbers
   ## in first location
-  R_init <- suppressWarnings(
-    EpiEstim::estimate_R(incid[, 1, 1], method = "non_parametric_si",
-                         config = make_config(si_distr = si_distr[, 1],
+  R_init <- lapply(seq_len(dim(incid)[3]), function(i) suppressWarnings(
+    EpiEstim::estimate_R(incid[, 1, i], method = "non_parametric_si",
+                         config = EpiEstim::make_config(si_distr = si_distr[, i],
                                               t_start = t,
-                                              t_end = t)))$R$'Mean(R)'
-  R2_init <- suppressWarnings(
-    EpiEstim::estimate_R(incid[, 1, 2], method = "non_parametric_si",
-                         config = make_config(si_distr = si_distr[, 2],
-                                              t_start = t,
-                                              t_end = t)))$R$'Mean(R)'
-  epsilon_init <- median(R2_init / R_init, na.rm = TRUE)
-  epsilon_out <- rep(NA, mcmc_control$n_iter + 1)
-  epsilon_out[1] <- epsilon_init
+                                              t_end = t)))$R$'Mean(R)')
+  epsilon_init <- unlist(lapply(seq(2, length(R_init)), function(i)
+    median(R_init[[i]] / R_init[[1]], na.rm = TRUE)))
+  epsilon_out <- matrix(NA, nrow = length(epsilon_init),
+                        ncol = mcmc_control$n_iter + 1)
+  epsilon_out[, 1] <- epsilon_init
   R_init <- draw_R(mcmc_control$n_iter, incid, lambda, priors,
                    t_min = t_min, t_max = t_max)
   R_out <- array(NA, dim= c(T, n_loc, mcmc_control$n_iter + 1))
   R_out[, , 1] <- R_init
 
   for (i in seq_len(mcmc_control$n_iter)) {
-    R_out[, , i + 1] <- draw_R(epsilon_out[i], incid, lambda, priors,
+    R_out[, , i + 1] <- draw_R(epsilon_out[, i], incid, lambda, priors,
                                t_min = t_min, t_max = t_max)
-    epsilon_out[i + 1] <- draw_epsilon(R_out[, , i + 1], incid, lambda, priors,
+    epsilon_out[, i + 1] <- draw_epsilon(R_out[, , i + 1], incid, lambda, priors,
                                        t_min = t_min, t_max = t_max)
   }
 
   # remove burnin and thin
   keep <- seq(mcmc_control$burnin, mcmc_control$n_iter, mcmc_control$thin)
-  epsilon_out <- epsilon_out[keep]
+  epsilon_out <- epsilon_out[, keep]
   R_out <- R_out[, , keep]
 
   list(epsilon = epsilon_out, R = R_out)

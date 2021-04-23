@@ -47,21 +47,23 @@ step to consider in the estimation. Default value is \code{nrow(incid)}.}
 \item{seed}{a numeric value used to fix the random seed}
 }
 \value{
-a value of epsilon drawn from the marginal posterior distribution
+a value or vector of values for epsilon for each non reference
+pathogen/strain/variant, drawn from the marginal posterior distribution
 }
 \description{
 Draw epsilon from marginal posterior distribution
 }
 \examples{
 
-n_loc <- 3 # 3 locations
+n_loc <- 4 # 4 locations
+n_v <- 3 # 3 strains
 T <- 100 # 100 time steps
 priors <- default_priors()
 # constant incidence 10 per day everywhere
 incid <- array(10, dim = c(T, n_loc, n_v))
 # arbitrary serial interval, same for both variants
 w_v <- c(0, 0.2, 0.5, 0.3)
-si_distr <- cbind(w_v, w_v)
+si_distr <- cbind(w_v, w_v, w_v)
 lambda <- compute_lambda(incid, si_distr)
 # Constant reproduction number of 1
 R <- matrix(1, nrow = T, ncol = n_loc)

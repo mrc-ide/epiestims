@@ -17,7 +17,7 @@ to the desired prior mean and coefficient of variation.
 Set default for Gamma priors
 }
 \examples{
-priors <- default_priors
+priors <- default_priors()
 # change the prior for R to have a mean of 3
 priors$R$shape <- 3
 

@@ -10,9 +10,7 @@ estimate_joint(
   incid,
   si_distr,
   priors,
-  n_iter = 1100,
-  burnin = 10,
-  thin = 10,
+  mcmc_control = default_mcmc_controls(),
   t_min = 2,
   t_max = nrow(incid),
   seed = NULL
@@ -34,14 +32,6 @@ distribution) for epsilon and R; can be obtained from the function
 \code{default_priors}. The prior for R is assumed to be the same for all
 time steps and all locations}
 
-\item{n_iter}{the number if iterations of the MCMC to perform}
-
-\item{burnin}{the burnin to use; MCMC iterations will only be recorded after
-the burnin}
-
-\item{thin}{the thin to use; MCMC iterations will only be recorded after
-the burnin and every \code{thin} iteration}
-
 \item{t_min}{an integer >1 giving the minimum time step to consider in the
 estimation. Default value is 2 (as the estimation is conditional on
 observations at time step 1 and can therefore only start at time step 2).}
@@ -50,9 +40,23 @@ observations at time step 1 and can therefore only start at time step 2).}
 step to consider in the estimation. Default value is \code{nrow(incid)}.}
 
 \item{seed}{a numeric value used to fix the random seed}
+
+\item{mcmc_controls}{a list of default MCMC control parameters, as obtained
+for example from function \code{default_mcmc_controls}}
 }
 \value{
-
+a list with two elements.
+\enumerate{
+\item \code{epsilon} is a matrix containing the MCMC chain (thinned and after
+burnin) for the relative transmissibility of the "new"
+pathogen/strain/variant(s) compared to the reference
+pathogen/strain/variant. Each row in the matrix is a "new"
+pathogen/strain/variant and each column an iteration of the MCMC.
+\item \code{R_out} is an array containing the MCMC chain (thinned and after
+burnin) for the reproduction number for the reference
+pathogen/strain/variant. The first dimension of the array is time,
+the second location, and the third iteration of the MCMC.
+}
 }
 \description{
 Jointly estimate the instantaneous reproduction number for a reference
@@ -61,6 +65,7 @@ pathogen/strain/variant and the relative transmissibility of a
 }
 \examples{
 
+n_v <- 2
 n_loc <- 3 # 3 locations
 T <- 100 # 100 time steps
 priors <- default_priors()
@@ -74,9 +79,7 @@ si_distr <- cbind(w_v, w_v)
 R_init <- matrix(5, nrow = T, ncol = n_loc)
 R_init[1, ] <- NA # no estimates of R on first time step
 epsilon_init <- 5
-x <- estimate_joint(incid, si_distr, priors,
-                    n_iter = 1000,
-                    burnin = 10)
+x <- estimate_joint(incid, si_distr, priors)
 # Plotting to check outputs
 par(mfrow = c(2, 2))
 plot(x$epsilon, type = "l",

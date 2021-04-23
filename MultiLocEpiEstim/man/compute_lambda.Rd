@@ -11,10 +11,10 @@ compute_lambda(incid, si_distr)
 for each time step (1st dimension), location (2nd dimension) and
 pathogen/strain/variant (3rd dimension)}
 
-\item{si_distr}{a matrix with two columns, each containing the probability mass
-function for the discrete serial interval for each of the two
+\item{si_distr}{a matrix where each column contains the probability mass
+function for the discrete serial interval for each of the
 pathogen/strain/variants, starting with the probability mass function
-for day 0 in the first row, which should be 0. each column in the matrix
+for day 0 in the first row, which should be 0. Each column in the matrix
 should sum to 1}
 }
 \value{
@@ -31,7 +31,8 @@ algorithm much faster
 Compute the overall infectivity
 }
 \examples{
-#'
+
+n_v <- 2
 n_loc <- 3 # 3 locations
 T <- 100 # 100 time steps
 priors <- default_priors()
