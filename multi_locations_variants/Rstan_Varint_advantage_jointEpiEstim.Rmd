@@ -37,7 +37,7 @@ target <- readRDS('../simulations/target_Rt.rds')
 ```{r}
 
 devtools::load_all("../MultiLocEpiEstim/")
-?estimate_joint
+# ?estimate_joint
 ```
 
 ## perform the estimation
@@ -55,9 +55,9 @@ w <- cbind(w_v, w_v)
 
 system.time( # currently 211s for 3 locations, 100 time steps, 2 variants
   res <- estimate_joint(incid, w, priors,
-                        n_iter = 500000,
-                        burnin = 5000,
-                        thin = 100)
+                        mcmc_control = list(n_iter = 500000,
+                                            burnin = 5000,
+                                            thin = 100))
 )
 
 ```
@@ -94,11 +94,11 @@ for (l in 1:n_loc) {
        xlab = "Time", ylab = "R",
        main = paste("R for variant 1, location", l))
   Epi::matshade(1:nrow(R), R)
-  lines(target[, l, v], col = "red")
+  lines(target[, l, v], col = "red", lty = 2)
 }
 
 boxplot(res$epsilon, ylim = c(0, 2), ylab = "Epsilon", main = "Relative transmissibility of second variant")
-abline(h = epsilon_target, col = "red")
+abline(h = epsilon_target, col = "red", lty = 2)
 
 ```
 
