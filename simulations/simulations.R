@@ -58,3 +58,5 @@ for (loc in 1:n_loc) {
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(n_iter = 1e4L, burnin = floor(1e4 / 2), thin = 10L)
 x <- EpiEstim:::estimate_joint(incid, si_distr, priors, seed = 1, t_min = 2L, t_max = 100L, mcmc_control = mcmc_controls)
+## Error in apply(epsilon * lambda[t, , -1], c(1, 2), sum) :
+##   dim(X) must have a positive length
