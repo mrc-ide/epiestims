@@ -9,6 +9,8 @@
 library(EpiEstim)
 library(projections)
 library(incidence)
+library(purrr)
+library(ggplot2)
 seed <- 42
 set.seed(seed)
 ndays <- 200
@@ -58,7 +60,7 @@ for (loc in 1:n_loc) {
 
 ## Now estimate epsilon
 priors <- EpiEstim:::default_priors()
-mcmc_controls <- list(n_iter = 1e4L, burnin = floor(1e4 / 2), thin = 10L)
+mcmc_controls <- list(n_iter = 1e4L, burnin = as.integer(floor(1e4 / 2)), thin = 10L)
 
 ## x is a list with elements R and epsilon
 ## epsilon is  a vector with length (n_iter - burnin)/thin + 1
@@ -105,7 +107,7 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
 }
 
 ## How does varying amount of data affect estimates?
-tmax_all <- seq(200, 50, -10)
+tmax_all <- as.integer(seq(200, 50, -10))
 names(tmax_all) <- tmax_all
 vary_tmax_fits <- map(
   tmax_all, function(tmax) {
