@@ -58,6 +58,18 @@ for (loc in 1:n_loc) {
   }
 }
 
+# check projections with plot
+plot(log(1 + incid[, 1, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
+lines(log(1 + incid[, 2, 1]), col = "blue")
+lines(log(1 + incid[, 3, 1]), col = "red")
+lines(log(1 + incid[, 1, 2]), lty = 2)
+lines(log(1 + incid[, 2, 2]), col = "blue", lty = 2)
+lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
+legend("bottomright", c("Strain 1, location 1", "Strain 1, location 2", "Strain 1, location 3",
+                        "Strain 2, location 1", "Strain 2, location 2", "Strain 2, location 3"),
+       col = c("black", "blue", "red", "black", "blue", "red"), 
+       lty = c(1, 1, 1, 2, 2, 2), cex = 0.7)
+
 ## Now estimate epsilon
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(n_iter = 1e4L, burnin = as.integer(floor(1e4 / 2)), thin = 10L)
