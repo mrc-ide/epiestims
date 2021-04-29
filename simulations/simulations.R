@@ -24,8 +24,9 @@ rt_variant <- transmission_advantage * rt_ref
 ## Assume reproduction number remains the same
 ## over the time period
 ## Make a vector that goes across rows
-rt <- rep(rt_variant, each = ndays)
-R <- array(rt, dim = c(ndays, n_loc, n_v))
+R <- array(NA, dim = c(ndays, n_loc, n_v))
+R[,,1] <- rep(rt_ref, each = ndays) 
+R[,,2] <- rep(rt_variant, each = ndays)
 #####################################################################
 ### Simulate epidemics with those reproduction numbers ###
 #####################################################################
