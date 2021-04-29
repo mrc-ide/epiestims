@@ -37,8 +37,10 @@ si <- EpiEstim::discr_si(0:30, mu = si_mean, sigma = si_std)
 si <- si / sum(si)
 si_no_zero <- si[-1]
 si_distr <- cbind(si, si)
-## start with 5 infected individual
-initial_incidence <- incidence::incidence(rep(1, 5))
+## start with 20 infected individual
+## large-ish initial seed to ensure we get an epidemic
+## can explore lower seed numbers later
+initial_incidence <- incidence::incidence(rep(1, 20))
 
 incid <- array(NA, dim = c(ndays, n_loc, n_v))
 
