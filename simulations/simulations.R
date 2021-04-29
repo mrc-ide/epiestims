@@ -4,24 +4,26 @@
 ## Transmission Advantage: low, medium, high say
 ## 0.1, 0.5, 1
 
-## 1. Try single location first
+## 1. Try single location first.
+## Update - doesn't work.
 library(EpiEstim)
 library(projections)
 library(incidence)
 seed <- 42
 set.seed(seed)
-ndays <- 100
-n_loc <- 1
+ndays <- 200
+n_loc <- 3
 n_v <- 2
-R1_loc1 <- 1.5
-transmission_advantage <- 1.1
-R2_loc1 <- transmission_advantage * R1_loc1
-
-
-R <- array(NA, dim = c(ndays, n_loc, n_v))
-R[, 1, 1] <- R1_loc1
-R[, 1, 2] <- R2_loc1
-
+## Set-up reference reproduction numbers
+rt_ref <- c(1.5, 1.2, 1.1)
+transmission_advantage <- 2
+## Reproduction number for variant
+rt_variant <- transmission_advantage * rt_ref
+## Assume reproduction number remains the same
+## over the time period
+## Make a vector that goes across rows
+rt <- rep(rt_variant, each = ndays)
+R <- array(rt, dim = c(ndays, n_loc, n_v))
 #####################################################################
 ### Simulate epidemics with those reproduction numbers ###
 #####################################################################
@@ -57,6 +59,82 @@ for (loc in 1:n_loc) {
 ## Now estimate epsilon
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(n_iter = 1e4L, burnin = floor(1e4 / 2), thin = 10L)
-x <- EpiEstim:::estimate_joint(incid, si_distr, priors, seed = 1, t_min = 2L, t_max = 100L, mcmc_control = mcmc_controls)
-## Error in apply(epsilon * lambda[t, , -1], c(1, 2), sum) :
-##   dim(X) must have a positive length
+
+## x is a list with elements R and epsilon
+## epsilon is  a vector with length (n_iter - burnin)/thin + 1
+## R is an array with dimensions T X n_loc X (n_iter - burnin)/thin + 1
+
+
+process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
+
+  ## Get rid of the first row because of NAs
+  r_est <- apply(
+    fit$R[-1, , ], c(1, 2), quantile,
+    probs = probs, na.rm = TRUE
+  )
+  nt <- dim(r_est)[2]
+  nl <- dim(r_est)[3]
+  r_estdf <- data.frame(
+    time = rep(NA, nt * nl),
+    location = rep(NA, nt * nl),
+    `2.5%` = rep(NA, nt * nl),
+    `25%` = rep(NA, nt * nl),
+    `50%` = rep(NA, nt * nl),
+    `75%` = rep(NA, nt * nl),
+    `97.5%` = rep(NA, nt * nl),
+    check.names = FALSE
+  )
+  r_estdf$time <- rep(seq_len(nt), nl)
+  r_estdf$location <- rep(seq_len(nl), nt)
+  for (time in seq_len(nt)) {
+    for (location in seq_len(nl)) {
+      r_estdf[3:7] <- r_est[, time, location]
+    }
+  }
+  r_estdf$param <- "R"
+  epsilon_est <- quantile(
+    fit$epsilon, probs = probs, na.rm = TRUE
+  )
+  eps_df <- data.frame(time = NA, location = NA)
+  eps_df <- cbind(eps_df, epsilon_est)
+  ## Stupid tall. make wide
+  eps_df <- tibble::rownames_to_column(eps_df)
+  eps_df <- tidyr::spread(eps_df, rowname, epsilon_est)
+  eps_df$param <- "epsilon"
+  rbind(eps_df, r_estdf)
+}
+
+## How does varying amount of data affect estimates?
+tmax_all <- seq(200, 50, -10)
+names(tmax_all) <- tmax_all
+vary_tmax_fits <- map(
+  tmax_all, function(tmax) {
+    message("tmax = ", tmax)
+    EpiEstim:::estimate_joint(
+      incid, si_distr, priors, seed = 1,
+      t_min = 2L, t_max = tmax,
+      mcmc_control = mcmc_controls
+    )
+  }
+)
+
+vary_tmax_est <- imap_dfr(
+  vary_tmax_fits, function(out, tmax) {
+    message("tmax = ", tmax)
+    process_fit(out)
+  }, .id = "tmax"
+)
+
+vary_tmax_est$tmax <- factor(
+  vary_tmax_est$tmax, levels = rev(tmax_all), ordered = TRUE
+)
+
+
+ggplot(data = vary_tmax_est[vary_tmax_est$param == "epsilon", ]) +
+  geom_linerange(aes(tmax, ymin = `2.5%`, ymax = `97.5%`)) +
+  geom_point(aes(tmax, `50%`)) +
+  geom_hline(
+    yintercept = transmission_advantage,
+    linetype = "dashed", color = "red"
+  )
+
