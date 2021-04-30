@@ -101,11 +101,11 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
     `97.5%` = rep(NA, nt * nl),
     check.names = FALSE
   )
-  r_estdf$time <- rep(seq_len(nt), nl)
+  r_estdf$time <- rep(seq_len(nt), each = nl)
   r_estdf$location <- rep(seq_len(nl), nt)
   for (time in seq_len(nt)) {
     for (location in seq_len(nl)) {
-      r_estdf[3:7] <- r_est[, time, location]
+      r_estdf[r_estdf$time == time & r_estdf$location == location, 3:7] <- r_est[, time, location]
     }
   }
   r_estdf$param <- "R"
