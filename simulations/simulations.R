@@ -122,7 +122,7 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) {
 }
 
 ## How does varying amount of data affect estimates?
-tmax_all <- as.integer(seq(200, 50, -10))
+tmax_all <- as.integer(seq(200, 10, -10))
 names(tmax_all) <- tmax_all
 vary_tmax_fits <- map(
   tmax_all, function(tmax) {
