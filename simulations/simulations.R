@@ -20,19 +20,22 @@ seed <- 42
 set.seed(seed)
 ## Common parameters
 ## Set time, locations and number of variants in simulations
-ndays <- 200
-n_loc <- 3
+ndays <- 100
+n_loc <- 2
 n_v <- 2
 
 ## Reference reproduction numbers in each location
-rt_ref <- c(1.3, 1.3, 1.3)
+##rt_ref <- c(1.5, 1.5, 1.5)
+rt_ref <- c(1.5, 1.5)
 
 ## Range of transmission advantage values to explore
-transmission_advantage <- seq(1, 2, 0.2)
+## transmission_advantage <- seq(2, 3, 0.2)
+transmission_advantage <- 2
 names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
-tmax_all <- seq(200, 40, -20)
+##tmax_all <- seq(ndays, 40, -20)
+tmax_all <- 100
 tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
 
@@ -46,11 +49,14 @@ si <- si / sum(si)
 si_no_zero <- si[-1]
 ## Needs to change if number of variants is
 ## changed.
-si_distr <- cbind(si, si)
+## For simulation
+si_distr <- cbind(si_no_zero, si_no_zero)
+## For estimation
+si_est <- cbind(si, si)
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 1e4L, burnin = as.integer(floor(1e4 / 2)),
-  thin = 10L
+  n_iter = 500000, burnin = as.integer(floor(1e4 / 2)),
+  thin = 100L
 )
 
 ## TODo
@@ -113,7 +119,7 @@ results <- map(
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
       EpiEstim:::estimate_joint(
-       incid, si_distr, priors, seed = 1,
+       incid, si_est, priors, seed = 1,
        t_min = 2L, t_max = tmax,
        mcmc_control = mcmc_controls
        )
@@ -125,18 +131,28 @@ results <- map(
 ## could be convergence issue??
 r200 <- results[[1]][[1]]
 e200 <- r200$epsilon
-r40 <- results[[1]][[9]]
+rt <- r200[["R"]]
+
+r40 <- results[[1]][[length(tmax_all)]]
 e40 <- r40$epsilon
-x <- data.frame(tmax = "tmax = 200", eps = e200)
+x <- data.frame(tmax = "tmax = 100", eps = e200)
 y <- data.frame(tmax = "tmax = 40", eps = e40)
 z <- rbind(x, y)
 
-p <- ggplot(z) +
-  geom_histogram(aes(eps, fill = tmax), alpha = 0.3) +
+p <- ggplot(x) +
+  geom_line(aes(1:nrow(x), eps, col = tmax)) +
   facet_wrap(~tmax, nrow = 2, scales = "free_x") +
    theme_minimal() +
   theme(legend.position = "top", legend.title = element_blank())
 
+murt <- apply(rt, c(2, 3), mean, na.rm = TRUE)
+
+ggplot() +
+  geom_line(aes(1:ncol(murt), murt[2, ])) +
+   theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank())
+
+cowplot::save_plot("figures/possible_convergence_issue.pdf", p)
 ## Maximum
 ## cumulative incidence at tmax across
 ## locations variants
