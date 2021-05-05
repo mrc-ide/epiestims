@@ -25,7 +25,7 @@ n_loc <- 3
 n_v <- 2
 
 ## Reference reproduction numbers in each location
-rt_ref <- c(1.1, 1.1, 1.1)
+rt_ref <- c(1.3, 1.3, 1.3)
 
 ## Range of transmission advantage values to explore
 transmission_advantage <- seq(1, 2, 0.2)
@@ -53,6 +53,10 @@ mcmc_controls <- list(
   thin = 10L
 )
 
+## TODo
+## Simulate incidence for reference variant, so that it
+## stays the same across the epsilon values we explore
+
 
 simulated_incid <- map(
   transmission_advantage, function(advantage) {
@@ -62,8 +66,9 @@ simulated_incid <- map(
     ## Assume reproduction number remains the same
     ## over the time period
     ## Make a vector that goes across rows
-    R <- array(NA, dim = c(ndays, n_loc, n_v))
+
     ## TO DO: update this so that it can handle n_v variants
+    R <- array(NA, dim = c(ndays, n_loc, n_v))
     R[,,1] <- rep(rt_ref, each = ndays)
     R[,,2] <- rep(rt_variant, each = ndays)
   ##############################################################################
@@ -77,6 +82,27 @@ simulated_incid <- map(
       initial_incidence, n_loc, n_v, ndays, R, si_distr
     )
 })
+## Diagnostics
+## Code to check projections with plot (needs updating with correct variable names)
+## TO DO: generate summary grid of incidence plots for each transmission advantage explored
+
+iwalk(
+  simulated_incid, function(incid, epsilon) {
+    pdf(glue::glue("figures/incid_{epsilon}.pdf"))
+    plot(log(1 + incid[, 1, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
+    lines(log(1 + incid[, 2, 1]), col = "blue")
+    lines(log(1 + incid[, 3, 1]), col = "red")
+    lines(log(1 + incid[, 1, 2]), lty = 2)
+    lines(log(1 + incid[, 2, 2]), col = "blue", lty = 2)
+    lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
+    legend("bottomright", c("Strain 1, location 1", "Strain 1, location 2", "Strain 1, location 3",
+                            "Strain 2, location 1", "Strain 2, location 2", "Strain 2, location 3"),
+           col = c("black", "blue", "red", "black", "blue", "red"),
+           lty = c(1, 1, 1, 2, 2, 2), cex = 0.7)
+    dev.off()
+
+  }
+)
 
 ## Run simulations across all combinations of transmission_advantage and tmax_all
 ## TO DO: convert code below into function that takes various variables above as arguments
@@ -95,6 +121,21 @@ results <- map(
   )
  }
 )
+## Weirdly estimate seems to be poorer when tmax is large
+## could be convergence issue??
+r200 <- results[[1]][[1]]
+e200 <- r200$epsilon
+r40 <- results[[1]][[9]]
+e40 <- r40$epsilon
+x <- data.frame(tmax = "tmax = 200", eps = e200)
+y <- data.frame(tmax = "tmax = 40", eps = e40)
+z <- rbind(x, y)
+
+p <- ggplot(z) +
+  geom_histogram(aes(eps, fill = tmax), alpha = 0.3) +
+  facet_wrap(~tmax, nrow = 2, scales = "free_x") +
+   theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank())
 
 ## Maximum
 ## cumulative incidence at tmax across
@@ -178,15 +219,3 @@ p2 <- ggplot(est_epsilon) +
 
 cowplot::save_plot("figures/epsilon_cumincid.pdf", p2)
 
-## Code to check projections with plot (needs updating with correct variable names)
-## TO DO: generate summary grid of incidence plots for each transmission advantage explored
-## plot(log(1 + incid[, 1, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
-## lines(log(1 + incid[, 2, 1]), col = "blue")
-## lines(log(1 + incid[, 3, 1]), col = "red")
-## lines(log(1 + incid[, 1, 2]), lty = 2)
-## lines(log(1 + incid[, 2, 2]), col = "blue", lty = 2)
-## lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
-## legend("bottomright", c("Strain 1, location 1", "Strain 1, location 2", "Strain 1, location 3",
-##                         "Strain 2, location 1", "Strain 2, location 2", "Strain 2, location 3"),
-##        col = c("black", "blue", "red", "black", "blue", "red"),
-##        lty = c(1, 1, 1, 2, 2, 2), cex = 0.7)
