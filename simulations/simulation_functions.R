@@ -94,3 +94,42 @@ simulate_incidence <- function(incid_init, nlocations,
   }
   incid
 }
+
+#' Reorder an array of incidence data so that the most
+#' transmissible variant is ordered first
+#'
+#' @param incidence An array containing time series of incidence
+#' data with dimensions of 1) number of days; 2) number of locations;
+#' 3) number of variants
+#' @param t_start Start of time window over which to estimate
+#' transmissibility (default is the minimum value = 2).
+#' @param t_end End of time window over which to estimate transmissbility.
+#' @si_distr serial interval distributions for the variants of interest. 1
+#' column for each variant. si_distr[1,] must equal 0.
+#'
+#' @return array of dimensions ndays X nlocations X nvariants, where
+#' the most transmissible variant in the time window of interest has
+#' dimensions [,,1].
+
+reorder_incidence <- function(incidence, t_start = 2, t_end, si_distr) {
+  
+  #identify variant with the largest estimated transmissibility over full time window
+  R_init <- sapply(seq_len(dim(incidence)[3]), function(i) suppressWarnings(
+    EpiEstim::estimate_R(apply(incidence[, , i, drop = FALSE], c(1, 3), sum)[,1],
+                         method = "non_parametric_si",
+                         config = EpiEstim::make_config(
+                           si_distr = si_distr[, i],
+                           t_start = t_start,
+                           t_end = t_end)))$R$'Mean(R)')
+  
+  max_transmiss <- which.max(R_init)
+  
+  # reorder variants so most transmissible is first
+  incid_reordered <- array(NA,
+                           dim = dim(incidence))
+  incid_reordered[, , 1] <- incidence[, , max_transmiss]
+  incid_reordered[, , -1] <- incidence[, , -max_transmiss]
+  
+  incid_reordered
+  
+}
