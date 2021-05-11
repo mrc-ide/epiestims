@@ -31,11 +31,11 @@ rt_ref <- c(1.5, 1.5)
 
 ## Range of transmission advantage values to explore
 ## transmission_advantage <- seq(2, 3, 0.2)
-transmission_advantage <- 1.1
+transmission_advantage <- 2
 names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
-tmax_all <- seq(ndays, 40, -20)
+tmax_all <- c(100, 40) # seq(ndays, 40, -20)
 ##tmax_all <- 100
 ##tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
@@ -101,8 +101,18 @@ results <- map(
   ## How does varying amount of data affect estimates?
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
+      
+      # modify incidence array so that the variant with highest incidence at tmax is the reference
+      max_incidence <- arrayInd(which.max(incid[tmax,,]),
+                                dim(incid[tmax,,]))
+      incid_new_ref <- array(NA,
+                             dim = dim(incid))
+      incid_new_ref[ , , 1] <- incid[ , , max_incidence[2]]
+      incid_new_ref[ , , -1] <- incid[, , -max_incidence[2]]
+      
+      # now call estimate_joint from EpiEstim using the re-ordered incidence data
       estimate_joint(
-       incid, si_est, priors, seed = 1,
+       incid_new_ref, si_est, priors, seed = 1,
        t_min = 2L, t_max = as.integer(tmax),
        mcmc_control = mcmc_controls
       )
@@ -149,6 +159,6 @@ p <- ggplot(vary_tmax) +
   theme(legend.position = "top")
 
 ggsave(
-  filename = glue::glue("figures/tmax_epsilon_qntls_{rt_ref[1]}.pdf"),
+  filename = glue::glue("figures/tmax_epsilon_qntls_{rt_ref[1]}_{transmission_advantage}.pdf"),
   p
 )
