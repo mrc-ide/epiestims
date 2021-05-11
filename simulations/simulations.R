@@ -20,7 +20,7 @@ seed <- 42
 set.seed(seed)
 ## Common parameters
 ## Set time, locations and number of variants in simulations
-ndays <- 100
+ndays <- 200
 n_loc <- 2
 n_v <- 2
 
@@ -35,7 +35,7 @@ names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
 ##tmax_all <- seq(ndays, 40, -20)
-tmax_all <- c(100, 40)
+tmax_all <- c(200, 40)
 tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
 
@@ -145,7 +145,7 @@ rt <- r200[["R"]]
 
 r40 <- results[[1]][[length(tmax_all)]]
 e40 <- r40$epsilon
-x <- data.frame(tmax = "tmax = 100", eps = e200)
+x <- data.frame(tmax = "tmax = 200", eps = e200)
 y <- data.frame(tmax = "tmax = 40", eps = e40)
 z <- rbind(x, y)
 
