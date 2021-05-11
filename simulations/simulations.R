@@ -35,7 +35,7 @@ names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
 ##tmax_all <- seq(ndays, 40, -20)
-tmax_all <- 100
+tmax_all <- c(100, 40)
 tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
 
@@ -55,7 +55,7 @@ si_distr <- cbind(si_no_zero, si_no_zero)
 si_est <- cbind(si, si)
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 500000, burnin = as.integer(floor(1e4 / 2)),
+  n_iter = 500000L, burnin = as.integer(floor(1e4 / 2)),
   thin = 100L
 )
 
@@ -94,18 +94,18 @@ simulated_incid <- map(
 
 iwalk(
   simulated_incid, function(incid, epsilon) {
-    pdf(glue::glue("figures/incid_{epsilon}.pdf"))
+    # pdf(glue::glue("figures/incid_{epsilon}.pdf"))
     plot(log(1 + incid[, 1, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
     lines(log(1 + incid[, 2, 1]), col = "blue")
-    lines(log(1 + incid[, 3, 1]), col = "red")
+    # lines(log(1 + incid[, 3, 1]), col = "red")
     lines(log(1 + incid[, 1, 2]), lty = 2)
     lines(log(1 + incid[, 2, 2]), col = "blue", lty = 2)
-    lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
+    # lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
     legend("bottomright", c("Strain 1, location 1", "Strain 1, location 2", "Strain 1, location 3",
                             "Strain 2, location 1", "Strain 2, location 2", "Strain 2, location 3"),
            col = c("black", "blue", "red", "black", "blue", "red"),
            lty = c(1, 1, 1, 2, 2, 2), cex = 0.7)
-    dev.off()
+    # dev.off()
 
   }
 )
@@ -115,17 +115,27 @@ iwalk(
 ## then we can also look at changes in si
 results <- map(
   simulated_incid, function(incid) {
-  ## How does varying amount of data affect estimates?
+    ## How does varying amount of data affect estimates?
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
+      
+      # modify incidence array so that the variant with highest transmissibility
+      # prior to tmax is the reference
+      # TO DO: adapt t_start input so that it is based on time when variants are co-circulating
+      incid_reordered <- reorder_incidence(incid,
+                                           t_start = 2,
+                                           t_end = tmax,
+                                           si_distr = si_est)
+      
+      # now call estimate_joint on the re-ordered incidence data
       EpiEstim:::estimate_joint(
-       incid, si_est, priors, seed = 1,
-       t_min = 2L, t_max = tmax,
-       mcmc_control = mcmc_controls
-       )
+        incid_reordered, si_est, priors, seed = 1,
+        t_min = 2L, t_max = as.integer(tmax),
+        mcmc_control = mcmc_controls
+      )
     }
-  )
- }
+    )
+  }
 )
 ## Weirdly estimate seems to be poorer when tmax is large
 ## could be convergence issue??
@@ -139,8 +149,8 @@ x <- data.frame(tmax = "tmax = 100", eps = e200)
 y <- data.frame(tmax = "tmax = 40", eps = e40)
 z <- rbind(x, y)
 
-p <- ggplot(x) +
-  geom_line(aes(1:nrow(x), eps, col = tmax)) +
+p <- ggplot(z) +
+  geom_line(aes(1:nrow(z), eps, col = tmax)) +
   facet_wrap(~tmax, nrow = 2, scales = "free_x") +
    theme_minimal() +
   theme(legend.position = "top", legend.title = element_blank())
