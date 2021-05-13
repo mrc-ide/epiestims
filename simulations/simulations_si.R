@@ -21,12 +21,12 @@ set.seed(seed)
 ## Common parameters
 ## Set time, locations and number of variants in simulations
 ndays <- 100
-n_loc <- 1
+n_loc <- 2
 n_v <- 2
 
 ## Reference reproduction numbers in each location
 ##rt_ref <- c(1.5, 1.5, 1.5)
-rt_ref <- 1.5
+rt_ref <- c(1.5, 1.5)
 
 ## Range of transmission advantage values to explore
 ## transmission_advantage <- seq(2, 3, 0.2)
@@ -35,9 +35,10 @@ names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
 ##tmax_all <- seq(ndays, 40, -20)
-tmax_all <- 100 # c(200, 40)
-tmax_all <- as.integer(tmax_all)
-names(tmax_all) <- tmax_all
+# tmax_all <- c(200, 40) 
+# tmax_all <- as.integer(tmax_all)
+# names(tmax_all) <- tmax_all
+t_max <- 100 # use a fixed tmax value
 
 ## Set serial interval distributions
 ## TO DO: vary these (eg variant has si that is shorter or longer than ref)
@@ -64,8 +65,8 @@ si_est <- map(si_variant, function(x) {
 })
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 50000L, burnin = as.integer(floor(1e4 / 2)), # previously n_iter = 500000L. reduce to speed up
-  thin = 100L
+  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)), # previously n_iter = 500000L. reduce to speed up
+  thin = 10L
 )
 
 ## TODo
@@ -102,19 +103,12 @@ simulated_incid <- imap(
 ## TO DO: generate summary grid of incidence plots for each transmission advantage explored
 
 iwalk(
-  simulated_incid, function(incid, epsilon) {
-    # pdf(glue::glue("figures/incid_{epsilon}.pdf"))
+  simulated_incid, function(incid, si) {
     plot(log(1 + incid[, 1, 1]), type= "l", xlab = "date", ylab = "log(1 + Incidence)")
-    # lines(log(1 + incid[, 2, 1]), col = "blue")
-    # lines(log(1 + incid[, 3, 1]), col = "red")
     lines(log(1 + incid[, 1, 2]), lty = 2)
-    # lines(log(1 + incid[, 2, 2]), col = "blue", lty = 2)
-    # lines(log(1 + incid[, 3, 2]), col = "red", lty = 2)
-    legend("bottomright", c("Strain 1, location 1", "Strain 1, location 2", "Strain 1, location 3",
-                            "Strain 2, location 1", "Strain 2, location 2", "Strain 2, location 3"),
-           col = c("black", "blue", "red", "black", "blue", "red"),
-           lty = c(1, 1, 1, 2, 2, 2), cex = 0.7)
-    # dev.off()
+    legend("bottomright", c("Strain 1", "Strain 2"),
+           lty = c(1, 2), cex = 0.7)
+    title(paste0("si_mean_ref = 6.83; si_mean_var = ", si))
     
   }
 )
@@ -122,30 +116,19 @@ iwalk(
 ## Run simulations across all combinations of transmission_advantage and tmax_all
 ## TO DO: convert code below into function that takes various variables above as arguments
 ## then we can also look at changes in si
-results <- map(
-  simulated_incid, function(incid) {
-    ## How does varying amount of data affect estimates?
-    map(tmax_all, function(tmax) {
-      message("tmax = ", tmax)
-      
-      # modify incidence array so that the variant with highest transmissibility
-      # prior to tmax is the reference
-      # TO DO: adapt t_start input so that it is based on time when variants are co-circulating
-      incid_reordered <- reorder_incidence(incid,
-                                           t_start = 2,
-                                           t_end = tmax,
-                                           si_distr = si_est)
-      
-      # now call estimate_joint on the re-ordered incidence data
-      EpiEstim:::estimate_joint(
-        incid_reordered, si_est, priors, seed = 1,
-        t_min = 2L, t_max = as.integer(tmax),
-        mcmc_control = mcmc_controls
-      )
-    }
+results <- imap(
+  simulated_incid, function(incid, si_name) {
+    
+    message("si_mean_var = ", si_name)
+    
+    EpiEstim:::estimate_joint(
+      incid, si_est[[si_name]], priors, seed = 1,
+      t_min = 2L, t_max = as.integer(t_max),
+      mcmc_control = mcmc_controls
     )
   }
 )
+
 ## Weirdly estimate seems to be poorer when tmax is large
 ## could be convergence issue??
 r200 <- results[[1]][[1]]
