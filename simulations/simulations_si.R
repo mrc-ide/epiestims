@@ -183,3 +183,76 @@ p1
 
 cowplot::save_plot("figures/epsilon_tmax_si.pdf", p1)
 
+
+## Now consider a situation where we estimate epsilon assuming that
+## we do not know the si of new variant so use current si
+
+results_same_si <- imap(
+  simulated_incid, function(incid, si_name) {
+    
+    message("si_mean_var = ", si_name)
+    
+    map(tmax_all, function(tmax) {
+      message("tmax = ", tmax)
+      
+      EpiEstim:::estimate_joint(
+        incid, si_est[[2]], priors, seed = 1,
+        t_min = 2L, t_max = as.integer(tmax),
+        mcmc_control = mcmc_controls
+      )
+    }
+    )
+  }
+)
+
+
+
+
+## Plot the estimated values of epsilon 
+
+vary_si_sameref <- map_depth(
+  results_same_si, 2, process_fit
+)
+
+vary_si_sameref <- map_dfr(
+  vary_si_sameref, function(x) {
+    bind_rows(x, .id = "tmax")
+  }, .id = "si"
+)
+
+vary_si_sameref$tmax <- factor(
+  vary_si_sameref$tmax, levels = rev(tmax_all), ordered = TRUE
+)
+
+vary_si_sameref$true_epsilon <- as.numeric(transmission_advantage)
+
+vary_si_sameref$si <- factor(
+  vary_si_sameref$si,
+  levels = si_mean,
+  ordered = TRUE
+)
+
+
+est_epsilon_sameref <- vary_si_sameref[vary_si_sameref$param == "epsilon", ]
+
+
+p2 <- ggplot(est_epsilon_sameref) +
+  geom_linerange(
+    aes(tmax, ymin = mu - sd, ymax = mu + sd)
+  ) +
+  geom_point(aes(tmax, mu)) +
+  geom_hline(
+    aes(yintercept = true_epsilon),
+    col = "red", linetype = "dashed"
+  ) +
+  expand_limits(y = 0) +
+  ylab("epsilon") +
+  facet_wrap(~ si, ncol = 2) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90)
+  )
+p2
+
+cowplot::save_plot("figures/epsilon_tmax_si_sameref.pdf", p2)
+
