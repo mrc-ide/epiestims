@@ -20,7 +20,7 @@ seed <- 42
 set.seed(seed)
 ## Common parameters
 ## Set time, locations and number of variants in simulations
-ndays <- 100
+ndays <- 200
 n_loc <- 2
 n_v <- 2
 
@@ -34,11 +34,10 @@ transmission_advantage <- 2
 names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
-##tmax_all <- seq(ndays, 40, -20)
+tmax_all <- seq(ndays, 40, -20)
 # tmax_all <- c(200, 40) 
-# tmax_all <- as.integer(tmax_all)
-# names(tmax_all) <- tmax_all
-t_max <- 100 # use a fixed tmax value
+tmax_all <- as.integer(tmax_all)
+names(tmax_all) <- tmax_all
 
 ## Set serial interval distributions
 ## TO DO: vary these (eg variant has si that is shorter or longer than ref)
@@ -65,7 +64,7 @@ si_est <- map(si_variant, function(x) {
 })
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)), # previously n_iter = 500000L. reduce to speed up
+  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)), 
   thin = 10L
 )
 
@@ -113,90 +112,55 @@ iwalk(
   }
 )
 
-## Run simulations across all combinations of transmission_advantage and tmax_all
-## TO DO: convert code below into function that takes various variables above as arguments
-## then we can also look at changes in si
+## Vary SI of variant (2xsmaller, 2xlarger and same as ref) for variant with transm advantage of 2
+## In estimating epsilon here, we assume that we know the SI
 results <- imap(
   simulated_incid, function(incid, si_name) {
     
     message("si_mean_var = ", si_name)
     
-    EpiEstim:::estimate_joint(
-      incid, si_est[[si_name]], priors, seed = 1,
-      t_min = 2L, t_max = as.integer(t_max),
-      mcmc_control = mcmc_controls
+    map(tmax_all, function(tmax) {
+      message("tmax = ", tmax)
+      
+      EpiEstim:::estimate_joint(
+        incid, si_est[[si_name]], priors, seed = 1,
+        t_min = 2L, t_max = as.integer(tmax),
+        mcmc_control = mcmc_controls
+      )
+    }
     )
   }
 )
 
-## Weirdly estimate seems to be poorer when tmax is large
-## could be convergence issue??
-r200 <- results[[1]][[1]]
-e200 <- r200$epsilon
-rt <- r200[["R"]]
 
-r40 <- results[[1]][[length(tmax_all)]]
-e40 <- r40$epsilon
-x <- data.frame(tmax = "tmax = 200", eps = e200)
-y <- data.frame(tmax = "tmax = 40", eps = e40)
-z <- rbind(x, y)
 
-p <- ggplot(z) +
-  geom_line(aes(1:nrow(z), eps, col = tmax)) +
-  facet_wrap(~tmax, nrow = 2, scales = "free_x") +
-  theme_minimal() +
-  theme(legend.position = "top", legend.title = element_blank())
 
-murt <- apply(rt, c(2, 3), mean, na.rm = TRUE)
+## Plot estimated values 
 
-ggplot() +
-  geom_line(aes(1:ncol(murt), murt[2, ])) +
-  theme_minimal() +
-  theme(legend.position = "top", legend.title = element_blank())
-
-cowplot::save_plot("figures/possible_convergence_issue.pdf", p)
-## Maximum
-## cumulative incidence at tmax across
-## locations variants
-cum_incid <- map_dfr(
-  simulated_incid, function(incid) {
-    map_dfr(tmax_all, function(tmax) {
-      x <- incid[seq_len(tmax), ,]
-      out <- apply(x, c(2, 3), sum)
-      data.frame(
-        max_cum_incid = max(out)
-      )
-    }, .id = "tmax"
-    )
-  }, .id = "epsilon"
-)
-
-vary_tmax_est <- map_depth(
+vary_si <- map_depth(
   results, 2, process_fit
 )
 
-vary_tmax_est <- map_dfr(
-  vary_tmax_est, function(x) {
+vary_si <- map_dfr(
+  vary_si, function(x) {
     bind_rows(x, .id = "tmax")
-  }, .id = "epsilon"
+  }, .id = "si"
 )
 
-vary_tmax_est <- left_join(vary_tmax_est, cum_incid)
-
-vary_tmax_est$tmax <- factor(
-  vary_tmax_est$tmax, levels = rev(tmax_all), ordered = TRUE
+vary_si$tmax <- factor(
+  vary_si$tmax, levels = rev(tmax_all), ordered = TRUE
 )
-## Duplicate column so that we can plot true values
-vary_tmax_est$true_epsilon <- as.numeric(vary_tmax_est$epsilon)
 
-vary_tmax_est$epsilon <- factor(
-  vary_tmax_est$epsilon,
-  levels = transmission_advantage,
+vary_si$true_epsilon <- as.numeric(transmission_advantage)
+
+vary_si$si <- factor(
+  vary_si$si,
+  levels = si_mean,
   ordered = TRUE
 )
 
 
-est_epsilon <- vary_tmax_est[vary_tmax_est$param == "epsilon", ]
+est_epsilon <- vary_si[vary_si$param == "epsilon", ]
 
 
 p1 <- ggplot(est_epsilon) +
@@ -210,30 +174,12 @@ p1 <- ggplot(est_epsilon) +
   ) +
   expand_limits(y = 0) +
   ylab("epsilon") +
-  facet_wrap(~ epsilon, ncol = 2) +
+  facet_wrap(~ si, ncol = 2) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 90)
   )
+p1
 
-cowplot::save_plot("figures/epsilon_tmax.pdf", p1)
-
-p2 <- ggplot(est_epsilon) +
-  geom_linerange(
-    aes(log(max_cum_incid), ymin = mu - sd, ymax = mu + sd)
-  ) +
-  geom_point(aes(log(max_cum_incid), mu)) +
-  geom_hline(
-    aes(yintercept = true_epsilon),
-    col = "red", linetype = "dashed"
-  ) +
-  facet_wrap(~ epsilon, ncol = 2, scales = "free_x") +
-  expand_limits(y = 0) +
-  ylab("epsilon") +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 90)
-  )
-
-cowplot::save_plot("figures/epsilon_cumincid.pdf", p2)
+cowplot::save_plot("figures/epsilon_tmax_si.pdf", p1)
 
