@@ -29,13 +29,13 @@ n_v <- 2
 rt_ref <- c(1.5, 1.5)
 
 ## Range of transmission advantage values to explore
-## transmission_advantage <- seq(2, 3, 0.2)
-transmission_advantage <- 2
+transmission_advantage <- seq(1, 2, 0.2)
+# transmission_advantage <- 2
 names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
-##tmax_all <- seq(ndays, 40, -20)
-tmax_all <- c(200, 40)
+tmax_all <- seq(ndays, 40, -20)
+# tmax_all <- c(200, 40)
 tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
 
@@ -55,8 +55,8 @@ si_distr <- cbind(si_no_zero, si_no_zero)
 si_est <- cbind(si, si)
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 500000L, burnin = as.integer(floor(1e4 / 2)),
-  thin = 100L
+  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)),
+  thin = 10L
 )
 
 ## TODo
@@ -119,17 +119,9 @@ results <- map(
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
       
-      # modify incidence array so that the variant with highest transmissibility
-      # prior to tmax is the reference
-      # TO DO: adapt t_start input so that it is based on time when variants are co-circulating
-      incid_reordered <- reorder_incidence(incid,
-                                           t_start = 2,
-                                           t_end = tmax,
-                                           si_distr = si_est)
-      
       # now call estimate_joint on the re-ordered incidence data
       EpiEstim:::estimate_joint(
-        incid_reordered, si_est, priors, seed = 1,
+        incid, si_est, priors, seed = 1,
         t_min = 2L, t_max = as.integer(tmax),
         mcmc_control = mcmc_controls
       )
