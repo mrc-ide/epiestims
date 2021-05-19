@@ -6,21 +6,11 @@
 
 ## 1. Try single location first.
 ## Update - doesn't work.
-library(EpiEstim)
-library(projections)
-library(incidence)
-library(purrr)
-library(dplyr)
-library(ggplot2)
-library(here)
-source("simulations/simulation_functions.R")
 
-if (! dir.exists("figures")) dir.create("figures")
-seed <- 42
-set.seed(seed)
 ## Common parameters
 ## Set time, locations and number of variants in simulations
-ndays <- 200
+source("global.R")
+ndays <- 100
 n_loc <- 2
 n_v <- 2
 
@@ -30,26 +20,33 @@ rt_ref <- c(1.5, 1.5)
 
 ## Range of transmission advantage values to explore
 ## transmission_advantage <- seq(2, 3, 0.2)
-transmission_advantage <- 2
+transmission_advantage <- 1.2
 names(transmission_advantage) <- transmission_advantage
 
 ## Define range of tmax values to explore
 tmax_all <- seq(ndays, 40, -20)
-# tmax_all <- c(200, 40) 
+# tmax_all <- c(200, 40)
 tmax_all <- as.integer(tmax_all)
 names(tmax_all) <- tmax_all
 
 ## Set serial interval distributions
 ## TO DO: vary these (eg variant has si that is shorter or longer than ref)
 ## covid serial interval from IBM
-si_mean <- c(3.41, 6.83, 13.66)
+##si_mean <- c(3.41, 6.83, 13.66)
+si_mean_ref <- 6.83
+## Variant SI
+si_mean <- si_mean_ref * seq(0.2, 3, 0.2)
 names(si_mean) <- si_mean
 si_std <- 3.8
 si_variant <- map(si_mean, function(x) {
+  ##shape_scale <- epitrix::gamma_mucv2shapescale(x, si_std / x)
+  ##cutoff <- qgamma(0.99, shape_scale$shape, scale = shape_scale$scale)
+  ## 30 seems to capture most of the probability mass alright
   si <- discr_si(0:30, mu = x, sigma = si_std)
   si <- si / sum(si)
 })
-si_ref <- si_variant[[2]] # mean 6.83 as per covid IBM
+
+si_ref <- si_variant[["6.83"]] # mean 6.83 as per covid IBM
 si_no_zero_ref <- si_ref[-1]
 si_no_zero_var <- map(si_variant, function(x) x[-1])
 ## Needs to change if number of variants is
@@ -64,7 +61,7 @@ si_est <- map(si_variant, function(x) {
 })
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)), 
+  n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)),
   thin = 10L
 )
 
@@ -81,7 +78,7 @@ simulated_incid <- imap(
     ## Assume reproduction number remains the same
     ## over the time period
     ## Make a vector that goes across rows
-    
+
     ## TO DO: update this so that it can handle n_v variants
     R <- array(NA, dim = c(ndays, n_loc, n_v))
     R[,,1] <- rep(rt_ref, each = ndays)
@@ -108,7 +105,7 @@ iwalk(
     legend("bottomright", c("Strain 1", "Strain 2"),
            lty = c(1, 2), cex = 0.7)
     title(paste0("si_mean_ref = 6.83; si_mean_var = ", si))
-    
+
   }
 )
 
@@ -116,12 +113,12 @@ iwalk(
 ## In estimating epsilon here, we assume that we know the SI
 results <- imap(
   simulated_incid, function(incid, si_name) {
-    
+
     message("si_mean_var = ", si_name)
-    
+
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
-      
+
       EpiEstim:::estimate_joint(
         incid, si_est[[si_name]], priors, seed = 1,
         t_min = 2L, t_max = as.integer(tmax),
@@ -135,11 +132,8 @@ results <- imap(
 
 
 
-## Plot estimated values 
-
-vary_si <- map_depth(
-  results, 2, process_fit
-)
+## Plot estimated values
+vary_si <- map_depth(results, 2, process_fit)
 
 vary_si <- map_dfr(
   vary_si, function(x) {
@@ -154,9 +148,7 @@ vary_si$tmax <- factor(
 vary_si$true_epsilon <- as.numeric(transmission_advantage)
 
 vary_si$si <- factor(
-  vary_si$si,
-  levels = si_mean,
-  ordered = TRUE
+  vary_si$si, levels = si_mean, ordered = TRUE
 )
 
 
@@ -165,16 +157,16 @@ est_epsilon <- vary_si[vary_si$param == "epsilon", ]
 
 p1 <- ggplot(est_epsilon) +
   geom_linerange(
-    aes(tmax, ymin = mu - sd, ymax = mu + sd)
+    aes(si, ymin = mu - sd, ymax = mu + sd)
   ) +
-  geom_point(aes(tmax, mu)) +
+  geom_point(aes(si, mu)) +
   geom_hline(
     aes(yintercept = true_epsilon),
     col = "red", linetype = "dashed"
   ) +
   expand_limits(y = 0) +
   ylab("epsilon") +
-  facet_wrap(~ si, ncol = 2) +
+  facet_wrap(~ tmax, ncol = 2) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 90)
@@ -189,14 +181,14 @@ cowplot::save_plot("figures/epsilon_tmax_si.pdf", p1)
 
 results_same_si <- imap(
   simulated_incid, function(incid, si_name) {
-    
+
     message("si_mean_var = ", si_name)
-    
+
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
-      
+
       EpiEstim:::estimate_joint(
-        incid, si_est[[2]], priors, seed = 1,
+        incid, si_est[["6.83"]], priors, seed = 1,
         t_min = 2L, t_max = as.integer(tmax),
         mcmc_control = mcmc_controls
       )
@@ -208,7 +200,7 @@ results_same_si <- imap(
 
 
 
-## Plot the estimated values of epsilon 
+## Plot the estimated values of epsilon
 
 vary_si_sameref <- map_depth(
   results_same_si, 2, process_fit
@@ -238,16 +230,16 @@ est_epsilon_sameref <- vary_si_sameref[vary_si_sameref$param == "epsilon", ]
 
 p2 <- ggplot(est_epsilon_sameref) +
   geom_linerange(
-    aes(tmax, ymin = mu - sd, ymax = mu + sd)
+    aes(si, ymin = mu - sd, ymax = mu + sd)
   ) +
-  geom_point(aes(tmax, mu)) +
+  geom_point(aes(si, mu)) +
   geom_hline(
     aes(yintercept = true_epsilon),
     col = "red", linetype = "dashed"
   ) +
   expand_limits(y = 0) +
   ylab("epsilon") +
-  facet_wrap(~ si, ncol = 2) +
+  facet_wrap(~ tmax, ncol = 2) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 90)
