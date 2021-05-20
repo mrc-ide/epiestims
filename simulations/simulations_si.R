@@ -58,13 +58,9 @@ si_no_zero_var <- map(si_variant, function(x) x[-1])
 ## Needs to change if number of variants is
 ## changed.
 ## For simulation
-si_distr <- map(si_no_zero_var, function(x) {
-  cbind(si_no_zero_ref, x)
-})
+si_distr <- map(si_no_zero_var, function(x) cbind(si_no_zero_ref, x))
 ## For estimation
-si_est <- map(si_variant, function(x) {
-  cbind(si_ref, x)
-})
+si_est <- map(si_variant, function(x) cbind(si_ref, x))
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
   n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)),
@@ -119,12 +115,9 @@ iwalk(
 ## In estimating epsilon here, we assume that we know the SI
 results <- imap(
   simulated_incid, function(incid, si_name) {
-
     message("si_mean_var = ", si_name)
-
     map(tmax_all, function(tmax) {
       message("tmax = ", tmax)
-
       EpiEstim:::estimate_joint(
         incid, si_est[[si_name]], priors, seed = 1,
         t_min = 2L, t_max = as.integer(tmax),
