@@ -13,6 +13,8 @@ source("global.R")
 ndays <- 100
 n_loc <- 2
 n_v <- 2
+## Number of simulations for each parameter
+nsims <- 10
 
 ## Reference reproduction numbers in each location
 ##rt_ref <- c(1.5, 1.5, 1.5)
@@ -27,6 +29,7 @@ names(transmission_advantage) <- transmission_advantage
 tmax_all <- seq(ndays, 40, -20)
 # tmax_all <- c(200, 40)
 tmax_all <- as.integer(tmax_all)
+tmax_all <- rep(tmax_all, each = nsims)
 names(tmax_all) <- tmax_all
 
 ## Set serial interval distributions
@@ -35,9 +38,12 @@ names(tmax_all) <- tmax_all
 ##si_mean <- c(3.41, 6.83, 13.66)
 si_mean_ref <- 6.83
 ## Variant SI
-si_mean <- si_mean_ref * seq(0.2, 3, 0.2)
+si_multiplier <- c(0.25, 0.5, 1, 1.5, 2)
+si_mean <- si_mean_ref * si_multiplier
+si_mean <- rep(si_mean, each = nsims)
 names(si_mean) <- si_mean
 si_std <- 3.8
+
 si_variant <- map(si_mean, function(x) {
   ##shape_scale <- epitrix::gamma_mucv2shapescale(x, si_std / x)
   ##cutoff <- qgamma(0.99, shape_scale$shape, scale = shape_scale$scale)
@@ -45,8 +51,8 @@ si_variant <- map(si_mean, function(x) {
   si <- discr_si(0:30, mu = x, sigma = si_std)
   si <- si / sum(si)
 })
-
-si_ref <- si_variant[["6.83"]] # mean 6.83 as per covid IBM
+ref_index <- match(si_mean_ref, names(si_mean))
+si_ref <- si_variant[[ref_index]] # mean 6.83 as per covid IBM
 si_no_zero_ref <- si_ref[-1]
 si_no_zero_var <- map(si_variant, function(x) x[-1])
 ## Needs to change if number of variants is
@@ -165,8 +171,13 @@ p1 <- ggplot(est_epsilon) +
     col = "red", linetype = "dashed"
   ) +
   expand_limits(y = 0) +
+  scale_x_discrete(
+    breaks = levels(vary_si$si),
+    labels = glue::glue(" X {si_multiplier}")
+  ) +
+  xlab("Variant serial interval") +
   ylab("epsilon") +
-  facet_wrap(~ tmax, ncol = 2) +
+  facet_wrap(~ tmax, ncol = 2, labeller = label_both) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 90)
@@ -202,9 +213,7 @@ results_same_si <- imap(
 
 ## Plot the estimated values of epsilon
 
-vary_si_sameref <- map_depth(
-  results_same_si, 2, process_fit
-)
+vary_si_sameref <- map_depth(results_same_si, 2, process_fit)
 
 vary_si_sameref <- map_dfr(
   vary_si_sameref, function(x) {
@@ -219,14 +228,13 @@ vary_si_sameref$tmax <- factor(
 vary_si_sameref$true_epsilon <- as.numeric(transmission_advantage)
 
 vary_si_sameref$si <- factor(
-  vary_si_sameref$si,
-  levels = si_mean,
-  ordered = TRUE
+  vary_si_sameref$si, levels = si_mean, ordered = TRUE
 )
 
 
 est_epsilon_sameref <- vary_si_sameref[vary_si_sameref$param == "epsilon", ]
 
+est_epsilon_sameref <- mutate_if(est_epsilon_sameref, is.numeric, log)
 
 p2 <- ggplot(est_epsilon_sameref) +
   geom_linerange(
@@ -238,8 +246,13 @@ p2 <- ggplot(est_epsilon_sameref) +
     col = "red", linetype = "dashed"
   ) +
   expand_limits(y = 0) +
-  ylab("epsilon") +
-  facet_wrap(~ tmax, ncol = 2) +
+  ylab("log(epsilon)") +
+  scale_x_discrete(
+    breaks = levels(vary_si$si),
+    labels = glue::glue(" X {si_multiplier}")
+  ) +
+  xlab("Variant serial interval") +
+  facet_wrap(~ tmax, ncol = 2, labeller = label_both) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 90)
