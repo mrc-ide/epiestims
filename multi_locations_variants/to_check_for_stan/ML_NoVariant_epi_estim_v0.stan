@@ -34,11 +34,7 @@ transformed parameters {
 }
 
 model{
-  for(i in 1:(nt)){
-    Rt[i,] ~ gamma(prior_shape, prior_rate);
-  }
-  // beta ~ uniform(0,prior_beta);
-  
+  to_vector(Rt) ~ gamma(prior_shape, prior_rate);
   for(j in 1:(n_location)){ //for(j in 1:(n_variant*n_location)){
     for (i in 1:nt){
       I[j,i,] ~ poisson(lambda[j,i,]);

@@ -13,7 +13,7 @@ data {
 
 parameters {
   matrix<lower=0>[nt, n_location] Rt;
-  row_vector<lower=0>[n_variant-1] beta;
+  row_vector<lower=0, upper = beta>[n_variant-1] beta;
 }
 
 transformed parameters {
@@ -36,8 +36,6 @@ model{
   for(i in 1:(nt)){
     Rt[i,] ~ gamma(prior_shape, prior_rate);
   }
-  beta ~ uniform(0,prior_beta);
-  
   for(j in 1:(n_variant*n_location)){
     for (i in 1:nt){
       I[j,i,] ~ poisson(lambda[j,i,]);
