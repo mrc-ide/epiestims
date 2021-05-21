@@ -63,33 +63,35 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
 ##' each variant
 ##' @param nsims number of simulations, defaults to 1
 ##' @return matrix of
-##' dimensions ndays X nlocations X nvariants
-##' @author Sangeeta Bhatia
+##' dimensions nsims X ndays X nlocations X nvariants
+##' @author Sangeeta Bhatia, Jack Wardle
 simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
                                simatrix, nsims = 1) {
 
   incid <- array(
-    NA, dim = c(ndays, nlocations, nvariants)
+    NA, dim = c(nsims, ndays, nlocations, nvariants)
   )
-  for (loc in seq_len(nlocations)) {
-    for (v in seq_len(nvariants)) {
-      incid[, loc, v] <- rbind(
-        incid_init$counts,
-        as.matrix( #
-          projections::project(
-            incid_init,
-            ## R in the future so removing time of seeding
-            R = rmatrix[-1, loc, v],
-            si = simatrix[, v],
-            n_sim = nsims,
-            n_days = ndays - 1,
-            time_change = seq_len(
-              length(rmatrix[, loc, v]) - 2
-            ) - 1
+  for (sim in seq_len(nsims)) {
+    for (loc in seq_len(nlocations)) {
+      for (v in seq_len(nvariants)) {
+        incid[sim, ,loc, v] <- rbind(
+          incid_init$counts,
+          as.matrix( #
+            project(
+              incid_init,
+              ## R in the future so removing time of seeding
+              R = rmatrix[-1, loc, v],
+              si = simatrix[, v],
+              n_sim = 1,
+              n_days = ndays - 1,
+              time_change = seq_len(
+                length(rmatrix[, loc, v]) - 2
+              ) - 1
+            )
           )
         )
-      )
+      }
     }
   }
   incid
@@ -112,7 +114,7 @@ simulate_incidence <- function(incid_init, nlocations,
 #' dimensions [,,1].
 
 reorder_incidence <- function(incidence, t_start = 2, t_end, si_distr) {
-  
+
   #identify variant with the largest estimated transmissibility over full time window
   R_init <- sapply(seq_len(dim(incidence)[3]), function(i) suppressWarnings(
     EpiEstim::estimate_R(apply(incidence[, , i, drop = FALSE], c(1, 3), sum)[,1],
@@ -121,15 +123,15 @@ reorder_incidence <- function(incidence, t_start = 2, t_end, si_distr) {
                            si_distr = si_distr[, i],
                            t_start = t_start,
                            t_end = t_end)))$R$'Mean(R)')
-  
+
   max_transmiss <- which.max(R_init)
-  
+
   # reorder variants so most transmissible is first
   incid_reordered <- array(NA,
                            dim = dim(incidence))
   incid_reordered[, , 1] <- incidence[, , max_transmiss]
   incid_reordered[, , -1] <- incidence[, , -max_transmiss]
-  
+
   incid_reordered
-  
+
 }
