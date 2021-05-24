@@ -36,7 +36,9 @@ sim_params <- expand.grid(
   si_std_variant = si_std_ref,
   tmax = seq(10, 60, by = 10)
 )
-index <- ifelse(short_run, 1:10, seq_len(nrow(sim_params)))
+
+
+index <- if (short_run) 1:10 else seq_len(nrow(sim_params))
 nsims <- ifelse(short_run, 10, 100)
 sim_params <- sim_params[index, ]
 si_distr_ref <- discr_si(
