@@ -67,34 +67,43 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
 ##' @author Sangeeta Bhatia, Jack Wardle
 simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
-                               simatrix, nsims = 1) {
+                               simatrix) {
 
   incid <- array(
-    NA, dim = c(nsims, ndays, nlocations, nvariants)
+    NA, dim = c(ndays, nlocations, nvariants)
   )
-  for (sim in seq_len(nsims)) {
-    for (loc in seq_len(nlocations)) {
-      for (v in seq_len(nvariants)) {
-        incid[sim, ,loc, v] <- rbind(
-          incid_init$counts,
-          as.matrix( #
-            project(
-              incid_init,
-              ## R in the future so removing time of seeding
-              R = rmatrix[-1, loc, v],
-              si = simatrix[, v],
-              n_sim = 1,
-              n_days = ndays - 1,
-              time_change = seq_len(
-                length(rmatrix[, loc, v]) - 2
-              ) - 1
-            )
+
+  for (loc in seq_len(nlocations)) {
+    for (v in seq_len(nvariants)) {
+      incid[ ,loc, v] <- rbind(
+        incid_init$counts,
+        as.matrix( #
+          project(
+            incid_init,
+            ## R in the future so removing time of seeding
+            R = rmatrix[-1, loc, v],
+            si = simatrix[, v],
+            n_sim = 1,
+            n_days = ndays - 1,
+            time_change = seq_len(
+              length(rmatrix[, loc, v]) - 2
+            ) - 1
           )
         )
-      }
+      )
     }
   }
   incid
+}
+
+simulate_incidence_multisim <- function(incid_init, nlocations,
+                                        nvariants, ndays, rmatrix,
+                                        simatrix, nsims = 10) {
+  sapply(seq_len(nsims), function(x) {
+    simulate_incidence(
+      incid_init, nlocations, nvariants, ndays, rmatrix, simatrix
+    )
+  })
 }
 
 #' Reorder an array of incidence data so that the most

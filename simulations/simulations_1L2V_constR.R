@@ -1,11 +1,11 @@
-# Scenario 1: 
+# Scenario 1:
 # 1 loc, 2 var, constant R
 require(EpiEstim)
 require(incidence)
 require(projections)
 require(purrr)
 require(ggplot2)
-source("simulation_functions.R")
+
 
 n_v <- 2 # 2 variants
 n_loc <- 1 # 1 location
@@ -61,11 +61,15 @@ simulated_incid <- map(
     ##############################################################################
     ## start with 20 infected individuals
     initial_incidence <- incidence::incidence(rep(1, 20))
-    simulate_incidence(
-      initial_incidence, n_loc, n_v, 
-      ndays, R, si_distr, nsims=nsims
+    map(seq_len(nsims), function(x) {
+     simulate_incidence(
+       initial_incidence, n_loc, n_v,
+       ndays, R, si_distr
+     )
+    }
     )
-  })
+  }
+)
 
 
 str(simulated_incid)
@@ -92,3 +96,4 @@ results <- imap(
   }
 )
 
+x <- simulated_incid[[1]][[1]]
