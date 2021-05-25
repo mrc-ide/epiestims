@@ -8,6 +8,8 @@ require(dplyr)
 require(ggplot2)
 source("simulation_functions.R")
 
+set.seed(42)
+
 ndays <- 100
 n_loc <- 1
 n_v <- 2
@@ -40,7 +42,7 @@ initial_incidence <- list(
 
 sim_params <- expand.grid(
   rt_ref = 3,  #c(1.2, 3),
-  epsilon = 2 #c(seq(from = 1, to = 2, by = 0.1), 2.5, 3)
+  epsilon = c(1.2, 1.6, 2) #c(seq(from = 1, to = 2, by = 0.1), 2.5, 3)
   #tmax = seq(30, 60, by = 30) # to speed things up
 )
 
@@ -101,15 +103,20 @@ simulated_incid <- pmap(
 )
 
 #saveRDS(simulated_incid, "results/1L2V_incid1.rds") # Rtref 1.2, eps 1, 2 sims 
-saveRDS(simulated_incid, "results/1L2V_incid2.rds") # Rtref 3, eps 2, 10 sims 
+# saveRDS(simulated_incid, "results/1L2V_incid2.rds") # Rtref 3, eps 2, 10 sims 
+
+tmax_all <- c(30, 40, 50, 60)
+names(tmax_all) <- tmax_all
 
 ## Estimate epsilon
 results <- pmap(
   list(
-    incid = simulated_incid,
-    tmax = 30
+    incid = simulated_incid
+    # tmax = 30
   ),
-  function(incid, si, tmax) {
+  function(incid, si) {
+    
+    map(tmax_all, function(tmax) {
     message("tmax = ", tmax)
     ## Loop over the first dimension which is
     ## the set of simulations
@@ -121,6 +128,7 @@ results <- pmap(
       )
     }
     )
+  })
   }
 )
 
@@ -130,11 +138,26 @@ params <- append(
 )
 
 summary_epsilon <- map_depth(
-  results, 2, summarise_epsilon
+  results, 3, summarise_epsilon
 )
+summary_epsilon <- map_depth(
+  summary_epsilon, 2, ~ bind_rows(., .id = "sim")
+)
+
 summary_epsilon <- map(
-  summary_epsilon, ~ bind_rows(., .id = "sim")
+  summary_epsilon, ~ bind_rows(., .id = "tmax")
 )
+
+summary_epsilon <- map(
+  summary_epsilon, function(x) {
+    x <- x %>%
+      mutate(tmax = recode(tmax,
+                           "1" = "30",
+                           "2" = "60"))
+    x
+  }
+)
+
 
 params <- as.list(sim_params)
 params <- append(
@@ -144,8 +167,8 @@ params <- append(
 out <- pmap_dfr(
   params, function(rt_ref, epsilon, tmax, est_epsilon) {
     x <- data.frame(
-      rt_ref = rt_ref, true_epsilon = epsilon,
-      tmax = 30
+      rt_ref = rt_ref, true_epsilon = epsilon#,
+      # tmax = 30
     )
     cbind(x, est_epsilon)
   }
@@ -162,13 +185,13 @@ saveRDS(out, "results/1L2V_processed.rds")
 
 ## By rt_ref
 ggplot(out) +
-  ylim(1.6,2.4) +
+  # ylim(1,2.4) +
   geom_point(
-    aes(true_epsilon, `50%`), position = "dodge2"
+    aes(true_epsilon, `50%`)#, position = "dodge2"
   ) +
   geom_linerange(
-    aes(true_epsilon, ymin = `2.5%`, ymax = `97.5%`),
-    position = "dodge2"
+    aes(true_epsilon, ymin = `2.5%`, ymax = `97.5%`)#,
+    # position = "dodge2"
   ) +
   facet_grid(rt_ref~tmax, scales = "free") +
   theme_minimal()
