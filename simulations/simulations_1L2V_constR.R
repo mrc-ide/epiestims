@@ -32,7 +32,10 @@ mcmc_controls <- list(
 
 ## Seed with 1 case but select simulations
 ## that went on to generate at least 20 cases
-initial_incidence <- incidence::incidence(rep(1, 1))
+initial_incidence <- list(
+  incidence::incidence(rep(seq(1, 10), each = 20)),
+  incidence::incidence(rep(1, 1))
+)
 
 sim_params <- expand.grid(
   rt_ref = 3,  #c(1.2, 3),
@@ -158,7 +161,7 @@ saveRDS(out, "results/1L2V_processed.rds")
 
 ## By rt_ref
 ggplot(out) +
-  ylim(0,200) +
+  ylim(1.6,2.4) +
   geom_point(
     aes(true_epsilon, `50%`), position = "dodge2"
   ) +
