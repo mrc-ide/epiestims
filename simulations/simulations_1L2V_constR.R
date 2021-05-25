@@ -32,6 +32,7 @@ mcmc_controls <- list(
 
 ## Seed with 1 case but select simulations
 ## that went on to generate at least 20 cases
+## Ref and variant have different initial incidence conditions, saved in this list
 initial_incidence <- list(
   incidence::incidence(rep(seq(1, 10), each = 20)),
   incidence::incidence(rep(1, 1))
