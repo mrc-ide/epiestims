@@ -7,7 +7,7 @@
 ## 2. Incorrect SI (of reference variant)
 ## R_reference c(1.2, 3)
 ## epsilon c(seq(from = 1, to = 2, by = 0.1), 2.5, 3)
-
+if (! dir.exists("results")) dir.create("results")
 source("global.R")
 short_run <- FALSE
 ndays <- 100
@@ -27,18 +27,23 @@ mcmc_controls <- list(
 
 ## Seed with 1 case but select simulations
 ## that went on to generate at least 20 cases
-initial_incidence <- incidence::incidence(rep(1, 1))
+initial_incidence <- list(
+  incidence::incidence(rep(seq(1, 10), each = 20)),
+  incidence::incidence(rep(1, 1))
+)
+
 
 sim_params <- expand.grid(
   rt_ref = c(1.2, 3),
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
-  si_std_variant = si_std_ref,
-  tmax = seq(10, 60, by = 10)
+  si_std_variant = si_std_ref
 )
 
+tmax_all <- seq(10, 60, 10)
+names(tmax_all) <- tmax_all
 
-index <- if (short_run) 1:10 else seq_len(nrow(sim_params))
+index <- if (short_run) c(1, nrow(sim_params)) else seq_len(nrow(sim_params))
 nsims <- ifelse(short_run, 10, 100)
 sim_params <- sim_params[index, ]
 si_distr_ref <- discr_si(
@@ -90,7 +95,7 @@ simulated_incid <- pmap(
     ## as we need so that we have nsim after
     ## filtering
     out <- imap(
-      seq_len(10 * nsims), function(x, index) {
+      seq_len(2 * nsims), function(x, index) {
         message("Simulation ", index)
         simulate_incidence(
           initial_incidence, n_loc, n_v, ndays, R, si
@@ -112,26 +117,39 @@ simulated_incid <- pmap(
   }
 )
 
+saveRDS(simulated_incid, "results/vary_si_simulated_data.rds")
+## simulated_incid <- readRDS("results/vary_si_simulated_data.rds")
 ## In estimating epsilon here, we assume that we know the SI
+
+
 results <- pmap(
-  list(
-    incid = simulated_incid, si = si_for_est,
-    tmax = sim_params$tmax
-  ),
-  function(incid, si, tmax) {
-      message("tmax = ", tmax)
-      ## Loop over the first dimension which is
-      ## the set of simulations
-      map(incid, function(x) {
-        EpiEstim:::estimate_joint(
-           x, si, priors, seed = 1,
-           t_min = 2L, t_max = as.integer(tmax),
-           mcmc_control = mcmc_controls
+  list(incid = simulated_incid, si = si_for_est),
+  function(incid, si) {
+    map(tmax_all, function(tmax) {
+        message("tmax = ", tmax)
+        imap(incid, function(x, index) {
+          message("Sim # ", index)
+          tryCatch(
+          {
+            out <- EpiEstim:::estimate_joint(
+              x, si, priors, seed = 1,
+              t_min = 2L, t_max = as.integer(tmax),
+              mcmc_control = mcmc_controls
+              )
+            list(epsilon = out[["epsilon"]][, seq_len(tmax)])
+             }, error = function(cond) {
+               out <- list()
+               class(out) <- "error"
+               out
+             }
+          )
+        }
         )
       }
     )
   }
 )
+saveRDS(results, "results/vary_si_raw.rds")
 
 params <- as.list(sim_params)
 params <- append(
@@ -139,11 +157,20 @@ params <- append(
 )
 
 summary_epsilon <- map_depth(
-  results, 2, summarise_epsilon
+  results, 3, function(x){
+    if (inherits(x, "error")) NULL
+    else summarise_epsilon(x)
+  }
 )
-summary_epsilon <- map(
-  summary_epsilon, ~ bind_rows(., .id = "sim")
+## Get rid of nulls now
+summary_epsilon <- map(summary_epsilon, function(incid_eps) {
+  map_dfr(
+    incid_eps, function(tmax_eps) bind_rows(tmax_eps, .id = "sim"),
+    .id = "tmax"
+  )
+}
 )
+
 
 params <- as.list(sim_params)
 params <- append(
@@ -152,35 +179,19 @@ params <- append(
 
 out <- pmap_dfr(
   params, function(rt_ref, epsilon, si_mu_variant,
-                   si_std_variant, tmax, est_epsilon) {
+                   si_std_variant, est_epsilon) {
     x <- data.frame(
       rt_ref = rt_ref, true_epsilon = epsilon,
       si_mu_variant = si_mu_variant,
-      si_std_variant = si_std_variant,
-      tmax = tmax
+      si_std_variant = si_std_variant
     )
     cbind(x, est_epsilon)
   }
 )
 
 
-if (! dir.exists("results")) dir.create("results")
-saveRDS(results, "results/vary_si_raw.rds")
+
+
 saveRDS(out, "results/vary_si_processed.rds")
 
-
-### Figures and summary
-## out <- readRDS("results/vary_si_processed.rds")
-
-## By rt_ref
-ggplot(out) +
-  geom_point(
-    aes(true_epsilon, `50%`), position = "dodge2"
-  ) +
-  geom_linerange(
-    aes(true_epsilon, ymin = `2.5%`, ymax = `97.5%`),
-    position = "dodge2"
-  ) +
-  facet_grid(rt_ref~tmax, scales = "free") +
-  theme_minimal()
 
