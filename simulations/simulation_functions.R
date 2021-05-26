@@ -1,12 +1,10 @@
 summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
-
   ## Get rid of the first row because of NAs
   r_est <- apply(
     fit$R[-1, , ], c(1, 2), quantile, probs = probs, na.rm = na.rm
   )
   r_mu <- apply(fit$R[-1, , ], c(1, 2), mean, na.rm = na.rm)
   r_sd <- apply(fit$R[-1, , ], c(1, 2), sd, na.rm = na.rm)
-
   nt <- dim(r_est)[2]
   nl <- dim(r_est)[3]
   r_estdf <- data.frame(
@@ -47,7 +45,6 @@ summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
 
 
 summarise_epsilon <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
-
   epsilon_est <- quantile(fit$epsilon, probs = probs, na.rm = na.rm)
   eps_df <- data.frame(epsilon_est)
   ## Tall. make wide
@@ -63,7 +60,9 @@ summarise_epsilon <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.
 ##' variants
 ##' No checks implemented, make sure you input right things in
 ##' right dimensions
-##' @param incid_init initial incidece as an incidence object
+##' @param incid_init initial incidence as a list of incidence
+##' objects. Each list element is the initial incidence object
+##' for a variant.
 ##' @param nlocations number of locations
 ##' @param nvariants number of variants
 ##' @param ndays number of days
@@ -79,17 +78,15 @@ simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
                                simatrix) {
 
-  incid <- array(
-    NA, dim = c(ndays, nlocations, nvariants)
-  )
+  incid <- array(NA, dim = c(ndays, nlocations, nvariants))
 
   for (loc in seq_len(nlocations)) {
     for (v in seq_len(nvariants)) {
       incid[ ,loc, v] <- rbind(
-        incid_init$counts,
+        tail(incid_init[[v]]$counts, 1),
         as.matrix( #
           project(
-            incid_init,
+            incid_init[[v]],
             ## R in the future so removing time of seeding
             R = rmatrix[-1, loc, v],
             si = simatrix[, v],
@@ -106,15 +103,6 @@ simulate_incidence <- function(incid_init, nlocations,
   incid
 }
 
-simulate_incidence_multisim <- function(incid_init, nlocations,
-                                        nvariants, ndays, rmatrix,
-                                        simatrix, nsims = 10) {
-  sapply(seq_len(nsims), function(x) {
-    simulate_incidence(
-      incid_init, nlocations, nvariants, ndays, rmatrix, simatrix
-    )
-  })
-}
 
 #' Reorder an array of incidence data so that the most
 #' transmissible variant is ordered first
