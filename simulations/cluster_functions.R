@@ -59,7 +59,19 @@ estimate_wrapper <- function(incid, si_for_est) {
 }
 
 
-manager <- function(rt_ref, epsilon, si_for_sim, si_for_est) {
-  incid <- simulate_incid_wrapper(rt_ref, epsilon, si)
-  estimate_wrapper(incid, si_for_est)
+manager <- function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
+  si_distr_ref <- discr_si(
+    0:30, mu = si_mu_ref, sigma = si_std_ref
+  )
+  si_no_zero_ref <- si_distr_ref[-1]
+  si_distr_variant <- discr_si(
+    0:30, mu = si_mu_variant, sigma = si_std_variant
+  )
+  si_distr_variant <- si_distr_variant / sum(si_distr_variant)
+  si_no_zero_var <- si_distr_variant[-1]
+  si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
+  si_for_est <- cbind(si_distr_ref, si_distr_variant)
+  incid <- simulate_incid_wrapper(rt_ref, epsilon, si_for_sim)
+  res <- estimate_wrapper(incid, si_for_est)
+  list(incid = incid, res = res)
 }
