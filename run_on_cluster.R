@@ -1,7 +1,4 @@
 library(context)
-share <- didehpc::path_mapping("malaria", "M:", "//fi--didef3.dide.ic.ac.uk/malaria", "M:")
-config <- didehpc::didehpc_config(shares = share)
-
 root <- "context"
 packages <- c("dplyr","purrr", "epitrix", "glue")
 src <- conan::conan_sources("mrc-ide/EpiEstim@multiv")
