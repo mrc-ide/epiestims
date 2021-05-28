@@ -12,15 +12,15 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si) {
     ## as we need so that we have nsim after
     ## filtering
     out <- map(
-      seq_len(2 * nsims), function(x) {
+      seq_len(10 * nsims), function(x) {
         simulate_incidence(
           initial_incidence, n_loc, n_v, ndays, R, si
         )
       }
     )
-    ## total number of cases at the end of the
+    ## total number of cases at the end of the first 10 days
     ## simulation for the variant.
-    ncases <- map_dbl(out, function(x) sum(x[, , 2]))
+    ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
     out <- out[ncases > 20]
     message("# of simulations with more than 20 cases ", length(out))
     ## At this point out will have either less than
@@ -40,19 +40,13 @@ estimate_wrapper <- function(incid, si_for_est) {
   for (index in seq_along(out)) {
     tmax <- tmax_all[[index]]
     for (sim in seq_along(incid)) {
-      out[[index]][[sim]] <-  tryCatch({
-        res <- EpiEstim:::estimate_joint(
+      out[[index]][[sim]] <- 
+        EpiEstim::estimate_joint(
                  incid[[sim]], si_for_est, priors, seed = 1,
                  t_min = 2L, t_max = as.integer(tmax),
                  mcmc_control = mcmc_controls
                  )
-        list(epsilon = res[["epsilon"]][, seq_len(tmax)])
-      }, error = function(cond) {
-        out <- list()
-        class(out) <- "error"
-        out
-      }
-      )
+       
     }
   }
   out
@@ -60,11 +54,11 @@ estimate_wrapper <- function(incid, si_for_est) {
 
 
 manager <- function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
-  si_distr_ref <- discr_si(
+  si_distr_ref <- EpiEstim::discr_si(
     0:30, mu = si_mu_ref, sigma = si_std_ref
   )
   si_no_zero_ref <- si_distr_ref[-1]
-  si_distr_variant <- discr_si(
+  si_distr_variant <- EpiEstim::discr_si(
     0:30, mu = si_mu_variant, sigma = si_std_variant
   )
   si_distr_variant <- si_distr_variant / sum(si_distr_variant)
