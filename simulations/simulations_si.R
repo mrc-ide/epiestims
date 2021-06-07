@@ -19,7 +19,8 @@ si_mu_ref <- 6.83
 si_std_ref <- 3.8
 
 ## Other common things
-priors <- EpiEstim:::default_priors()
+priors <- list(epsilon = list(shape = 1, scale = 1), 
+               R = list(shape = 1, scale = 1))
 mcmc_controls <- list(
   n_iter = 10000L, burnin = as.integer(floor(1e4 / 2)),
   thin = 10L
@@ -40,7 +41,7 @@ sim_params <- expand.grid(
   si_std_variant = si_std_ref
 )
 
-tmax_all <- seq(10, 60, 10)
+tmax_all <- seq(20, 60, 10)
 names(tmax_all) <- tmax_all
 
 index <- if (short_run) c(1, nrow(sim_params)) else seq_len(nrow(sim_params))
