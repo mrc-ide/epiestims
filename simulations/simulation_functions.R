@@ -43,16 +43,27 @@ summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
   rbind(eps_df, r_estdf)
 }
 
-
-summarise_epsilon <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
-  epsilon_est <- quantile(fit$epsilon, probs = probs, na.rm = na.rm)
-  eps_df <- data.frame(epsilon_est)
+summarise_vec <- function(vec, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
+  vec_est <- quantile(vec, probs = probs, na.rm = na.rm)
   ## Tall. make wide
-  eps_df <- tibble::rownames_to_column(eps_df)
-  eps_df <- tidyr::spread(eps_df, rowname, epsilon_est)
-  eps_df$mu <- mean(fit$epsilon, na.rm  = na.rm)
-  eps_df$sd <- sd(fit$epsilon, na.rm  = na.rm)
+  eps_df <- tibble::rownames_to_column(data.frame(vec_est, check.names = FALSE))
+  eps_df <- tidyr::spread(eps_df, rowname, vec_est)
+  eps_df$mu <- mean(vec, na.rm  = na.rm)
+  eps_df$sd <- sd(vec, na.rm  = na.rm)
+  eps_df
+}
+
+summarise_epsilon <- function(fit, ...) {
+  eps_df <- summarise_vec(fit$epsilon)
   eps_df$param <- "epsilon"
+  eps_df
+}
+
+## Summarise epsilon - true_epsilon
+## true_eps is the true epsilon value.
+summarise_epsilon_error <- function(fit, true_eps, ...) {
+  eps_df <- summarise_vec(fit$epsilon - true_eps)
+  eps_df$param <- "epsilon_error"
   eps_df
 }
 
