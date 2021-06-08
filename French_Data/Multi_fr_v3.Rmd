@@ -87,7 +87,7 @@ initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence
                        std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = TRUE)
 
 
-
+saveRDS(object = initial_res$I, file = 'Rdata/Incidence_france.rds')
 ```
 
 
