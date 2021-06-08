@@ -2,7 +2,10 @@
 ---
 title: "multi - french"
 author: "Imperial College"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 
@@ -65,7 +68,7 @@ names(d) [match(variants0,names(d))]<- variants
 
 ```{r,clean}
 # for incidence
-regions <- sort(unique(d$reg))
+regions <- sort(unique(d$region))
 #for Rt
 mean_prior <- c(2)
 std_prior <- c(1)
@@ -78,10 +81,10 @@ n_sample_R <- 1e1
 
 u_age <- unique(d$cl_age90)
 
-initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence = FALSE,
+initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence = TRUE,
                        variants = variants, t_window = t_window, 
                        SI = SI_assumed, mean_prior = mean_prior,
-                       std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = FALSE)
+                       std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = TRUE)
 
 
 
