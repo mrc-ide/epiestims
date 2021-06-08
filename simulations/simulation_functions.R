@@ -1,17 +1,10 @@
-process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
-
+summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
   ## Get rid of the first row because of NAs
   r_est <- apply(
-    fit$R[-1, , ], c(1, 2), quantile,
-    probs = probs, na.rm = na.rm
+    fit$R[-1, , ], c(1, 2), quantile, probs = probs, na.rm = na.rm
   )
-  r_mu <- apply(
-    fit$R[-1, , ], c(1, 2), mean, na.rm = na.rm
-  )
-  r_sd <- apply(
-    fit$R[-1, , ], c(1, 2), sd, na.rm = na.rm
-  )
-
+  r_mu <- apply(fit$R[-1, , ], c(1, 2), mean, na.rm = na.rm)
+  r_sd <- apply(fit$R[-1, , ], c(1, 2), sd, na.rm = na.rm)
   nt <- dim(r_est)[2]
   nl <- dim(r_est)[3]
   r_estdf <- data.frame(
@@ -49,11 +42,38 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
   eps_df$param <- "epsilon"
   rbind(eps_df, r_estdf)
 }
+
+summarise_vec <- function(vec, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
+  vec_est <- quantile(vec, probs = probs, na.rm = na.rm)
+  ## Tall. make wide
+  eps_df <- tibble::rownames_to_column(data.frame(vec_est, check.names = FALSE))
+  eps_df <- tidyr::spread(eps_df, rowname, vec_est)
+  eps_df$mu <- mean(vec, na.rm  = na.rm)
+  eps_df$sd <- sd(vec, na.rm  = na.rm)
+  eps_df
+}
+
+summarise_epsilon <- function(fit, ...) {
+  eps_df <- summarise_vec(fit$epsilon)
+  eps_df$param <- "epsilon"
+  eps_df
+}
+
+## Summarise epsilon - true_epsilon
+## true_eps is the true epsilon value.
+summarise_epsilon_error <- function(fit, true_eps, ...) {
+  eps_df <- summarise_vec(fit$epsilon - true_eps)
+  eps_df$param <- "epsilon_error"
+  eps_df
+}
+
 ##' Simulate incidence for multiple locations and multiple
 ##' variants
 ##' No checks implemented, make sure you input right things in
 ##' right dimensions
-##' @param incid_init initial incidece as an incidence object
+##' @param incid_init initial incidence as a list of incidence
+##' objects. Each list element is the initial incidence object
+##' for a variant.
 ##' @param nlocations number of locations
 ##' @param nvariants number of variants
 ##' @param ndays number of days
@@ -67,35 +87,33 @@ process_fit <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
 ##' @author Sangeeta Bhatia, Jack Wardle
 simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
-                               simatrix, nsims = 1) {
+                               simatrix) {
 
-  incid <- array(
-    NA, dim = c(nsims, ndays, nlocations, nvariants)
-  )
-  for (sim in seq_len(nsims)) {
-    for (loc in seq_len(nlocations)) {
-      for (v in seq_len(nvariants)) {
-        incid[sim, ,loc, v] <- rbind(
-          incid_init$counts,
-          as.matrix( #
-            project(
-              incid_init,
-              ## R in the future so removing time of seeding
-              R = rmatrix[-1, loc, v],
-              si = simatrix[, v],
-              n_sim = 1,
-              n_days = ndays - 1,
-              time_change = seq_len(
-                length(rmatrix[, loc, v]) - 2
-              ) - 1
-            )
+  incid <- array(NA, dim = c(ndays, nlocations, nvariants))
+
+  for (loc in seq_len(nlocations)) {
+    for (v in seq_len(nvariants)) {
+      incid[ ,loc, v] <- rbind(
+        tail(incid_init[[v]]$counts, 1),
+        as.matrix( #
+          project(
+            incid_init[[v]],
+            ## R in the future so removing time of seeding
+            R = rmatrix[-1, loc, v],
+            si = simatrix[, v],
+            n_sim = 1,
+            n_days = ndays - 1,
+            time_change = seq_len(
+              length(rmatrix[, loc, v]) - 2
+            ) - 1
           )
         )
-      }
+      )
     }
   }
   incid
 }
+
 
 #' Reorder an array of incidence data so that the most
 #' transmissible variant is ordered first
