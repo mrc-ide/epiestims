@@ -1,0 +1,169 @@
+
+---
+title: "Zika - Colombia"
+author: "Imperial College"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document: default
+  word_document:
+    reference_docx: word_style.docx
+---
+
+
+```{r echo = FALSE}
+library(knitr)
+opts_chunk$set(fig.path='figs/', fig.keep='high',
+               dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
+               tidy=FALSE, warning=FALSE, fig.show="asis"
+ 	       )
+# library(EpiEstim)
+# library(Hmisc)
+# library(dplyr)
+# library(tidyr)
+library(EpiEstim)
+library(ggplot2)
+
+source('Rscript/utils.r')
+source('Rscript/wrapper.r')
+
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+r <- rf(32)
+```
+
+# load data
+
+```{r}
+# from https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-variants/
+
+d <- read.csv(file = 'Rdata/sp-variant-7j-reg-2021-06-02-21h05.csv',sep=';')
+d$reg <- as.character(d$reg)
+d$cl_age90 <- as.character(d$cl_age90)
+unique(d$cl_age90)
+d$week_end <- as.Date(substr(d$semaine, 1, 10),format = '%Y-%m-%d')+6
+
+# rename regions
+f <- which(d$reg %in% c('5','7','8'))
+d <- d[-f,]
+
+# from 
+d_region <- read.csv(file = 'Rdata/regions-france.csv',encoding = "UTF-8")
+d$region <- as.character(d_region$nom_region[match(d$reg,d_region$code_region)])
+# unique(d$region)
+# unique(d_region$code_region)
+# sort(unique(d$reg))
+
+# rename variants
+variants0 <- c('Nb_susp_ABS','Nb_susp_501Y_V1','Nb_susp_501Y_V2_3')
+# match(variants,names(d))
+variants <- c('wild','alpha','beta/gamma')
+
+names(d) [match(variants0,names(d))]<- variants
+
+```
+
+
+
+# get list of matrix, 1 for each variant with 1 column for dates and 'n' columns for each location
+
+
+```{r,clean}
+# for incidence
+regions <- sort(unique(d$reg))
+#for Rt
+mean_prior <- c(2)
+std_prior <- c(1)
+#
+mean_SI <- 5.4 # mean 5.4 days and standard deviation of 1.5 days (Rai, Shukla, and Dwivedi 2021).
+std_SI <- 1.5
+SI_assumed <- EpiEstim::discr_si(seq(0, 20), mean_SI, std_SI)
+t_window <- 7
+n_sample_R <- 1e1
+
+u_age <- unique(d$cl_age90)
+
+initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence = FALSE,
+                       variants = variants, t_window = t_window, 
+                       SI = SI_assumed, mean_prior = mean_prior,
+                       std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = FALSE)
+
+
+
+```
+
+
+# table looking at inclusion
+
+days where 2 variants have Rt estimates with 95%CrI lower than 0.5
+
+```{r, all_age, fig.width=5, fig.height=8}
+
+selection <- select_Rt_get_median_samples(th = 0.2, # only keep where 95%CrI of Rt less then 0.2
+                                          EpiEstim_Rt = initial_res$EpiEstim_Rt,
+                                          regions = regions, 
+                                          variants = variants,
+                                          SI = SI_assumed,
+                                          trim = 0)
+
+
+selection$summary_select
+
+plot_hist_dist(x = selection$median_Rts, x_sum = selection$summary_select)
+plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select)
+
+# second
+selection <- select_Rt_get_median_samples(th = 0.2, 
+                                          EpiEstim_Rt = initial_res$EpiEstim_Rt,
+                                          regions = regions, 
+                                          variants = variants,
+                                          SI = SI_assumed,
+                                          trim = 0.99) # trim initial Rt until cumsum(1:x)>=0.99
+selection$summary_select
+plot_hist_dist(x = selection$median_Rts, x_sum = selection$summary_select)
+ep <- plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select, keep=TRUE)
+
+res_epsi <- data.frame(matrix(NA,ncol = 4, nrow = length(u_age) ))
+names(res_epsi) <- c('Age_class', names(ep))
+res_epsi$Age_class <- u_age
+
+for(i in 1:3){
+  temp <- round(quantile(ep[[i]],c(0.5,.025,.975)),digits = 2)
+  res_epsi[length(u_age),1+i] <- paste0(temp[1],' ; 95%CrI[',temp[2],' ; ',temp[3],']')
+}           
+
+           
+```
+
+
+# for 0-9
+
+```{r, age_class, fig.width=5, fig.height=8}
+
+for(j in 1:(length(u_age)-1)){
+  print(u_age[j])
+  
+  initial_res <- wrapper(age_group = u_age[j], regions = regions, plot_incidence = FALSE,
+                         variants = variants, t_window = t_window, 
+                         SI = SI_assumed, mean_prior = mean_prior,
+                         std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = FALSE)
+  
+  selection <- select_Rt_get_median_samples(th = 0.2, 
+                                            EpiEstim_Rt = initial_res$EpiEstim_Rt,
+                                            regions = regions, 
+                                            variants = variants,
+                                            SI = SI_assumed,
+                                            trim = 0.99)
+  selection$summary_select
+  
+  
+  ep <- plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select, keep=TRUE)
+  
+  for(i in 1:3){
+    temp <- round(quantile(ep[[i]],c(0.5,.025,.975),na.rm=TRUE),digits = 2)
+    res_epsi[j,1+i] <- paste0(temp[1],' ; 95%CrI[',temp[2],' ; ',temp[3],']')
+  }     
+  
+}
+
+```
+
