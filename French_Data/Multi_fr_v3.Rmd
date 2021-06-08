@@ -1,12 +1,8 @@
 
 ---
-title: "Zika - Colombia"
+title: "multi - french"
 author: "Imperial College"
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
-output:
-  html_document: default
-  word_document:
-    reference_docx: word_style.docx
+output: pdf_document
 ---
 
 
