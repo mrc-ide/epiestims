@@ -40,13 +40,13 @@ estimate_wrapper <- function(incid, si_for_est) {
   for (index in seq_along(out)) {
     tmax <- tmax_all[[index]]
     for (sim in seq_along(incid)) {
-      out[[index]][[sim]] <- 
+      out[[index]][[sim]] <-
         EpiEstim::estimate_joint(
                  incid[[sim]], si_for_est, priors, seed = 1,
                  t_min = 2L, t_max = as.integer(tmax),
                  mcmc_control = mcmc_controls
                  )
-       
+
     }
   }
   out
@@ -64,7 +64,9 @@ manager <- function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
   si_distr_variant <- si_distr_variant / sum(si_distr_variant)
   si_no_zero_var <- si_distr_variant[-1]
   si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
-  si_for_est <- cbind(si_distr_ref, si_distr_variant)
+  ## si_for_est <- cbind(si_distr_ref, si_distr_variant)
+  ## Mis-specify SI for variant
+  si_for_est <- cbind(si_distr_ref, si_distr_ref)
   incid <- simulate_incid_wrapper(rt_ref, epsilon, si_for_sim)
   res <- estimate_wrapper(incid, si_for_est)
   list(incid = incid, res = res)
