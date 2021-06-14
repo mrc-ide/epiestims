@@ -56,7 +56,8 @@ wrapper <- function(age_group,regions, plot_incidence = TRUE,
                xlab = '',ylab = 'Rt',
                type = 'l',col=cols[j],
                main = regions[i],
-               ylim = c(0, 8) )
+               ylim = c(0, 3) )
+          abline(h = 1,lty=2,col='red3')
         }else{
           lines(x,y[,1],type = 'l',col=cols[j])
         }
