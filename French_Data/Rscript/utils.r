@@ -100,10 +100,26 @@ select_Rt_get_median_samples <- function(th, EpiEstim_Rt,
                                          trim = 0){
   
   trim_time <- which(cumsum(SI)>=trim)[1]
-  select_Rt <- list()
+  select_Rt_by_variant <- list()
   temp <- data.frame(matrix(0,nrow = nrow(EpiEstim_Rt[[1]][[regions[1]]]$R),
                             ncol = length(regions)))
   
+  # for each variant and locations, check selection
+  for(i in 1:(length(variants))){
+    select_Rt_by_variant[[variants[i]]] <- temp
+    for(k in 1:length(regions)){
+      range_95_i <- EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.975(R)` - EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.025(R)` 
+      
+      f <- which((range_95_i < th) )
+      f <- f[which(f>=trim_time)]
+      select_Rt_by_variant[[variants[i]]][f,k] <- 1
+      
+    }
+    
+  }
+  
+  select_Rt <- list()
+
   # check combination of 2 variants and see whether 95CrI range bekow threshold at each time steps
   for(i in 1:(length(variants)-1)){
     for(j in (i+1):length(variants)){
@@ -115,6 +131,7 @@ select_Rt_get_median_samples <- function(th, EpiEstim_Rt,
         f <- which((range_95_i < th) & (range_95_j < th))
         f <- f[which(f>=trim_time)]
         select_Rt[[paste0(variants[i],'-vs-',variants[j])]][f,k] <- 1
+        
       }
       
     }
@@ -174,6 +191,7 @@ select_Rt_get_median_samples <- function(th, EpiEstim_Rt,
   }
   
   return(list(select_Rt = select_Rt,
+              select_Rt_by_variant = select_Rt_by_variant,
               summary_select = summary_select,
               median_Rts = median_Rts,
               samples_Rts = samples_Rts))
@@ -233,5 +251,48 @@ plot_hist_dist <- function(x, x_sum, keep = FALSE){
                                                  byrow = TRUE))
   if(keep){
     return(epsi)
+  }
+}
+
+########################################################################################
+## plot Rt post_selection
+
+plot_Rt_post_selection <- function(res,selection,regions,variants){
+  
+  cols <- c('black','blue3','red3')
+  cols2 <- c(rgb(0,0,0,.1),rgb(0,0,1,.1),rgb(1,0,0,.1))
+  
+  layout(matrix(1:4,2,2))
+  for(i in 1:length(regions)){
+    for(j in 1:length(variants)){
+      
+      x <- res$I[[1]]$date[res$EpiEstim_Rt[[j]][[regions[i]]]$R$t_end]
+      y <- cbind(res$EpiEstim_Rt[[variants[j]]][[regions[i]]]$R$`Median(R)`,
+                 res$EpiEstim_Rt[[variants[j]]][[regions[i]]]$R$`Quantile.0.025(R)`,
+                 res$EpiEstim_Rt[[variants[j]]][[regions[i]]]$R$`Quantile.0.95(R)`)
+      if (j==1){
+        plot(x,y[,1],
+             xlab = '',ylab = 'Rt',
+             type = 'l',col=cols[j],
+             main = regions[i],
+             ylim = c(0, 3) )
+        abline(h = 1,lty=2,col='red3')
+      }else{
+        lines(x,y[,1],type = 'l',col=cols[j])
+      }
+      polygon(c(x,rev(x)), c(y[,2],rev(y[,3])),
+              col = cols2[j],
+              border = NA)
+      lines(x[which(selection$select_Rt_by_variant[[variants[j]]][,i]==0)],
+            rep(2,length(x))[which(selection$select_Rt_by_variant[[variants[j]]][,i]==0)]+j*.2,
+            type = 'p',col=cols[j],
+            pch='-',cex=0.5)
+      
+      lines(x[which(selection$select_Rt_by_variant[[variants[j]]][,i]==1)],
+            rep(2,length(x))[which(selection$select_Rt_by_variant[[variants[j]]][,i]==1)]+j*.2,
+            type = 'p',col=cols[j],
+            pch=15,cex=0.5)
+    }
+    
   }
 }

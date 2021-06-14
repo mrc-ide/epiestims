@@ -26,7 +26,7 @@ source('Rscript/utils.r')
 source('Rscript/wrapper.r')
 
 library(RColorBrewer)
-rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+rf <- colorRampPalette(rev(brewer.pal(8,'Dark2')))
 r <- rf(32)
 ```
 
@@ -84,7 +84,7 @@ u_age <- unique(d$cl_age90)
 initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence = TRUE,
                        variants = variants, t_window = t_window, 
                        SI = SI_assumed, mean_prior = mean_prior,
-                       std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = TRUE)
+                       std_prior = std_prior, n_sample_R = n_sample_R) # trim initial Rt until cumsum(1:x)>=0.99
 
 
 saveRDS(object = initial_res$I, file = 'Rdata/Incidence_france.rds')
@@ -95,29 +95,26 @@ saveRDS(object = initial_res$I, file = 'Rdata/Incidence_france.rds')
 
 days where 2 variants have Rt estimates with 95%CrI lower than 0.5
 
-```{r, all_age, fig.width=5, fig.height=8}
-
-selection <- select_Rt_get_median_samples(th = 0.2, # only keep where 95%CrI of Rt less then 0.2
-                                          EpiEstim_Rt = initial_res$EpiEstim_Rt,
-                                          regions = regions, 
-                                          variants = variants,
-                                          SI = SI_assumed,
-                                          trim = 0)
+```{r, Rts_all_age, fig.width=8, fig.height=5}
 
 
-selection$summary_select
-
-plot_hist_dist(x = selection$median_Rts, x_sum = selection$summary_select)
-plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select)
-
-# second
 selection <- select_Rt_get_median_samples(th = 0.2, 
                                           EpiEstim_Rt = initial_res$EpiEstim_Rt,
                                           regions = regions, 
                                           variants = variants,
                                           SI = SI_assumed,
                                           trim = 0.99) # trim initial Rt until cumsum(1:x)>=0.99
+
+plot_Rt_post_selection(res = initial_res, selection = selection, 
+                       regions = regions, variants = variants)
+
 selection$summary_select
+
+```
+
+
+```{r,epsilon_fig_all_age,  fig.width=5, fig.height=8}
+
 plot_hist_dist(x = selection$median_Rts, x_sum = selection$summary_select)
 ep <- plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select, keep=TRUE)
 
@@ -136,18 +133,13 @@ for(i in 1:3){
 # test joint_epi_estim
 
 ```{r, joint_epiestim_epsilon}
-# library('remotes')
-# devtools::install_github("mrc-ide/EpiEstim", upgrade = FALSE)
-# remotes::install_github("mrc-ide/EpiEstim@multiv", upgrade = FALSE)
+
 
 incid <- array(NA,dim = c(nrow(initial_res$I$wild), length(regions), length(variants)))
 incid[,,1] <- as.matrix(initial_res$I$wild[,-1])
-temp <- as.matrix(initial_res$I$wild[,-1])
+# temp <- as.matrix(initial_res$I$wild[,-1])
 incid[,,2] <- as.matrix(initial_res$I$alpha[,-1])
 incid[,,3] <- as.matrix(initial_res$I$`beta/gamma`[,-1])
-
-incid <- incid[,-10,]
-regions <- regions[-10]
 
 # SIs
 si_distr <- cbind(SI_assumed, SI_assumed, SI_assumed)
@@ -156,113 +148,27 @@ mcmc_control <- list(n_iter = 1e3L, burnin = 1e2L, thin = 10L) #default_mcmc_con
 
 t_start <- as.integer(which(cumsum(SI_assumed)>=.99)[1]+1)
 t_end <- as.integer(nrow(incid))
-  
-R <- list()
-n_intervals <- 3
-t_int <- round(seq(t_start, t_end, length.out = n_intervals+1))
+n_intervals <- 4  
 
-# k=2
-# R_check <- EpiEstim::estimate_joint(incid = incid[,9:10,1:3], si_distr = si_distr, 
-#                               priors = priors,mcmc_control = mcmc_control,
-#                               t_min = as.integer(t_int[k]),
-#                                 t_max = as.integer(t_int[k+1]))
-# 
-# incid2 <- process_I_multivariant(incid[,9:10,1:3])
-# 
-# lambda <- compute_lambda(incid = incid2, si_distr = si_distr)
-# 
-# ## reordering
-#   R_init <- sapply(seq_len(dim(incid2$local)[3]), function(i) {
-#     tmp_df <- data.frame(local = apply(incid2$local[, , i, drop = FALSE],
-#                                        c(1, 3), sum)[,1],
-#                          imported = apply(incid2$imported[, , i, drop = FALSE],
-#                                           c(1, 3), sum)[,1])
-#     suppressWarnings(
-#     EpiEstim::estimate_R(tmp_df,
-#                          method = "non_parametric_si",
-#                          config = EpiEstim::make_config(
-#                            si_distr = si_distr[, i],
-#                            t_start = t_min,
-#                            t_end = t_max)))$R$'Mean(R)'
-#     })
-# 
-#   max_transmiss <- which.max(R_init)
-# 
-# ###
-# 
-# matplot(apply(R_check$R,c(1,2),median),ylim = c(0.5,2))
-# median(R_check$epsilon[1,])
-# median(R_check$epsilon[2,])
-                              
-R[[1]] <- EpiEstim::estimate_joint(incid = incid, si_distr = si_distr, 
-                              priors = priors,mcmc_control = mcmc_control,
-                              t_min = t_start,
-                              t_max = t_end)
-for(k in 1:n_intervals){
-  R[[k+1]] <- EpiEstim::estimate_joint(incid = incid, si_distr = si_distr, 
-                                priors = priors,mcmc_control = mcmc_control,
-                                t_min = as.integer(t_int[k]),
-                                t_max = as.integer(t_int[k+1] ) )
-}
+Jestim_wild_alpha <- wrapper_joint_Rt(incid = incid[,,c(1,2)],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
 
-
-
+Jestim_wild_beta <- wrapper_joint_Rt(incid = incid[,,c(1,3)],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
 ```
 
 
-```{r,check_epiestims}
-layout(matrix(1:4,2,2))
-cols <- RColorBrewer::brewer.pal(n_intervals+1,name = 'Spectral')
-cols2 <- yarrr::transparent(cols, trans.val = .9)
-Sum_R <- list()
-for(k in 1:(n_intervals+1)){
-  Sum_R[[k]] <- list(median = apply(R[[k]]$R,c(1,2),median),
-                     low = apply(R[[k]]$R,c(1,2),quantile,0.025,na.rm=TRUE),
-                     high = apply(R[[k]]$R,c(1,2),quantile,0.975,na.rm=TRUE))
-} 
-
-for(i in 1:length(regions)){
-  for(k in 1:(n_intervals+1)){
-    x <- initial_res$I$alpha$date #1:nrow(R[[k]]$R)
-    y <- cbind(Sum_R[[k]]$median[,i],Sum_R[[k]]$low[,i],Sum_R[[k]]$high[,i])
-    f <- which(!is.na(Sum_R[[k]]$median[,i]))
-    x<-x[f]
-    y<-y[f,]
-    
-    if(k==1){
-      plot(x,y[,1],
-            xlab = '',ylab = 'Rt',
-            type = 'l',col=cols[k],
-            main = regions[i],
-            ylim = c(0, 2) )
-    }else{
-      lines(x,y[,1],col=cols[k])
-    }
-       
-       abline(h = 1,lty=2,col='red3')
-       
-       polygon(c(x,rev(x)), c(y[,2],rev(y[,3])),
-               col = cols2[k],
-               border = NA)
-  }
-}
-
-Sum_epsilon1<- apply(R[[1]]$epsilon,1,quantile,c(.5,.025,.975))
-Sum_epsilon2<- apply(R[[2]]$epsilon,1,quantile,c(.5,.025,.975))
-Sum_epsilon3<- apply(R[[3]]$epsilon,1,quantile,c(.5,.025,.975))
-for(i in 1:2){
-  for(k in 1:(n_intervals+1)){
-    if (k==1){
-      plot(R[[k]]$epsilon[i,],col=cols[k],ylim=c(0.9,1.5))
-    }else{
-      lines(R[[k]]$epsilon[i,],col=cols[k],type = 'p')
-    }
-  }
-}
-```
-
-
-# for 0-9
+# by age classes
 
 ```{r, age_class, fig.width=5, fig.height=8}
 
@@ -272,7 +178,7 @@ for(j in 1:(length(u_age)-1)){
   initial_res <- wrapper(age_group = u_age[j], regions = regions, plot_incidence = FALSE,
                          variants = variants, t_window = t_window, 
                          SI = SI_assumed, mean_prior = mean_prior,
-                         std_prior = std_prior, n_sample_R = n_sample_R, plot_Rt = FALSE)
+                         std_prior = std_prior, n_sample_R = n_sample_R)
   
   selection <- select_Rt_get_median_samples(th = 0.2, 
                                             EpiEstim_Rt = initial_res$EpiEstim_Rt,
@@ -293,4 +199,22 @@ for(j in 1:(length(u_age)-1)){
 }
 
 ```
+
+
+
+#check again 3 variant
+
+```{r}
+Jestim_wild_alpha <- wrapper_joint_Rt(incid = incid[,,],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
+
+
+
+```
+
 
