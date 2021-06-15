@@ -78,7 +78,7 @@ wrapper_joint_Rt <- function(incid, t_start, t_end, n_intervals,
                        high = apply(R[[k]]$R,c(1,2),quantile,0.975,na.rm=TRUE))
   } 
   
-  for(i in 1:length(regions2)){
+  for(i in 1:length(regions)){
     for(k in 1:(n_intervals+1)){
       x <- initial_res$I$alpha$date #1:nrow(R[[k]]$R)
       y <- cbind(Sum_R[[k]]$median[,i],Sum_R[[k]]$low[,i],Sum_R[[k]]$high[,i])

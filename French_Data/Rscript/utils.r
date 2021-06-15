@@ -109,9 +109,10 @@ select_Rt_get_median_samples <- function(th, EpiEstim_Rt,
     select_Rt_by_variant[[variants[i]]] <- temp
     for(k in 1:length(regions)){
       range_95_i <- EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.975(R)` - EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.025(R)` 
+      t_range_start <- EpiEstim_Rt[[i]][[regions[k]]]$R$t_start
       
       f <- which((range_95_i < th) )
-      f <- f[which(f>=trim_time)]
+      f <- f[which(t_range_start[f]>=trim_time)]
       select_Rt_by_variant[[variants[i]]][f,k] <- 1
       
     }
@@ -127,9 +128,10 @@ select_Rt_get_median_samples <- function(th, EpiEstim_Rt,
       for(k in 1:length(regions)){
         range_95_i <- EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.975(R)` - EpiEstim_Rt[[i]][[regions[k]]]$R$`Quantile.0.025(R)` 
         range_95_j <- EpiEstim_Rt[[j]][[regions[k]]]$R$`Quantile.0.975(R)` - EpiEstim_Rt[[j]][[regions[k]]]$R$`Quantile.0.025(R)` 
+        t_range_start <- EpiEstim_Rt[[i]][[regions[k]]]$R$t_start
         
         f <- which((range_95_i < th) & (range_95_j < th))
-        f <- f[which(f>=trim_time)]
+        f <- f[which(t_range_start[f]>=trim_time)]
         select_Rt[[paste0(variants[i],'-vs-',variants[j])]][f,k] <- 1
         
       }
