@@ -1,0 +1,323 @@
+
+---
+title: "multi - french"
+author: "Imperial College"
+---
+
+
+```{r echo = FALSE}
+library(knitr)
+opts_chunk$set(fig.path='figs/', fig.keep='high',
+               dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
+               tidy=FALSE, warning=FALSE, fig.show="asis"
+ 	       )
+# library(EpiEstim)
+# library(Hmisc)
+# library(dplyr)
+# library(tidyr)
+library(EpiEstim)
+library(ggplot2)
+library(yarrr)
+
+source('Rscript/utils.r')
+source('Rscript/wrapper.r')
+
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(8,'Spectral')))
+r <- rf(32)
+```
+
+# load data
+
+```{r}
+
+
+
+## read in england data
+england <- readRDS("Rdata/s_by_region_over25_pillar2_pcr.rds")
+england <- england %>%
+  select(specimen_date, nhser_name,
+         s_positive_adj1, s_negative_adj1, s_na_adj1) %>%
+  group_by(specimen_date, nhser_name) %>%
+  summarise(s_positive_adj1 = sum(s_positive_adj1),
+            s_negative_adj1 = sum(s_negative_adj1),
+            s_na_adj1 = sum(s_na_adj1)) %>%
+  mutate(region = tolower(gsub(" ", "_", nhser_name))) %>%
+  rename(date = specimen_date)
+
+## there are some samples not identified as negative or positive, we split those
+## according to the ratio of the two. In the hopefully rare case that none are
+## identified as negative or positive, these are split 50/50 - probably another
+## way could be better?
+na_positive_prop <- england$s_positive_adj1 /
+  (england$s_positive_adj1 + england$s_negative_adj1)
+na_positive_prop <- ifelse(is.na(na_positive_prop), 0.5, na_positive_prop)
+s_positive_adj1_extra <- round(na_positive_prop * england$s_na_adj1)
+s_negative_adj1_extra <- england$s_na_adj1 - s_positive_adj1_extra
+england$s_positive_adj1 <- england$s_positive_adj1 + s_positive_adj1_extra
+england$s_negative_adj1 <- england$s_negative_adj1 + s_negative_adj1_extra
+
+
+
+d <- list( alpha = england[which((england$date >= as.Date('01/09/2020', format = '%d/%m/%Y')) &
+                (england$date < as.Date('15/03/2021', format = '%d/%m/%Y'))),],
+           delta = england[which(england$date >= as.Date('15/03/2021', format = '%d/%m/%Y')),])
+           
+
+# from 
+d_region <- unique(d$region)
+# unique(d_region$code_region)
+# sort(unique(d$reg))
+
+# rename variants
+variants0 <- c('Nb_susp_ABS','Nb_susp_501Y_V1','Nb_susp_501Y_V2_3')
+# match(variants,names(d))
+variants <- c('wild','alpha','beta/gamma')
+
+names(d[[1]])[3:4] <- c('wild','alpha')
+names(d[[2]])[3:4] <- c('delta','wild')
+
+```
+
+
+
+# get list of matrix, 1 for each variant with 1 column for dates and 'n' columns for each location
+
+
+```{r,clean}
+# for incidence
+regions <- sort(unique(england$region))
+#for Rt
+mean_prior <- c(2)
+std_prior <- c(1)
+#
+mean_SI <- 5.4 # mean 5.4 days and standard deviation of 1.5 days (Rai, Shukla, and Dwivedi 2021).
+std_SI <- 1.5
+SI_assumed <- EpiEstim::discr_si(seq(0, 20), mean_SI, std_SI)
+t_window <- 7
+n_sample_R <- 1e2
+
+
+initial_res <- wrapper(age_group = u_age[11] , regions = regions, plot_incidence = TRUE,
+                       variants = variants, t_window = t_window, 
+                       SI = SI_assumed, mean_prior = mean_prior,
+                       std_prior = std_prior, n_sample_R = n_sample_R) # trim initial Rt until cumsum(1:x)>=0.99
+
+
+saveRDS(object = initial_res$I, file = 'Rdata/Incidence_france.rds')
+```
+
+
+# table looking at inclusion
+
+days where 2 variants have Rt estimates with 95%CrI lower than 0.5
+
+```{r, Rts_all_age, fig.width=8, fig.height=5}
+
+
+selection <- select_Rt_get_median_samples(th = 0.2, 
+                                          EpiEstim_Rt = initial_res$EpiEstim_Rt,
+                                          regions = regions, 
+                                          variants = variants,
+                                          SI = SI_assumed,
+                                          trim = 0.99) # trim initial Rt until cumsum(1:x)>=0.99
+
+plot_Rt_post_selection(res = initial_res, selection = selection, 
+                       regions = regions, variants = variants)
+
+selection$summary_select
+
+write.csv(selection$summary_select, file = 'Rdata/selected.csv')
+```
+
+
+```{r,epsilon_fig_all_age,  fig.width=5, fig.height=8}
+
+# plot_hist_dist(x = selection$median_Rts, x_sum = selection$summary_select)
+ep <- plot_hist_dist(x = selection$samples_Rts, x_sum = selection$summary_select, keep=TRUE)
+
+res_epsi <- data.frame(matrix(NA,ncol = 4, nrow = length(u_age) ))
+names(res_epsi) <- c('Age_class', names(ep))
+res_epsi$Age_class <- u_age
+
+for(i in 1:3){
+  temp <- round(quantile(ep[[i]],c(0.5,.025,.975)),digits = 2)
+  res_epsi[length(u_age),1+i] <- paste0(temp[1],' ; 95%CrI[',temp[2],' ; ',temp[3],']')
+}           
+
+           
+```
+
+
+
+#check  3 variants
+
+
+### prep
+```{r}
+incid <- array(NA,dim = c(nrow(initial_res$I$wild), length(regions), length(variants)))
+incid[,,1] <- as.matrix(initial_res$I$wild[,-1])
+# temp <- as.matrix(initial_res$I$wild[,-1])
+incid[,,2] <- as.matrix(initial_res$I$alpha[,-1])
+incid[,,3] <- as.matrix(initial_res$I$`beta/gamma`[,-1])
+
+# SIs
+si_distr <- cbind(SI_assumed, SI_assumed, SI_assumed)
+priors <- default_priors()
+mcmc_control <- list(n_iter = 1e3L, burnin = 1e2L, thin = 10L) #default_mcmc_controls()
+
+t_start <- as.integer(which(cumsum(SI_assumed)>=.99)[1]+1)
+t_end <- as.integer(nrow(incid))
+n_intervals <- 4  
+```
+
+###inference
+
+```{r}
+Jestim_all <- wrapper_joint_Rt(incid = incid[,,],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
+
+
+write.csv(Jestim_all$Sum_epsilon, file = 'Rdata/epsilons_all')
+```
+
+```{r}
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(8,'Spectral')))
+r <- rf(32)
+
+for(i in 1:3){
+  Rs <- array(NA,dim = dim(Jestim_all$R[[1]]$R))
+  if(i ==1){
+    e <-rep(1,dim(Rs)[3])
+  }else{
+    e <- Jestim_all$R[[1]]$epsilon[i-1,]
+  }
+  for (j in 1:length(regions)){
+    Rs[,j,] <- Jestim_all$R[[1]]$R[,j,] * matrix(e, nrow = dim(Rs)[1], ncol = dim(Rs)[3], byrow = TRUE)
+  }
+  
+  
+  d_joint <- data.frame(date = initial_res$I$alpha$date,
+                   apply(Rs,c(1,2),median))
+  
+  names(d_joint) <- c('date',regions)
+  
+  d_EpiEstim <- data.frame( date = initial_res$I[[1]]$date[initial_res$EpiEstim_Rt[[1]][[regions[1]]]$R$t_end],
+                    purrr::map_dfr(initial_res$EpiEstim_Rt[[variants[i]]], function(x) cbind(x$R$`Median(R)`)))
+  names(d_EpiEstim) <- c('date',regions)
+  d3 <- selection$select_Rt_by_variant[[i]]
+  d3[d3==0] <- NA
+  d_EpiEstim[,-1] <- d_EpiEstim[,-1]*d3
+  
+  # d_joint <- d_joint[match(d_EpiEstim$date,d_joint$date),]
+  
+  d_joint <- tidyr::gather(d_joint,region,R,regions)
+  d_EpiEstim <- tidyr::gather(d_EpiEstim,region,R,regions)
+  
+  d_12 <- merge(x = d_EpiEstim, y = d_joint, by = c('date','region'),all = TRUE)
+  d_12 <- d_12[-which(is.na(d_12$R.x+d_12$R.y)),]
+  
+  if(i==1){
+    d_tot <- d_12
+  }else{
+    d_tot <- rbind(d_tot,d_12)
+  }
+  
+  g <- ggplot(d_12, aes(R.x,R.y)) +  
+    xlab('Rt (EpiEstim)') + 
+    ylab('Rt (multi)') +
+    stat_bin2d(bins=25) + 
+    xlim(0,2) + ylim(0,2) +
+    scale_fill_gradientn(colours=r) + 
+    geom_abline(intercept = 0,slope = 1,col='red3') 
+  print(g)
+  
+  SS_tot <- sum((d_12$R.x - mean(d_12$R.x))^2)
+  SS_res <- sum((d_12$R.x-d_12$R.y)^2)
+  print(1-SS_res/SS_tot)
+}
+
+  g <- ggplot(d_tot, aes(R.x,R.y)) +  
+    xlab('Rt (EpiEstim)') + 
+    ylab('Rt (multi)') +
+    stat_bin2d(bins=25) + 
+    xlim(0,2) + ylim(0,2) +
+    scale_fill_gradientn(colours=r) + 
+    geom_abline(intercept = 0,slope = 1,col='red3') 
+  print(g)
+  
+  SS_tot <- sum((d_tot$R.x - mean(d_tot$R.x))^2)
+  SS_res <- sum((d_tot$R.x-d_tot$R.y)^2)
+  print(1-SS_res/SS_tot)
+
+```
+
+
+
+
+# test indepedantly wild-vs-alpha and wild-vs-beta
+
+```{r, joint_epiestim_epsilon}
+
+
+Jestim_wild_alpha <- wrapper_joint_Rt(incid = incid[,,c(1,2)],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
+write.csv(Jestim_wild_alpha$Sum_epsilon, file = 'Rdata/epsilons_alpha')
+
+Jestim_wild_beta <- wrapper_joint_Rt(incid = incid[,,c(1,3)],
+                           t_start = t_start, 
+                           t_end = t_end, 
+                           n_intervals = n_intervals, 
+                           plot_Rt = TRUE, 
+                           plot_epsilon_trace = TRUE,
+                           plot_epsilon = TRUE )
+
+write.csv(Jestim_wild_beta$Sum_epsilon, file = 'Rdata/epsilons_beta')
+
+```
+
+
+
+# by age classes
+
+```{r, age_class, fig.width=5, fig.height=8, eval = FALSE}
+
+for(j in 1:(length(u_age)-1)){
+  print(u_age[j])
+  
+  initial_res_age <- wrapper(age_group = u_age[j], regions = regions, plot_incidence = FALSE,
+                         variants = variants, t_window = t_window, 
+                         SI = SI_assumed, mean_prior = mean_prior,
+                         std_prior = std_prior, n_sample_R = n_sample_R)
+  
+  selection_age <- select_Rt_get_median_samples(th = 0.2, 
+                                            EpiEstim_Rt = initial_res_age$EpiEstim_Rt,
+                                            regions = regions, 
+                                            variants = variants,
+                                            SI = SI_assumed,
+                                            trim = 0.99)
+  selection_age$summary_select
+  
+  
+  ep <- plot_hist_dist(x = selection_age$samples_Rts, x_sum = selection_age$summary_select, keep=TRUE)
+  
+  for(i in 1:3){
+    temp <- round(quantile(ep[[i]],c(0.5,.025,.975),na.rm=TRUE),digits = 2)
+    res_epsi[j,1+i] <- paste0(temp[1],' ; 95%CrI[',temp[2],' ; ',temp[3],']')
+  }     
+  
+}
+
+```
+

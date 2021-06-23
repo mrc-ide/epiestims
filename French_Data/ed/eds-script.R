@@ -1,3 +1,7 @@
+library(tidyr)
+library(tidyverse)
+library(EpiEstim)
+
 ## read in england data
 england <- readRDS("s_by_region_over25_pillar2_pcr.rds")
 england <- england %>%
