@@ -2,37 +2,30 @@
 ############################################################
 
 
-wrapper <- function(dat, regions, plot_incidence = TRUE,
+wrapper <- function(age_group,regions, plot_incidence = TRUE,
                     variants , t_window , 
                     SI , mean_prior ,
                     std_prior , n_sample_R ){
   
   # the function below will divide incidence by 7 as it weekly rolling count
-  I <- format_I(dat = dat, variants = variants)
-  col=c('black','blue3','red3')
+  I <- format_I(d = d, age_group = age_group, variants = variants)
   
   if(plot_incidence==TRUE){
     layout(matrix(1:4,2,2))
     
     for(i in 1:length(regions)){
-      ylim = c(0,0)
-      for(j in 1:length(I)){
-        ylim[2] <- max(c(ylim[2],I[[j]][,i+1]))
-      }
-      
       plot(I[[1]][,1],I[[1]][,i+1],
            type = 'l',col='black',
            xlab = '',ylab='I',
            main = names(I[[1]])[i+1],
-           ylim =ylim )
-      
-      for (j in 2:length(variants)){
-        lines(I[[j]][,1],I[[j]][,i+1],
-              type = 'l',col=col[j])
-      }
+           ylim =c(0, max(c(I[[1]][,i+1],I[[2]][,i+1],I[[3]][,i+1]))) )
+      lines(I[[2]][,1],I[[2]][,i+1],
+            type = 'l',col='blue3')
+      lines(I[[3]][,1],I[[3]][,i+1],
+            type = 'l',col='red3')
       
       legend('topleft',legend = variants,
-             lwd=2,col=col[1:length(variants)],
+             lwd=2,col=c('black','blue3','red3'),
              bty='n')
     }
   }
@@ -41,7 +34,7 @@ wrapper <- function(dat, regions, plot_incidence = TRUE,
                                                  variants = variants, 
                                                  regions = regions,
                                                  t_window = t_window, 
-                                                 SI = SI,
+                                                 SI = SI_assumed,
                                                  mean_prior = mean_prior,
                                                  std_prior = std_prior,
                                                  n_sample_R = n_sample_R)
@@ -57,7 +50,7 @@ wrapper <- function(dat, regions, plot_incidence = TRUE,
 
 wrapper_joint_Rt <- function(incid, t_start, t_end, n_intervals, 
                              plot_Rt = TRUE, plot_epsilon_trace = TRUE, 
-                             plot_epsilon = TRUE,initial_res ){
+                             plot_epsilon = TRUE ){
   R <- list()
   
   t_int <- round(seq(t_start, t_end, length.out = n_intervals+1))

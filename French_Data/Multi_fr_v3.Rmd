@@ -144,7 +144,7 @@ incid[,,3] <- as.matrix(initial_res$I$`beta/gamma`[,-1])
 # SIs
 si_distr <- cbind(SI_assumed, SI_assumed, SI_assumed)
 priors <- default_priors()
-mcmc_control <- list(n_iter = 1e3L, burnin = 1e2L, thin = 10L) #default_mcmc_controls()
+mcmc_control <- list(n_iter = 1e4L, burnin = 1e2L, thin = 10L) #default_mcmc_controls()
 
 t_start <- as.integer(which(cumsum(SI_assumed)>=.99)[1]+1)
 t_end <- as.integer(nrow(incid))
@@ -163,7 +163,7 @@ Jestim_all <- wrapper_joint_Rt(incid = incid[,,],
                            plot_epsilon = TRUE )
 
 
-write.csv(Jestim_all$Sum_epsilon, file = 'Rdata/epsilons_all')
+write.csv(Jestim_all$Sum_epsilon, file = 'Rdata/epsilons_all.csv')
 ```
 
 ```{r}
@@ -253,7 +253,7 @@ Jestim_wild_alpha <- wrapper_joint_Rt(incid = incid[,,c(1,2)],
                            plot_Rt = TRUE, 
                            plot_epsilon_trace = TRUE,
                            plot_epsilon = TRUE )
-write.csv(Jestim_wild_alpha$Sum_epsilon, file = 'Rdata/epsilons_alpha')
+write.csv(Jestim_wild_alpha$Sum_epsilon, file = 'Rdata/epsilons_alpha.csv')
 
 Jestim_wild_beta <- wrapper_joint_Rt(incid = incid[,,c(1,3)],
                            t_start = t_start, 
@@ -263,7 +263,7 @@ Jestim_wild_beta <- wrapper_joint_Rt(incid = incid[,,c(1,3)],
                            plot_epsilon_trace = TRUE,
                            plot_epsilon = TRUE )
 
-write.csv(Jestim_wild_beta$Sum_epsilon, file = 'Rdata/epsilons_beta')
+write.csv(Jestim_wild_beta$Sum_epsilon, file = 'Rdata/epsilons_beta.csv')
 
 ```
 

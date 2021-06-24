@@ -2,13 +2,16 @@
 ###########################################################################
 # get list of matrix, 1 for each variant with 1 column for dates and 'n' columns for each location
 
-format_I <- function(dat,variants){
+format_I <- function(d,age_group,variants){
+  f <- which(d$cl_age90 == age_group)
+  d <- d[f,]
+  # names(d)
   
   I <- list()
   for(i in 1:length(variants)){
-    temp <- as.data.frame(dat[,c(which(names(dat) %in% 'region'),
-                                 which(names(dat) %in% variants[i]),
-                                 which(names(dat) %in% 'date'))] )# 
+    temp <- d[,c(which(names(d) %in% 'region'),
+                 which(names(d) %in% variants[i]),
+                 which(names(d) %in% 'week_end'))] # 
     names(temp) <- c('region','I','date')
     temp$I <- temp$I/7
     I[[variants[i]]] <- tidyr::spread(data = temp, region,  I)
@@ -91,7 +94,7 @@ plot2d_hist <- function(x,k){
 # select right Rt based on threshold for 95CrI range
 
 
-select_Rt_get_median_samples <- function( th, EpiEstim_Rt, 
+select_Rt_get_median_samples <- function(th, EpiEstim_Rt, 
                                          regions, variants,
                                          SI ,
                                          trim = 0){
@@ -208,7 +211,7 @@ plot_hist_dist <- function(x, x_sum, keep = FALSE){
 
   p <- q <-list()
   epsi <- list()
-  for(k in 1:(ncol(x_sum)-1)){
+  for(k in 1:3){
     # print(k)
     if(sum(x_sum[k+1])>0){
       
@@ -242,20 +245,12 @@ plot_hist_dist <- function(x, x_sum, keep = FALSE){
     }
   }
   
-  if((ncol(x_sum)-1) == 3){
-    gridExtra::grid.arrange(p[[1]],q[[1]],p[[2]],q[[2]],p[[3]],q[[3]],
-                            nrow = 3,
-                            layout_matrix = matrix(c(1,1,1,2,3,3,3,4,5,5,5,6),
-                                                   nrow = 3, ncol = 4,
-                                                   byrow = TRUE))
-  }else{
-    gridExtra::grid.arrange(p[[1]],q[[1]],
-                            nrow = 1,
-                            layout_matrix = matrix(c(1,1,1,2),
-                                                   nrow = 1, ncol = 4,
-                                                   byrow = TRUE))
-  }
   
+  gridExtra::grid.arrange(p[[1]],q[[1]],p[[2]],q[[2]],p[[3]],q[[3]],
+                          nrow = 3,
+                          layout_matrix = matrix(c(1,1,1,2,3,3,3,4,5,5,5,6),
+                                                 nrow = 3, ncol = 4,
+                                                 byrow = TRUE))
   if(keep){
     return(epsi)
   }
