@@ -1,9 +1,9 @@
 library(context)
-root <- "context2"
+root <- "wrong_si"
 packages <- c("dplyr", "here","purrr", "epitrix", "glue", "incidence", 
               "projections")
 # src <- conan::conan_sources("mrc-ide/EpiEstim@multiv")
-
+# options(didehpc.cluster = 'fi--didemrchnb')
 
 source_files <- c(
   "global.R", "simulations/simulation_functions.R",
@@ -11,9 +11,7 @@ source_files <- c(
   "simulations/cluster_functions.R"
 )
 
-ctx <-context_save(
-  root, packages = packages, sources = source_files
-)
+ctx <-context_save(root, packages = packages, sources = source_files)
 
 
 
@@ -21,6 +19,7 @@ obj <- didehpc::queue_didehpc(ctx)
 obj$install_packages('abind')
 obj$install_packages('mrc-ide/EpiEstim@multiv')
 vary_si <- obj$enqueue_bulk(sim_params, manager)
+# Mis-specification of SI task submitted 10th June 'thalassophilic_chipmunk'
 ## Test locally,
 ## obj <- queuer:::queue_local$new(ctx)
 ## tb <- obj$enqueue_bulk(sim_params[c(1, 11), ], manager)
