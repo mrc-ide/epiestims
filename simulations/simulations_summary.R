@@ -5,9 +5,11 @@ library(dplyr)
 library(purrr)
 library(ggplot2)
 
-sim_params <- readRDS("results/wrong_si_X.rds")
+sim_params <- readRDS("results/debug_eps_sim_params.rds")
+prefix <- "debug2_eps"
+
 fit_files <- glue(
-  "results/wrong_si_{seq_len(nrow(sim_params))}.rds"
+  "results/{prefix}_{seq_len(nrow(sim_params))}.rds"
 )
 ## we have some missing results due to cluster
 ## issues
@@ -21,7 +23,7 @@ incid_at_tmax <- imap_dfr(
     ## memory exhausted
     ## read one at a time
     if (! avl) return(NULL)
-    infile <- glue("results/wrong_si_{index}.rds")
+    infile <- glue("results/{prefix}_{index}.rds")
     fit <- readRDS(infile)
     message("Reading ", infile)
     params <- sim_params[index, ]
@@ -52,7 +54,7 @@ eps_summary <- imap_dfr(
     ## otherwise you have  will have to make one
     ## massive loop doing everything
     if (! avl) return(NULL)
-    infile <- glue("results/wrong_si_{index}.rds")
+    infile <- glue("results/{prefix}_{index}.rds")
     fit <- readRDS(infile)
     message("Reading ", infile)
     params <- sim_params[index, ]
@@ -80,7 +82,7 @@ eps_err_summary <- imap_dfr(
   available, function(avl, index) {
     ##  Read them again
     if (! avl) return(NULL)
-    infile <- glue("results/wrong_si_{index}.rds")
+    infile <- glue("results/{prefix}_{index}.rds")
     fit <- readRDS(infile)
     message("Reading ", infile)
     params <- sim_params[index, ]
@@ -106,15 +108,15 @@ eps_err_summary <- imap_dfr(
 
 
 saveRDS(
-  incid_at_tmax, "results/incid_at_tmax_wrong_si.rds"
+  incid_at_tmax, glue("results/incid_at_tmax_{prefix}.rds")
 )
 
 saveRDS(
-  eps_err_summary, "results/eps_err_summary_wrong_si.rds"
+  eps_err_summary, glue("results/eps_err_summary_{prefix}.rds")
 )
 
 saveRDS(
-  eps_summary, "results/eps_summary_wrong_si.rds"
+  eps_summary, glue("results/eps_summary_{prefix}.rds")
 )
 
 

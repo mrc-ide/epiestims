@@ -1,14 +1,11 @@
 nearest_10 <- function(x, base = 10) 10^ceiling(log(x, base = base))
-incid_at_tmax <- readRDS(
-  "results/incid_at_tmax_wrong_si.rds"
-)
+prefix <- "no_reorder_eps"
+incid_at_tmax <- readRDS(glue("results/incid_at_tmax_{prefix}.rds"))
 
-eps_err_summary <- readRDS(
-  "results/eps_err_summary_wrong_si.rds"
-)
+eps_err_summary <- readRDS(glue("results/eps_err_summary_{prefix}.rds"))
 
 eps_summary <- readRDS(
-  "results/eps_summary_wrong_si.rds"
+  glue("results/eps_summary_{prefix}.rds")
 )
 
 by_si <- group_by(eps_summary, si_mu_variant, epsilon) %>%
@@ -25,7 +22,7 @@ p <- ggplot(by_si) +
   theme_minimal() +
   theme(legend.position = "top")
 
-ggsave("figures/by_sivar_prop_wrong_si.pdf", p)
+ggsave("figures/by_sivar_prop_{prefix}.png", p)
 
 ## Number of simulations where true epsilon is in
 ## 95% CrI
@@ -42,6 +39,7 @@ p <- ggplot(by_tmax, aes(tmax, n / total)) +
   theme_minimal() +
   theme(legend.position = "top")
 
+ggsave(glue("figures/by_tmax_prop_{prefix}.png"), p)
 ##
 eps_summary_incid <- left_join(eps_summary, incid_at_tmax)
 ## As we will have very different values of incid
@@ -95,10 +93,10 @@ p3 <- ggplot(by_ratio) +
   ylim(0, 1) +
   theme_minimal()
 
-ggsave("figures/by_tmax_prop_wrong_si.pdf", p)
-ggsave("figures/by_ref_incid_wrong_si.pdf", p1)
-ggsave("figures/by_var_incid_wrong_si.pdf", p2)
-ggsave("figures/by_ratio_wrong_si.pdf", p3)
+
+ggsave(glue("figures/by_ref_incid_{prefix}.png"), p1)
+ggsave(glue("figures/by_var_incid_{prefix}.png"), p2)
+ggsave(glue("figures/by_ratio_{prefix}.png"), p3)
 
 #####
 eps_err_summary_incid <- left_join(eps_err_summary, incid_at_tmax)
@@ -124,4 +122,11 @@ p <- ggplot(small, aes(factor(si_mu_variant), `50%`)) +
   geom_boxplot() +
   theme_minimal()
 
-ggsave("figures/by_sivar_wrong_si.pdf", p)
+ggsave(glue("figures/by_sivar_{prefix}.png"), p)
+
+
+p <- ggplot(by_tmax, aes(tmax, epsilon, fill = n)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "YlOrRd")
+
+ggsave(glue("figures/by_tmax_prop_{prefix}_heatmap.png"), p)

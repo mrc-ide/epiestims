@@ -56,7 +56,7 @@ x <- pmap(
   }
 )
 
-outfiles <- glue("results/debug_eps_{seq_len(nrow(sim_params))}.rds")
+outfiles <- glue("results/no_reorder_eps_{seq_len(nrow(sim_params))}.rds")
 walk2(x, outfiles, function(res, outfile) saveRDS(res, outfile))
 
 ## Structure of each fit$res object is:
