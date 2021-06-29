@@ -11,6 +11,22 @@ eps_summary <- readRDS(
   "results/eps_summary_wrong_si.rds"
 )
 
+by_si <- group_by(eps_summary, si_mu_variant, epsilon) %>%
+  summarise(
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
+    total = n()
+  ) %>% ungroup()
+by_si$label <- glue("X {round(by_si$si_mu_variant / 6.83, 1)}")
+
+p <- ggplot(by_si) +
+  geom_point(aes(label, n / total)) +
+  facet_wrap(~epsilon) +
+  ylim(0, 1) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+ggsave("figures/by_sivar_prop_wrong_si.pdf", p)
+
 ## Number of simulations where true epsilon is in
 ## 95% CrI
 by_tmax <- group_by(eps_summary, tmax, epsilon) %>%
@@ -73,7 +89,7 @@ p2 <- ggplot(by_var_incid) +
 
 
 p3 <- ggplot(by_ratio) +
-  geom_point(aes(ratio_incid_round, n / total)) +
+  geom_point(aes(log(ratio_incid_round), n / total)) +
   ##scale_x_continuous(limits = c(NA, 15)) +
   facet_wrap(~epsilon) +
   ylim(0, 1) +
@@ -84,3 +100,28 @@ ggsave("figures/by_ref_incid_wrong_si.pdf", p1)
 ggsave("figures/by_var_incid_wrong_si.pdf", p2)
 ggsave("figures/by_ratio_wrong_si.pdf", p3)
 
+#####
+eps_err_summary_incid <- left_join(eps_err_summary, incid_at_tmax)
+
+
+p <- ggplot(eps_err_summary, aes(factor(tmax), `50%`)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+
+p <- ggplot(eps_err_summary_incid, aes(log(ref_incid), `50%`)) +
+  geom_point() +
+  theme_minimal() +
+  xlim(0, 15) +
+  theme(legend.position = "top")
+
+large <- eps_err_summary_incid[eps_err_summary_incid$`50%` > 10, ]
+## cases when error is smalll
+small <- eps_err_summary_incid[eps_err_summary_incid$`50%` < 10, ]
+
+p <- ggplot(small, aes(factor(si_mu_variant), `50%`)) +
+  geom_boxplot() +
+  theme_minimal()
+
+ggsave("figures/by_sivar_wrong_si.pdf", p)
