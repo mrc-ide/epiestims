@@ -34,30 +34,30 @@ initial_incidence <- list(
 )
 
 
-sim_params <- expand.grid(
-  rt_ref = c(1.2, 3),
-  epsilon = c(seq(from = 1, to = 2, by = 0.5), 2.5, 3),
-  si_mu_variant = si_mu_ref,
-  si_std_variant = si_std_ref
-)
+## sim_params <- expand.grid(
+##   rt_ref = c(1.2, 3),
+##   epsilon = c(seq(from = 1, to = 2, by = 0.5), 2.5, 3),
+##   si_mu_variant = si_mu_ref,
+##   si_std_variant = si_std_ref
+## )
 
 tmax_all <- seq(20, 60, 10)
 names(tmax_all) <- tmax_all
 
-index <- if (short_run) c(1, nrow(sim_params)) else seq_len(nrow(sim_params))
-nsims <- ifelse(short_run, 10, 50)
+## index <- if (short_run) c(1, nrow(sim_params)) else seq_len(nrow(sim_params))
+## nsims <- ifelse(short_run, 10, 50)
 
-x <- pmap(
-  sim_params,
-  function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
-    message("Working on rt_ref = ", rt_ref)
-    message("Working on epsilon = ", epsilon)
-    manager(rt_ref, epsilon, si_mu_variant, si_std_variant)
-  }
-)
+## x <- pmap(
+##   sim_params,
+##   function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
+##     message("Working on rt_ref = ", rt_ref)
+##     message("Working on epsilon = ", epsilon)
+##     manager(rt_ref, epsilon, si_mu_variant, si_std_variant)
+##   }
+## )
 
-outfiles <- glue("results/no_reorder_eps_{seq_len(nrow(sim_params))}.rds")
-walk2(x, outfiles, function(res, outfile) saveRDS(res, outfile))
+## outfiles <- glue("results/no_reorder_eps_{seq_len(nrow(sim_params))}.rds")
+## walk2(x, outfiles, function(res, outfile) saveRDS(res, outfile))
 
 ## Structure of each fit$res object is:
 ## List of 5 corresponding to the 5 tmax values

@@ -1,12 +1,12 @@
 source("simulations/simulation_functions.R")
-source("simulations/simulations_si.R")
+##source("simulations/simulations_si.R")
 library(glue)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 
-sim_params <- readRDS("results/debug_eps_sim_params.rds")
-prefix <- "debug2_eps"
+sim_params <- readRDS("results/vary_si_sim_params.rds")
+prefix <- "vary_si"
 
 fit_files <- glue(
   "results/{prefix}_{seq_len(nrow(sim_params))}.rds"
