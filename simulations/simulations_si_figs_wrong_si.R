@@ -1,5 +1,5 @@
 nearest_10 <- function(x, base = 10) 10^ceiling(log(x, base = base))
-prefix <- "tmin15_swapped_vary_si"
+prefix <- "swapped_vary_si"
 incid_at_tmax <- readRDS(glue("results/incid_at_tmax_{prefix}.rds"))
 
 eps_err_summary <- readRDS(glue("results/eps_err_summary_{prefix}.rds"))
@@ -22,7 +22,7 @@ p <- ggplot(by_si) +
   theme_minimal() +
   theme(legend.position = "top")
 
-ggsave("figures/by_sivar_prop_{prefix}.png", p)
+ggsave(glue("figures/by_sivar_prop_{prefix}.png"), p)
 
 ## Number of simulations where true epsilon is in
 ## 95% CrI
