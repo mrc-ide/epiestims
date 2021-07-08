@@ -1,6 +1,6 @@
 library(context)
 root <- "correct_si"
-packages <- c("dplyr", "here","purrr", "epitrix", "glue", "incidence", 
+packages <- c("dplyr", "here","purrr", "epitrix", "glue", "incidence",
               "projections")
 # src <- conan::conan_sources("mrc-ide/EpiEstim@multiv")
 # options(didehpc.cluster = 'fi--didemrchnb')
@@ -39,4 +39,20 @@ iwalk(
   )
 
 vary_si <- obj$enqueue_bulk(sim_params, manager)
-# 'antinationalistic_walrus'
+                                        # 'antinationalistic_walrus'
+
+
+out <- pmap(
+  sim_params,
+  function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
+    manager(rt_ref, epsilon, si_mu_variant, si_std_variant)
+  }
+)
+outfiles <- glue(
+  "results/debugging_{seq_len(nrow(sim_params))}.rds"
+)
+
+walk2(out, outfiles, saveRDS)
+saveRDS(
+  sim_params, "results/debugging_sim_params.rds"
+)
