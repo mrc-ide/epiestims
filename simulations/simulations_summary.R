@@ -6,7 +6,7 @@ library(purrr)
 library(ggplot2)
 
 sim_params <- readRDS("results/vary_si_sim_params.rds")
-prefix <- "vary_si"
+prefix <- "tmin15_swapped_vary_si"
 
 fit_files <- glue(
   "results/{prefix}_{seq_len(nrow(sim_params))}.rds"
@@ -96,7 +96,7 @@ eps_err_summary <- imap_dfr(
         imap_dfr(
           eps_tmax, function(eps_sim, sim) {
             out <- summarise_epsilon_error(
-              eps_sim, params$epsilon
+              eps_sim, 1/params$epsilon ## For swapped incidence
             )
             cbind(params, out)
           }, .id = "sim")
