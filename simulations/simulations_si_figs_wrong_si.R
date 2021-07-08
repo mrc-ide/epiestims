@@ -10,7 +10,7 @@ eps_summary <- readRDS(
 
 by_si <- group_by(eps_summary, si_mu_variant, epsilon) %>%
   summarise(
-    n = sum(1/epsilon > `2.5%` & 1/epsilon < `97.5%`),
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
     total = n()
   ) %>% ungroup()
 by_si$label <- glue("X {round(by_si$si_mu_variant / 6.83, 1)}")
@@ -28,11 +28,12 @@ ggsave(glue("figures/by_sivar_prop_{prefix}.png"), p)
 ## 95% CrI
 by_tmax <- group_by(eps_summary, tmax, epsilon) %>%
   summarise(
-    n = sum(1/epsilon > `2.5%` & 1/epsilon < `97.5%`),
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
     total = n(),
     lower = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 2],
     upper = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 3]
   ) %>% ungroup()
+
 
 p <- ggplot(by_tmax) +
   geom_linerange(aes(x = tmax, ymin = lower, ymax = upper)) +
@@ -58,19 +59,19 @@ eps_summary_incid <- eps_summary_incid[eps_summary_incid$ratio_incid_round <= 10
 
 by_ref_incid <- group_by(eps_summary_incid, ref_incid_round, epsilon) %>%
   summarise(
-    n = sum(1/epsilon > `2.5%` & 1/epsilon < `97.5%`),
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
     total = n()
   ) %>% ungroup()
 
 by_var_incid <- group_by(eps_summary_incid, var_incid_round, epsilon) %>%
   summarise(
-    n = sum(1/epsilon > `2.5%` & 1/epsilon < `97.5%`),
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
     total = n()
   ) %>% ungroup()
 
 by_ratio <- group_by(eps_summary_incid, ratio_incid_round, epsilon) %>%
   summarise(
-    n = sum(1/epsilon > `2.5%` & 1/epsilon < `97.5%`),
+    n = sum(epsilon > `2.5%` & epsilon < `97.5%`),
     total = n()
   ) %>% ungroup()
 
@@ -109,6 +110,7 @@ eps_err_summary_incid <- left_join(eps_err_summary, incid_at_tmax)
 p <- ggplot(eps_err_summary, aes(factor(tmax), `50%`)) +
   geom_boxplot() +
   theme_minimal() +
+  facet_wrap(~epsilon) +
   theme(legend.position = "top")
 
 

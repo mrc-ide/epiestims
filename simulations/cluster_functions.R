@@ -71,3 +71,24 @@ manager <- function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
   res <- estimate_wrapper(incid, si_for_est)
   list(incid = incid, res = res)
 }
+
+r1 <- estimate_R(
+  incid[[1]][, , 1], "non_parametric_si",
+  config = make_config(t_start = 15, t_end = 100, si_distr = si_for_est[, 1])
+)$R
+
+r2 <- estimate_R(
+  incid[[1]][, , 2], "non_parametric_si",
+  config = make_config(t_start = 15, t_end = 100, si_distr = si_for_est[, 1])
+)$R
+
+
+##
+sim1 <- res[[1]]
+
+summarise_epsilon(res[[5]][[2]])
+summarise_epsilon(res[[4]][[2]])
+summarise_epsilon(res[[3]][[2]])
+summarise_epsilon(res[[2]][[2]])
+
+summarise_epsilon(res[[1]][[2]])

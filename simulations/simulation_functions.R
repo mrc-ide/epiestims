@@ -103,6 +103,7 @@ simulate_incidence <- function(incid_init, nlocations,
             si = simatrix[, v],
             n_sim = 1,
             n_days = ndays - 1,
+            instantaneous_R = TRUE,
             time_change = seq_len(
               length(rmatrix[, loc, v]) - 2
             ) - 1

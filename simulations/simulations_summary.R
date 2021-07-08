@@ -5,8 +5,8 @@ library(dplyr)
 library(purrr)
 library(ggplot2)
 
-sim_params <- readRDS("results/vary_si_sim_params.rds")
-prefix <- "swapped_vary_si"
+sim_params <- readRDS("results/debugging_sim_params.rds")
+prefix <- "debugging"
 
 fit_files <- glue(
   "results/{prefix}_{seq_len(nrow(sim_params))}.rds"
