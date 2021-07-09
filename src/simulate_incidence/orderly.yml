@@ -1,0 +1,17 @@
+
+script: simulate_incidence.R
+
+parameters:
+- rt_ref
+- epsilon
+- si_mu_ref
+- si_std_ref
+- si_mu_var
+- si_std_var
+
+
+artefacts:
+  data:
+    description: Simulated incidence
+    filenames:
+      - simulated_incid.rds
