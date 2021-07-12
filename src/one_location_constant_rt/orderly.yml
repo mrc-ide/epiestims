@@ -6,6 +6,8 @@ packages:
 - projections
 - purrr
 
+parameters: short_run
+
 global_resources:
   R/sim_utils.R: sim_utils.R
   

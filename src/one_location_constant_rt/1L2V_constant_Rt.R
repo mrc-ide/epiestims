@@ -19,13 +19,13 @@ si <- si / sum(si)
 si_no_zero <- si[-1]
 
 # Number of simulations
-short_run <- TRUE
-nsims <- ifelse(short_run, 10, 100)
+nsims <- ifelse(short_run, 2, 100)
 
 ## Other common things
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 5000L, burnin = as.integer(floor(5e3 / 2)), # speed up
+  n_iter = 5000L,
+  burnin = as.integer(floor(5e3 / 2)), # speed up
   thin = 10L
 )
 
@@ -38,30 +38,21 @@ initial_incidence <- list(
 )
 
 sim_params <- expand.grid(
-  rt_ref = 3,  #c(1.2, 3),
-  epsilon = c(1.2, 1.6, 2) #c(seq(from = 1, to = 2, by = 0.1), 2.5, 3)
-  #tmax = seq(30, 60, by = 30) # to speed things up
+  rt_ref = c(1.2, 3),
+  epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3)
 )
-
-index <- seq_len(nrow(sim_params))
-sim_params <- sim_params[index, ]
 
 ## Remember to use the SI without the first element
 ## for simulating data (si_no_zero), and to use SI with the
 ## first element (si) in calls to EpiEstim
-
 si_for_sim <- cbind(si_no_zero, si_no_zero)
-
 si_for_est <- cbind(si, si)
 
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
 simulated_incid <- pmap(
-  list(
-    rt_ref = sim_params$rt_ref,
-    epsilon = sim_params$epsilon
-  ),
+  sim_params,
   function(rt_ref, epsilon) {
     ## Calculate reproduction number for variant
     rt_variant <- epsilon * rt_ref
@@ -99,20 +90,14 @@ simulated_incid <- pmap(
   }
 )
 
-#saveRDS(simulated_incid, "results/1L2V_incid1.rds") # Rtref 1.2, eps 1, 2 sims
-# saveRDS(simulated_incid, "results/1L2V_incid2.rds") # Rtref 3, eps 2, 10 sims
 
-tmax_all <- c(30, 40, 50, 60)
+tmax_all <- seq(20, 60, by = 10)
 names(tmax_all) <- tmax_all
 
 ## Estimate epsilon
-results <- pmap(
-  list(
-    incid = simulated_incid
-    # tmax = 30
-  ),
+results <- map(
+  simulated_incid,
   function(incid, si) {
-
     map(tmax_all, function(tmax) {
     message("tmax = ", tmax)
     ## Loop over the first dimension which is
@@ -120,7 +105,7 @@ results <- pmap(
     map(incid, function(x) {
       EpiEstim:::estimate_joint(
         x, si_for_est, priors, seed = 1,
-        t_min = 2L, t_max = as.integer(tmax),
+        t_min = 15L, t_max = as.integer(tmax),
         mcmc_control = mcmc_controls
       )
     }
@@ -129,66 +114,6 @@ results <- pmap(
   }
 )
 
-params <- as.list(sim_params)
-params <- append(
-  x = params, values = list(result = results)
-)
-
-summary_epsilon <- map_depth(
-  results, 3, summarise_epsilon
-)
-summary_epsilon <- map_depth(
-  summary_epsilon, 2, ~ bind_rows(., .id = "sim")
-)
-
-summary_epsilon <- map(
-  summary_epsilon, ~ bind_rows(., .id = "tmax")
-)
-
-summary_epsilon <- map(
-  summary_epsilon, function(x) {
-    x <- x %>%
-      mutate(tmax = recode(tmax,
-                           "1" = "30",
-                           "2" = "60"))
-    x
-  }
-)
-
-
-params <- as.list(sim_params)
-params <- append(
-  params, list(est_epsilon = summary_epsilon)
-)
-
-out <- pmap_dfr(
-  params, function(rt_ref, epsilon, tmax, est_epsilon) {
-    x <- data.frame(
-      rt_ref = rt_ref, true_epsilon = epsilon#,
-      # tmax = 30
-    )
-    cbind(x, est_epsilon)
-  }
-)
-
-
-if (! dir.exists("results")) dir.create("results")
-saveRDS(results, "results/1L2V_raw.rds")
-saveRDS(out, "results/1L2V_processed.rds")
-
-
-### Figures and summary
-## out <- readRDS("results/vary_si_processed.rds")
-
-## By rt_ref
-ggplot(out) +
-  # ylim(1,2.4) +
-  geom_point(
-    aes(true_epsilon, `50%`)#, position = "dodge2"
-  ) +
-  geom_linerange(
-    aes(true_epsilon, ymin = `2.5%`, ymax = `97.5%`)#,
-    # position = "dodge2"
-  ) +
-  facet_grid(rt_ref~tmax, scales = "free") +
-  theme_minimal()
+saveRDS(sim_params, "param_grid.rds")
+saveRDS(results, "estimate_joint_output.rds")
+saveRDS(simulated_incid, "sim_incid.rds")
