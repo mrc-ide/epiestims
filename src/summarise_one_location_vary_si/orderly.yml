@@ -2,8 +2,11 @@ script: summarise_sims.R
 
 packages:
   - dplyr
+  - Hmisc
   - purrr
+  - ggforce
   - ggplot2
+  - glue
   
 artefacts:
   data:

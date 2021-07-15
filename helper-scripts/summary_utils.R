@@ -68,3 +68,15 @@ summarise_epsilon_error <- function(fit, true_eps, ...) {
   eps_df$param <- "epsilon_error"
   eps_df
 }
+
+## df is grouped df, output of group_by
+summarise_sims <- function(df) {
+  summarise(
+    df,
+    n = sum(true_eps >= `2.5%` & true_eps <= `97.5%`),
+    total = n(),
+    pt_est = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 1],
+    lower = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 2],
+    upper = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 3]
+  )
+}
