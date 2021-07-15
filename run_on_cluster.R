@@ -1,3 +1,4 @@
+didehpc::didehpc_config(cores = 8)
 library(context)
 packages <- c("dplyr", "epitrix", "glue", "incidence",
               "orderly", "projections", "purrr")
@@ -12,5 +13,4 @@ obj <- didehpc::queue_didehpc(ctx)
 obj$install_packages('abind')
 obj$install_packages('mrc-ide/EpiEstim@multiv')
 res <- obj$enqueue(orderly::orderly_bundle_run('20210713-160158-cfa36a12.zip', "cluster-runs"))
-# id "3dc0bba4842f281240837c753b7db2bb"
-orderly::orderly_bundle_import('cluster-runs/20210712-223938-7707dbc9.zip')
+
