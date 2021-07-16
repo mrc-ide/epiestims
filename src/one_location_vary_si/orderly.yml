@@ -15,6 +15,12 @@ artefacts:
   data:
     description: Parameter grid, simulated incidence and results from estimate_joint
     filenames:
-      - param_grid.rds
       - estimate_joint_output.rds
-      - sim_incid.rds
+
+depends:
+  one_location_vary_si:
+    id: latest
+    use:
+      sim_incid.rds: sim_incid.rds
+      param_grid.rds: param_grid.rds
+        
