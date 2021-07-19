@@ -62,7 +62,8 @@ tmax_all <- seq(20, 60, by = 10)
 names(tmax_all) <- tmax_all
 
 ## Estimate epsilon
-results <- pmap(
+plan(multicore)
+results <- future_pmap(
   list(
     incid = simulated_incid,
     si_mu_variant = sim_params$si_mu_variant,
