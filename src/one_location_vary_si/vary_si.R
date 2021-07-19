@@ -24,13 +24,6 @@ mcmc_controls <- list(
   thin = 10L
 )
 
-## Seed with 1 case but select simulations
-## that went on to generate at least 20 cases
-## Ref and variant have different initial incidence conditions, saved in this list
-initial_incidence <- list(
-  incidence::incidence(rep(seq(1, 10), each = 10)),
-  incidence::incidence(rep(seq(1, 10), each = 10))
-)
 
 sim_params <- expand.grid(
   rt_ref = c(1.2, 3),
@@ -39,7 +32,7 @@ sim_params <- expand.grid(
   si_std_variant = si_std_ref
 )
 
-
+incid_init <- initial_incidence()
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
@@ -53,7 +46,7 @@ simulated_incid <- pmap(
     si_no_zero_var <- si_distr_variant[-1]
     si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
     simulate_incid_wrapper(
-      rt_ref, epsilon, si_for_sim, incid_init = initial_incidence, nsims = nsims)
+      rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims)
   }
 )
 
@@ -92,7 +85,7 @@ results <- future_pmap(
     )
     }
     )
-  }
+  }, .progress = TRUE
 )
 
 

@@ -1,3 +1,10 @@
+## For 1 location now, edit for 2 locations later.
+initial_incidence <- function() {
+  list(
+    incidence::incidence(rep(seq(1, 10), each = 20)),
+    incidence::incidence(dates = 10, first_date = 1, last_date = 10)
+  )
+}
 ##' Simulate incidence for multiple locations and multiple
 ##' variants
 ##' No checks implemented, make sure you input right things in
@@ -19,12 +26,15 @@
 simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
                                simatrix) {
-  incid <- array(NA, dim = c(ndays, nlocations, nvariants))
 
+  init_days <- nrow(incid_init[[1]]$counts)
+  incid <- array(
+    NA, dim = c(ndays + init_days, nlocations, nvariants)
+  )
   for (loc in seq_len(nlocations)) {
     for (v in seq_len(nvariants)) {
       incid[, loc, v] <- rbind(
-        tail(incid_init[[v]]$counts, 1),
+        incid_init[[v]]$counts,
         as.matrix( #
           project(
             incid_init[[v]],
@@ -32,7 +42,7 @@ simulate_incidence <- function(incid_init, nlocations,
             R = rmatrix[-1, loc, v],
             si = simatrix[, v],
             n_sim = 1,
-            n_days = ndays - 1,
+            n_days = ndays,
             instantaneous_R = TRUE,
             time_change = seq_len(
               length(rmatrix[, loc, v]) - 2
@@ -49,28 +59,26 @@ simulate_incidence <- function(incid_init, nlocations,
 simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
                                    n_loc = 1, n_v = 2,
                                    ndays = 100, nsims = 100) {
-      ## Calculate reproduction number for variant
-    rt_variant <- epsilon * rt_ref
-    ## Assume reproduction number remains the same
-    ## over the time period
-    ## Make a vector that goes across rows
-    R <- array(NA, dim = c(ndays, n_loc, n_v))
-    R[,,1] <- rep(rt_ref, each = ndays)
-    R[,,2] <- rep(rt_variant, each = ndays)
-    ## Because we are starting with a small seed
-    ## we simulate 10 times as many trajectories
-    ## as we need so that we have nsim after
-    ## filtering
-    out <- rerun(
-      nsims,
-      simulate_incidence(
-        incid_init, n_loc, n_v, ndays, R, si
-      )
+  ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
+  min_var_cases <- 5
+  ## Calculate reproduction number for variant
+  rt_variant <- epsilon * rt_ref
+  ## Assume reproduction number remains the same
+  ## over the time period
+  ## Make a vector that goes across rows
+  R <- array(NA, dim = c(ndays, n_loc, n_v))
+  R[,,1] <- rep(rt_ref, each = ndays)
+  R[,,2] <- rep(rt_variant, each = ndays)
+  out <- rerun(
+    nsims,
+    simulate_incidence(
+      incid_init, n_loc, n_v, ndays, R, si
     )
+  )
   ## total number of cases at the end of the first 10 days
   ## simulation for the variant.
   ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
-  out <- out[ncases > 20]
+  out <- out[ncases > min_var_cases]
   message("# of simulations with more than 20 cases ", length(out))
   ## At this point out may have less than
   ## the desired number of simulations
@@ -85,7 +93,7 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
     )
     out <- append(out, more)
     ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
-    out <- out[ncases > 20]
+    out <- out[ncases > min_var_cases]
     success <- length(out)
   }
   names(out) <- seq_len(nsims)
