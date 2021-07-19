@@ -84,8 +84,26 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
       )
     )
     out <- append(out, more)
+    ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
+    out <- out[ncases > 20]
     success <- length(out)
   }
   names(out) <- seq_len(nsims)
   out
+}
+
+## nicked from EpiEstim@fix_tmin; After PR 127 is
+## merged, this function can be deleted.
+compute_si_cutoff <- function(si_distr, miss_at_most = 0.05) {
+  if (sum(si_distr) != 1) {
+    warning("Input SI distribution should sum to 1. Normalising now")
+    si_distr <- si_distr / colSums(si_distr)
+  }
+  cutoff <- 1 - miss_at_most
+  cdf <- apply(si_distr, 2, cumsum)
+  idx <- apply(
+    cdf, 2,
+    function(col) Position(function(x) x > cutoff, col)
+  )
+  as.integer(max(idx))
 }
