@@ -2,7 +2,6 @@ script: vary_si.R
 packages:
 - dplyr
 - EpiEstim
-- furrr
 - incidence
 - projections
 - purrr

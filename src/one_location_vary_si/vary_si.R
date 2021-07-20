@@ -31,13 +31,15 @@ sim_params <- expand.grid(
   si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
   si_std_variant = si_std_ref
 )
-
+sim_params <- ifelse(
+  short_run, sim_params[1:2, ], sim_params
+)
 incid_init <- initial_incidence()
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
-simulated_incid <- pmap(
-  sim_params,
+simulated_incid <- clusterMap(
+  NULL,
   function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(
       0:30, mu = si_mu_variant, sigma = si_std_variant
@@ -47,7 +49,10 @@ simulated_incid <- pmap(
     si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
     simulate_incid_wrapper(
       rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims)
-  }
+  },
+  sim_params$rt_ref, sim_params$epsilon,
+  sim_params$si_mu_variant,
+  sim_params$si_std_variant
 )
 
 
@@ -55,21 +60,14 @@ tmax_all <- seq(20, 60, by = 10)
 names(tmax_all) <- tmax_all
 
 ## Estimate epsilon
-plan(multicore)
-results <- future_pmap(
-  list(
-    incid = simulated_incid,
-    si_mu_variant = sim_params$si_mu_variant,
-    si_std_variant = sim_params$si_std_variant
-  ),
+results <- clusterMap(
+  NULL,
   function(incid, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(
       0:30, mu = si_mu_variant, sigma = si_std_variant
     )
     si_distr_variant <- si_distr_variant / sum(si_distr_variant)
     si_for_est <- cbind(si_distr_ref, si_distr_variant)
-    tmin <- 10 + compute_si_cutoff(si_for_est)
-    message("t_min = ", tmin)
     map(tmax_all, function(tmax) {
     message("tmax = ", tmax)
     ## Loop over the first dimension which is
@@ -77,15 +75,16 @@ results <- future_pmap(
     map(incid, function(x) {
       EpiEstim:::estimate_joint(
         x, si_for_est, priors, seed = 1,
-        t_min = as.integer(tmin),
-        t_max = as.integer(10 + tmax),
+        t_min = NULL
+        t_max = tmax,
         mcmc_control = mcmc_controls
       )
     }
     )
     }
     )
-  }, .progress = TRUE
+  },
+  simulated_incid, sim_params$si_mu_variant, sim_params$si_std_variant
 )
 
 
