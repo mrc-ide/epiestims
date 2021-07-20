@@ -1,0 +1,127 @@
+
+---
+title: "multi - french"
+author: "Imperial College"
+---
+
+
+```{r echo = FALSE}
+library(knitr)
+opts_chunk$set(fig.path='figs/', fig.keep='high',
+               dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
+               tidy=FALSE, warning=FALSE, fig.show="asis"
+ 	       )
+library(EpiEstim)
+
+
+###########################################################################
+###########################################################################
+
+# get Rts for each locations and variants
+# extract R matrix from epiestim and samples of posterior
+
+get_epiestim_rt_multi_Locations <- function(I , Epi_param){
+  
+  t_start <- seq(2, nrow(I[[1]])-(Epi_param$t_window-1)) 
+  t_end <- t_start + (Epi_param$t_window-1)
+  trim_time <- which(cumsum(Epi_param$SI) >= Epi_param$threshold_SI_initial_incidence)[1]
+  
+  EpiEstim_Rt <- list()
+  template <- I[[1]]
+  template[,2:ncol(template)] <- NA
+  
+  for (k in 1:length(I)){
+    
+    EpiEstim_Rt[[ names(I)[k] ]] <- list(Rt_m = template,
+                                         Rt_low = template,
+                                         Rt_up = template,
+                                         Rt_incl = template,
+                                         Rt_s = array(NA,dim = c(nrow(I[[k]]), ncol(I[[k]])-1, Epi_param$n_sample_R)),
+                                         Rt_mean = template,
+                                         Rt_std = template)
+    
+    
+    for(i in 2:ncol(I[[k]]) ){
+      
+      temp <- EpiEstim::estimate_R(incid = I[[k]][,i], 
+                                   method = "non_parametric_si", 
+                                   config = EpiEstim::make_config(list(si_distr = Epi_param$SI,
+                                                                       t_start = t_start ,
+                                                                       t_end = t_end,
+                                                                       mean_prior = Epi_param$mean_prior_Rt,
+                                                                       std_prior = Epi_param$std_prior_Rt)))
+      
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_m[temp$R$t_end,i] <- temp$R$`Median(R)`
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_low[temp$R$t_end,i] <- temp$R$`Quantile.0.025(R)`
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_up[temp$R$t_end,i] <- temp$R$`Quantile.0.975(R)`
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_mean[temp$R$t_end,i] <- temp$R$`Mean(R)`
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_std[temp$R$t_end,i] <- temp$R$`Std(R)`
+      
+      incl <- which( ((EpiEstim_Rt[[ names(I)[k] ]]$Rt_up[,i] - 
+                        EpiEstim_Rt[[ names(I)[k] ]]$Rt_low[,i]) <= 
+                       Epi_param$threshold_Rt_95width) )
+      
+      incl <- incl[-which(incl < (temp$R$t_end[1] + trim_time))]
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_incl[incl,i] <- 1
+      
+      #samples
+      temp2 <- matrix(NA, nrow = nrow(I[[k]]),
+                      ncol = Epi_param$n_sample_R)
+      for(j in incl){
+        mu <- EpiEstim_Rt[[ names(I)[k] ]]$Rt_mean[j,i]
+        std <- EpiEstim_Rt[[ names(I)[k] ]]$Rt_std[j,i]
+        param <- epitrix::gamma_mucv2shapescale(mu = mu,
+                                               cv = std/mu)
+        temp2[j,] <- rgamma(n = Epi_param$n_sample_R, shape = param$shape, scale = param$scale)
+      }
+      
+      EpiEstim_Rt[[ names(I)[k] ]]$Rt_s[,i-1,] <- temp2
+    }
+  }
+  
+  return(EpiEstim_Rt)
+}
+
+
+###########################################################################
+###########################################################################
+
+```
+
+# load data
+
+```{r}
+
+Epi_param <- readRDS('Rdata/Epi_param.rds')
+
+I_fr <- readRDS(file = 'Rdata/I_fr.rds')
+I_UK1 <- readRDS(file = 'Rdata/I_UK1.rds')
+I_UK2 <- readRDS(file = 'Rdata/I_UK2.rds')
+
+```
+
+# run epiestim on french data
+
+```{r}
+
+Rt_epi_fr <- get_epiestim_rt_multi_Locations(I = I_fr , Epi_param = Epi_param)
+
+saveRDS(object = Rt_epi_fr, file = 'Rdata/Rt_epi_fr.rds')
+
+```
+
+
+# run epiestim on UK data
+
+```{r}
+
+Rt_epi_UK1 <- get_epiestim_rt_multi_Locations(I = I_UK1 , Epi_param = Epi_param)
+Rt_epi_UK2 <- get_epiestim_rt_multi_Locations(I = I_UK2 , Epi_param = Epi_param)
+
+saveRDS(object = Rt_epi_UK1, file = 'Rdata/Rt_epi_UK1.rds')
+saveRDS(object = Rt_epi_UK2, file = 'Rdata/Rt_epi_UK2.rds')
+
+
+```
+
+
