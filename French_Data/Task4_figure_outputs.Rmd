@@ -7,67 +7,189 @@ author: "Imperial College"
 
 ```{r echo = FALSE}
 library(knitr)
-opts_chunk$set(fig.path='figs/', fig.keep='high',
+opts_chunk$set(fig.path='figs/task4/', fig.keep='high',
                dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
                tidy=FALSE, warning=FALSE, fig.show="asis"
  	       )
 
 library(ggplot2)
+library(gridExtra)
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(8,'Spectral')))
+r <- rf(32)
+
 
 ###########################################################################
 ###########################################################################
 
-# plot 2 d hist of variants Rts
 
-plot2d_hist <- function(x,k){
-  sub('-vs-.*', '', names(x)[k])
-  sub('.*-vs-', '', names(x)[k])
-  ggplot(x[[k]], aes(x,y)) +  
-    xlab(paste0('Rt (',sub('-vs-.*', '', names(x)[k]),')')) + 
-    ylab(paste0('Rt (',sub('.*-vs-', '', names(x)[k]),')')) +
+errb <- function(d1,d2,title){
+  d <- rbind(d1,d2)
+  d$x <- rep(nrow(d1):1,2)+rep(c(.2,-.2),each=nrow(d1))
+  d$methods <- rep(c('joint','naive'),each=nrow(d1))
+  
+  #
+  p <- ggplot(d, aes(x=med, y=x , fill=methods, color=methods)) + 
+    geom_point() +
+    geom_errorbarh(aes(xmin=low, xmax=up),height = .1) +
+    labs(x="epsilon", y = "") +
+    scale_y_continuous(breaks=1:nrow(d1),labels = rev(d1$name)) +
+    scale_x_continuous(limits = c(0,3)) +
+    ggtitle(title) +
+    geom_vline(xintercept=c(1), linetype="dashed",color='red3') +
+    geom_hline(yintercept = c(4.5,nrow(d1)-4+3.5), linetype="dashed", color='blue3')+
+    theme(legend.position="bottom")
+  return(p)
+}
+
+
+
+###########################################################################
+###########################################################################
+
+
+heatplot<- function(x,dealing_with,xlab,ylab,title){
+  
+  # remove those not selected
+  Rem <- x[[dealing_with[1]]]$Rt_incl[,-1] * x[[dealing_with[2]]]$Rt_incl[,-1]
+  
+  # get Rts
+  x1 <- x[[dealing_with[1]]]$Rt_s
+  for(i in 1:dim(x1)[3]){
+    x1[,,i] <- as.matrix(x1[,,i]*Rem)
+  }
+  
+  x2 <- x[[dealing_with[2]]]$Rt_s
+  for(i in 1:dim(x1)[3]){
+    x2[,,i] <- as.matrix(x2[,,i]*Rem)
+  }
+  x <- data.frame(x=c(x1),
+                  y = c(x2))
+  
+  p <- ggplot(x, aes(x,y)) +  
+    xlab(paste0(xlab)) + 
+    ylab(paste0(ylab)) +
     stat_bin2d(bins=25) + 
-    xlim(0,max(x[[k]])) + ylim(0,max(x[[k]])) +
+    xlim(0,max(x,na.rm=TRUE)) + ylim(0,max(x,na.rm=TRUE)) +
     scale_fill_gradientn(colours=r) + 
-    geom_abline(intercept = 0,slope = 1,col='red3') 
+    geom_abline(intercept = 0,slope = 1,col='red3') +
+    ggtitle(title) 
   
-}
-###########################################################################
-###########################################################################
-# plot 2d hist 
-
-plot_hist_dist <- function(x, x_sum, keep = FALSE){
-  
-
-  p <- q <-list()
-  epsi <- list()
-  for(k in 1:(ncol(x_sum)-1)){
-    # print(k)
-    if(sum(x_sum[k+1])>0){
-      
-      p[[k]] <- plot2d_hist(x = x, k)
-      
-     
-  
-  if((ncol(x_sum)-1) == 3){
-    gridExtra::grid.arrange(p[[1]],q[[1]],p[[2]],q[[2]],p[[3]],q[[3]],
-                            nrow = 3,
-                            layout_matrix = matrix(c(1,1,1,2,3,3,3,4,5,5,5,6),
-                                                   nrow = 3, ncol = 4,
-                                                   byrow = TRUE))
-  }else{
-    gridExtra::grid.arrange(p[[1]],q[[1]],
-                            nrow = 1,
-                            layout_matrix = matrix(c(1,1,1,2),
-                                                   nrow = 1, ncol = 4,
-                                                   byrow = TRUE))
-  }
-  
-  if(keep){
-    return(epsi)
-  }
+  return(p)
 }
 
+###########################################################################
+###########################################################################
 
+plotSI <- function(I, Rt1, Rt2, k, periods){
+  
+  variants <- names(I)
+  x <- I[[1]]$date
+  y <- I[[1]][,k+1]
+  for(i in 2:length(I)){
+    y <- cbind(y,I[[i]][,k+1])
+  }
+  
+  cols=c('black','blue3','red3','')
+  cols2 <- c(rgb(0,0,0,.1),rgb(0,0,1,.1),rgb(1,0,0,.1))
+  # incidence
+  x <- I[[1]]$date
+  y <- I[[1]][,k+1]
+  for(i in 2:length(I)){
+    y <- cbind(y,I[[i]][,k+1])
+  }
+  # plot
+  plot(x,y[,1],type='l',
+       col = cols[1],
+       main=(names(I[[1]][k+1])),
+       bty = 'n',
+       xlab = '',ylab = 'Incidence',
+       ylim=c(0,max(y,na.rm=TRUE)))
+  for (i in 2:ncol(y)){
+    lines(x,y[,i],col = cols[i])
+  }
+  legend('topleft',legend = variants,
+         lwd=2,col=cols[1:length(variants)],
+         bty='n')
+  abline(v = x[periods$intervals[c(3,4,5)]],col = 'darkorange3',lty=2)
+  
+  # Rt naive
+  Rt <- Rt1
+  y <- Rt[[1]]$Rt_m[,k+1]
+  ylow <- Rt[[1]]$Rt_low[,k+1]
+  yhigh <- Rt[[1]]$Rt_up[,k+1]
+  
+  for(i in 2:length(I)){
+    y <- cbind(y,Rt[[i]]$Rt_m[,k+1])
+    ylow <- cbind(ylow,Rt[[i]]$Rt_low[,k+1])
+    yhigh <- cbind(yhigh,Rt[[i]]$Rt_up[,k+1])
+  }
+  f <- which(!is.na(y[,1]))
+  #plot
+  for(i in 1:length(I)){
+    if (i==1){
+      plot(x,y[,1],
+           bty = 'n',
+           xlab = '',ylab = 'Rt',
+           type = 'l',col=cols[1],
+           main = '',
+           ylim = c(0, 3) )
+      abline(h = 1,lty=2,col='red3')
+    }else{
+      lines(x,y[,i],col=cols[i])
+    }
+    polygon(c(x[f],rev(x[f])), c(ylow[f,i],rev(yhigh[f,i])),
+            col = cols2[i],
+            border = NA)
+    # selected
+    lines(x,
+          rep(3,length(x))-i*.2,
+          type = 'p',col=cols[i],
+          pch='-',cex=0.5)
+    
+    lines(x[which(Rt[[1]]$Rt_incl[,k+1]==1)],
+          rep(3,length(x))[which(Rt[[1]]$Rt_incl[,k+1]==1)]-i*.2,
+          type = 'p',col=cols[i],
+          pch=15,cex=0.5)
+  }
+  abline(v = x[periods$intervals[c(3,4,5)]],col = 'darkorange3',lty=2)
+  
+  # Rt from joint
+  Rt <- Rt2
+  cols <- RColorBrewer::brewer.pal(length(Rt),name = 'Dark2')
+  cols2 <- yarrr::transparent(cols, trans.val = .9)
+  
+  y <- Rt[[1]]$median[,k]
+  ylow <- Rt[[1]]$low[,k]
+  yhigh <- Rt[[1]]$high[,k]
+  
+  for(i in 2:length(Rt)){
+    y <- cbind(y,Rt[[i]]$median[,k])
+    ylow <- cbind(ylow,Rt[[i]]$low[,k])
+    yhigh <- cbind(yhigh,Rt[[i]]$high[,k])
+  }
+  
+  #plot
+  for(i in 1:length(Rt)){
+    f <- which(!is.na(y[,i]))
+    if (i==1){
+      plot(x,y[,1],
+           bty = 'n',
+           xlab = '',ylab = 'Rt',
+           type = 'l',col=cols[1],
+           main = '',
+           ylim = c(0, 3) )
+      abline(h = 1,lty=2,col='red3')
+    }else{
+      lines(x,y[,i],col=cols[i])
+    }
+    polygon(c(x[f],rev(x[f])), c(ylow[f,i],rev(yhigh[f,i])),
+            col = cols2[i],
+            border = NA)
+  }
+  abline(v = x[periods$intervals[c(3,4,5)]],col = 'darkorange3',lty=2)
+  
+}
 ```
 
 # load data
@@ -100,99 +222,97 @@ naive_epsilon_UK2 <- readRDS('Rdata/naive_epsilon_UK2.rds')
 
 # errorbars of epsilons
 
-```{r, epsilons, fig.height=6, fig.width=8}
+## alpha - wild
 
-layout(matrix(1:2,1,2))
-#########################################################
-#########################################################
-# fr
-#########################################################
-#########################################################
-
-d <- Jestim_fr$epsilon$wild_alpha
-d <- purrr::map_df(d, rev)
-Hmisc::errbar(x = d$name,
-              y = d$med,yplus = d$up,
-              yminus = d$low,
-              xlab = '',
-              ylab = 'epsilon (alpha vs wild)',
-              ylim = c(0,3),
-              bty = 'n',
-              main = 'France')
-abline(v = 1,lty = 2, col='red3')
-abline(h = 4.5,lty = 2, col='blue3')
-abline(h = ncol(I_fr$wild)+3.5,lty = 2, col='blue3')
+```{r, epsilons1, fig.height=6, fig.width=8}
 
 
-#########################################################
-#########################################################
-# uk
-#########################################################
-#########################################################
-
-d <- Jestim_UK1$epsilon$wild_alpha
-d <- purrr::map_df(d, rev)
-Hmisc::errbar(x = d$name,
-              y = d$med,yplus = d$up,
-              yminus = d$low,
-              xlab = '',
-              ylab = 'epsilon (alpha vs wild)',
-              ylim = c(0,3),
-              bty = 'n',
-              main = 'UK')
-abline(v = 1,lty = 2, col='red3')
-abline(h = 4.5,lty = 2, col='blue3')
-abline(h = ncol(I_UK1$wild)+3.5,lty = 2, col='blue3')
-
-d <- naive_epsilon_UK1$sum_epsilon$wild_alpha
-d <- purrr::map_df(d, rev)
-Hmisc::errbar(x = d$name,
-              y = d$med,yplus = d$up,
-              yminus = d$low,
-              add=TRUE)
-#########################################################
-
-d <- Jestim_fr$epsilon$`wild_beta/gamma`
-d <- purrr::map_df(d, rev)
-Hmisc::errbar(x = d$name,
-              y = d$med,yplus = d$up,
-              yminus = d$low,
-              xlab = '',
-              ylab = 'epsilon (beta/gamma vs wild)',
-              ylim = c(0,3),
-              bty = 'n',
-              main = 'France')
-abline(v = 1,lty = 2, col='red3')
-abline(h = 4.5,lty = 2, col='blue3')
-abline(h = ncol(I_fr$wild)+3.5,lty = 2, col='blue3')
+p <- errb(d1 = Jestim_fr$epsilon$wild_alpha,
+          d2 = naive_epsilon_fr$sum_epsilon$wild_alpha,
+          title = 'France - alpha vs. wild')
 
 
-#########################################################
+q <- errb(d1 = Jestim_UK1$epsilon$wild_alpha,
+          d2 = naive_epsilon_UK1$sum_epsilon$wild_alpha,
+          title = 'UK - alpha vs. wild')
 
-d <- Jestim_UK2$epsilon$alpha_delta
-d <- purrr::map_df(d, rev)
-Hmisc::errbar(x = d$name,
-              y = d$med,yplus = d$up,
-              yminus = d$low,
-              xlab = '',
-              ylab = 'epsilon (alpha vs delta)',
-              ylim = c(0,3),
-              bty = 'n',
-              main = 'UK')
-abline(v = 1,lty = 2, col='red3')
-abline(h = 4.5,lty = 2, col='blue3')
-abline(h = ncol(I_UK2$alpha)+3.5,lty = 2, col='blue3')
+
+
+grid.arrange(p, q, nrow = 1)
+
+```
+
+### Others
+
+```{r, epsilons2, fig.height=6, fig.width=8}
+
+
+
+
+p <- errb(d1 =  Jestim_fr$epsilon$`wild_beta/gamma`,
+          d2 = naive_epsilon_fr$sum_epsilon$`wild_beta/gamma`,
+          title = 'France - beta/gamma vs. wild')
+
+
+q <- errb(d1 = Jestim_UK2$epsilon$alpha_delta,
+          d2 = naive_epsilon_UK2$sum_epsilon$alpha_delta,
+          title = 'UK - delta vs. alpha')
+
+
+
+grid.arrange(p, q, nrow = 1)
+
+
 
 ```
 
 
 # heatmap of Rts
 
-```{r, heatmap_Rts}
+## alpha wild
+
+```{r, heatmap_Rts1, fig.height=5, fig.width=10}
+
+p <- heatplot(x = Rt_epi_fr,
+              dealing_with = c(1,2),
+              xlab = 'Rt - wild',
+              ylab = 'Rt - alpha',
+              title = 'France')
+
+q <- heatplot(x = Rt_epi_UK1,
+              dealing_with = c(1,2),
+              xlab = 'Rt - wild',
+              ylab = 'Rt - alpha',
+              title = 'UK')
+
+grid.arrange(p, q, nrow = 1)
+```
 
 
+## others
 
 
+```{r, heatmap_Rts2, fig.height=5, fig.width=14}
+
+p <- heatplot(x = Rt_epi_fr,
+              dealing_with = c(1,3),
+              xlab = 'Rt - wild',
+              ylab = 'Rt - beta/gamma',
+              title = 'France')
+
+p2 <- heatplot(x = Rt_epi_fr,
+              dealing_with = c(2,3),
+              xlab = 'Rt - alpha',
+              ylab = 'Rt - beta/gamma',
+              title = 'France')
+
+q <- heatplot(x = Rt_epi_UK2,
+              dealing_with = c(1,2),
+              xlab = 'Rt - alpha',
+              ylab = 'Rt - delta',
+              title = 'UK')
+
+grid.arrange(p, p2, q, nrow = 1)
 ```
 
 
@@ -200,15 +320,51 @@ abline(h = ncol(I_UK2$alpha)+3.5,lty = 2, col='blue3')
 
 ## incidence
 
-```{r, SI_incidence}
+```{r, SI_incidence_fr, fig.height=6,fig.width=8}
 
+layout(matrix(1:6,3,2,byrow = FALSE))
+
+I <- I_fr
+for(i in 1:(ncol(I[[1]])-1) ){
+  plotSI(I = I,
+         Rt1 = Rt_epi_fr,
+         Rt2 = Jestim_fr$Sum_R, 
+         k = i, 
+         periods = periods$periods_fr)
+}
 
 ```
 
 
-## Rts
+```{r, SI_incidence_UK1, fig.height=6,fig.width=8}
 
-```{r, SI_Rts}
+layout(matrix(1:6,3,2,byrow = FALSE))
+
+I <- I_UK1
+for(i in 1:(ncol(I[[1]])-1) ){
+  plotSI(I = I,
+         Rt1 = Rt_epi_UK1,
+         Rt2 = Jestim_UK1$Sum_R, 
+         k = i, 
+         periods = periods$periods_UK1)
+}
 
 ```
 
+
+
+
+```{r, SI_incidence_UK2, fig.height=6,fig.width=8}
+
+layout(matrix(1:6,3,2,byrow = FALSE))
+
+I <- I_UK2
+for(i in 1:(ncol(I[[1]])-1) ){
+  plotSI(I = I,
+         Rt1 = Rt_epi_UK2,
+         Rt2 = Jestim_UK2$Sum_R, 
+         k = i, 
+         periods = periods$periods_UK2)
+}
+
+```

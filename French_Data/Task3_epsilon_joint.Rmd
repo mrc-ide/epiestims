@@ -7,7 +7,7 @@ author: "Imperial College"
 
 ```{r echo = FALSE}
 library(knitr)
-opts_chunk$set(fig.path='figs/', fig.keep='high',
+opts_chunk$set(fig.path='figs/task3/', fig.keep='high',
                dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
                tidy=FALSE, warning=FALSE, fig.show="asis"
  	       )
@@ -78,14 +78,15 @@ wrapper_joint_Rt <- function(I, periods,Epi_param,
     matplot(t(Epi_joint$epsilon))
   }  
   
+  Sum_R <- list(median = apply(Epi_joint$R,c(1,2),median),
+                  low = apply(Epi_joint$R,c(1,2),quantile,0.025,na.rm=TRUE),
+                  high = apply(Epi_joint$R,c(1,2),quantile,0.975,na.rm=TRUE))
   if(plot_Rt){
     layout(matrix(1:4,2,2))
     cols <- RColorBrewer::brewer.pal(5+1,name = 'Dark2')
     cols2 <- yarrr::transparent(cols, trans.val = .9)
     
-    Sum_R <- list(median = apply(Epi_joint$R,c(1,2),median),
-                  low = apply(Epi_joint$R,c(1,2),quantile,0.025,na.rm=TRUE),
-                  high = apply(Epi_joint$R,c(1,2),quantile,0.975,na.rm=TRUE))
+    
     
     
     for(i in 2:ncol(I[[1]])){
@@ -118,7 +119,7 @@ wrapper_joint_Rt <- function(I, periods,Epi_param,
   ###################################################################
   ###################################################################
   
-  
+ 
   for(k in 2:ncol(I[[1]])){
     print(colnames(I[[1]])[k])
     
@@ -142,7 +143,7 @@ wrapper_joint_Rt <- function(I, periods,Epi_param,
   ###################################################################
   ###################################################################
   
-  
+  Sum_R <- list(Sum_R)
   for(k in 1:(length(periods$intervals)-2)){
     print(name_epsi[1+length(I[[1]])-1+k])
     
@@ -153,13 +154,17 @@ wrapper_joint_Rt <- function(I, periods,Epi_param,
                                         t_min = as.integer(periods$intervals[1+k]),
                                         t_max = as.integer(periods$intervals[1+k+1]) )
     
+    Sum_R[[k+1]] <- list(median = apply(Epi_joint$R,c(1,2),median),
+                       low = apply(Epi_joint$R,c(1,2),quantile,0.025,na.rm=TRUE),
+                       high = apply(Epi_joint$R,c(1,2),quantile,0.975,na.rm=TRUE))
+    
     for(i in 1:(length(I)-1)){
       epsilon[[i]][1+length(I[[1]])-1+k,2:4] <- quantile(Epi_joint$epsilon[i,],c(.5,.025,.975))
     }
     
   }
   
-  return(list(epsilon = epsilon))
+  return(list(epsilon = epsilon, Sum_R = Sum_R))
 }
 
 ```
@@ -182,7 +187,7 @@ periods <- readRDS(file = 'Rdata/periods.rds')
 # run joint epiesptim to get epsilon
 
 
-```{r}
+```{r,fr}
 
 Jestim_fr <- wrapper_joint_Rt(I = I_fr, 
                                periods = periods$periods_fr,
@@ -195,7 +200,7 @@ Jestim_fr <- wrapper_joint_Rt(I = I_fr,
 
 
 
-```{r}
+```{r,UK1}
 
 Jestim_UK1 <- wrapper_joint_Rt(I = I_UK1, 
                                periods = periods$periods_UK1,
@@ -208,7 +213,7 @@ Jestim_UK1 <- wrapper_joint_Rt(I = I_UK1,
 
 
 
-```{r}
+```{r,UK2}
 
 Jestim_UK2 <- wrapper_joint_Rt(I = I_UK2, 
                                periods = periods$periods_UK2,

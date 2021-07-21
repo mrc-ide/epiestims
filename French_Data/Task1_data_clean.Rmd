@@ -7,7 +7,7 @@ author: "Imperial College"
 
 ```{r echo = FALSE}
 library(knitr)
-opts_chunk$set(fig.path='figs/', fig.keep='high',
+opts_chunk$set(fig.path='figs/task1/', fig.keep='high',
                dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
                tidy=FALSE, warning=FALSE, fig.show="asis"
  	       )
