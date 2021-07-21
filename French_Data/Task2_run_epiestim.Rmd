@@ -100,28 +100,138 @@ I_UK2 <- readRDS(file = 'Rdata/I_UK2.rds')
 
 ```
 
-# run epiestim on french data
+# run epiestim
+
+## run epiestim on french data
 
 ```{r}
 
 Rt_epi_fr <- get_epiestim_rt_multi_Locations(I = I_fr , Epi_param = Epi_param)
 
-saveRDS(object = Rt_epi_fr, file = 'Rdata/Rt_epi_fr.rds')
-
 ```
 
 
-# run epiestim on UK data
+## run epiestim on UK data
 
 ```{r}
 
 Rt_epi_UK1 <- get_epiestim_rt_multi_Locations(I = I_UK1 , Epi_param = Epi_param)
 Rt_epi_UK2 <- get_epiestim_rt_multi_Locations(I = I_UK2 , Epi_param = Epi_param)
 
-saveRDS(object = Rt_epi_UK1, file = 'Rdata/Rt_epi_UK1.rds')
-saveRDS(object = Rt_epi_UK2, file = 'Rdata/Rt_epi_UK2.rds')
+```
 
+# naive epsilon
+
+## function
+
+```{r}
+
+
+naive_epsilon <- function(I, Rt_epi, periods){
+  
+  name_epsi <- c('All',colnames(I[[1]][-1]),paste0('Quarter',1:4))
+  epsi_template <- data.frame(name = name_epsi,
+                              med = NA,
+                              low = NA,
+                              up = NA)
+  
+  
+  epsilons_samples <- list()
+  sum_epsilon <- list()
+  for (i in 1:(length(I)-1)){
+    sum_epsilon[[ paste(names(I)[c(1,i+1)],collapse='_') ]] <- epsi_template
+    epsilons_samples[[ paste(names(I)[c(1,i+1)],collapse='_') ]] <- 1
+  }
+  
+  epsilon <- list(sum_epsilon = sum_epsilon,
+                  epsilons_samples = epsilons_samples)
+  
+  x <- Rt_epi
+  x1 <- x[[1]]$Rt_s
+  for(i in 1:dim(x1)[3]){
+    x1[,,i] <- as.matrix(x1[,,i]*x[[1]]$Rt_incl[,-1])
+  }
+  for (k in 1:length(epsilon$sum_epsilon)){
+    
+    x2 <- x[[k+1]]$Rt_s
+    for(i in 1:dim(x1)[3]){
+      x2[,,i] <- as.matrix(x2[,,i]*x[[k+1]]$Rt_incl[,-1])
+    }
+    
+    epsi1 <- x2/x1
+    # sum_epsi_geo <- apply(epsi1,2,quantile,c(.5,.025,.975),na.rm=TRUE)
+    sum_epsi_national <- quantile(epsi1,c(.5,.025,.975),na.rm=TRUE)
+    
+    # # geo
+    # for(i in 2:ncol(I[[1]])){
+    #   epsilon$sum_epsilon[[k]][i,2:4] <- quantile(epsi1[,i-1,],c(.5,.025,.975),na.rm=TRUE)
+    # }
+    
+    # by quarter
+    for(i in 1:4){
+      f <- which(periods$periods == i)
+      epsilon$sum_epsilon[[k]][ncol(I[[1]])+i,2:4]  <- quantile(epsi1[f,,],c(.5,.025,.975),na.rm=TRUE)
+    }
+    
+    epsilon$sum_epsilon[[k]][1,2:4] <- sum_epsi_national
+    epsilon$sum_epsilon[[k]][2:ncol(I[[1]]),2:4] <- sum_epsi_geo
+    
+    epsilon$epsilons_samples[[k]] <- epsi1
+    
+    
+  }
+  
+  return(epsilon)
+}
+
+```
+
+## france
+
+```{r}
+
+naive_epsilon_fr <- naive_epsilon(I = I_fr, 
+                                  Rt_epi = Rt_epi_fr,
+                                  periods = periods$periods_fr)
+
+naive_epsilon_fr$sum_epsilon$wild_alpha
+```
+
+## UK1
+
+```{r}
+
+naive_epsilon_UK1 <- naive_epsilon(I = I_UK1,
+                                   Rt_epi = Rt_epi_UK1,
+                                   periods = periods$periods_UK1)
+
+naive_epsilon_UK1$sum_epsilon$wild_alpha
+```
+
+## UK2
+
+
+```{r}
+
+naive_epsilon_UK2 <- naive_epsilon(I = I_UK2,
+                                   Rt_epi = Rt_epi_UK2,
+                                   periods = periods$periods_UK2)
 
 ```
 
 
+
+
+# save
+
+```{r}
+
+saveRDS(object = Rt_epi_fr, file = 'Rdata/Rt_epi_fr.rds')
+saveRDS(object = Rt_epi_UK1, file = 'Rdata/Rt_epi_UK1.rds')
+saveRDS(object = Rt_epi_UK2, file = 'Rdata/Rt_epi_UK2.rds')
+
+saveRDS(object = naive_epsilon_fr, file = 'Rdata/naive_epsilon_fr.rds')
+saveRDS(object = naive_epsilon_UK1, file = 'Rdata/naive_epsilon_UK1.rds')
+saveRDS(object = naive_epsilon_UK2, file = 'Rdata/naive_epsilon_UK2.rds')
+
+```

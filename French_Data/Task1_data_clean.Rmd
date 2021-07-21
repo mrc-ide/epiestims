@@ -71,7 +71,7 @@ Epi_param <- list(mean_prior_Rt = mean_prior_Rt, std_prior_Rt = std_prior_Rt,
                   mcmc_control = mcmc_control)
 
 
-saveRDS(object = Epi_param, file = 'Rdata/Epi_param.rds')
+
 
 ```
 
@@ -122,7 +122,7 @@ d <- list(fr = d)
 
 I_fr <- format_I(dat = d$fr , variants = variants)
 
-saveRDS(object = I_fr, file = 'Rdata/I_fr.rds')
+
 
 ```
 
@@ -185,8 +185,46 @@ I_UK1 <- format_I(dat = d$alpha , variants = variants[[1]])
 
 I_UK2 <- format_I(dat = d$delta , variants = variants[[2]])
 
-saveRDS(object = I_UK1, file = 'Rdata/I_UK1.rds')
-saveRDS(object = I_UK2, file = 'Rdata/I_UK2.rds')
 
 ```
 
+
+# time periods
+
+```{r}
+n_period <- 4
+
+range(I_fr$wild$date)
+range(I_UK1$wild$date)
+range(I_UK2$alpha$date)
+
+diff(range(I_fr$wild$date))
+diff(range(I_UK1$wild$date))
+diff(range(I_UK2$alpha$date))
+
+trim_time <- which(cumsum(Epi_param$SI) >= Epi_param$threshold_SI_initial_incidence)[1]
+
+periods_fr <- list(intervals = c(1,round(seq(trim_time, nrow(I_fr$wild),length.out = n_period+1))))
+periods_fr$periods <- rep(c(NA,1:n_period), diff(periods_fr$intervals)+ c(rep(0,n_period),1) ) 
+
+periods_UK1 <- list(intervals = c(1,round(seq(trim_time, nrow(I_UK1$wild),length.out = n_period+1))) )
+periods_UK1$periods <- rep(c(NA,1:n_period), diff(periods_UK1$intervals)+ c(rep(0,n_period),1) ) 
+
+periods_UK2 <- list(intervals =c(1,round(seq(trim_time, nrow(I_UK2$alpha),length.out = n_period+1))) )
+periods_UK2$periods <- rep(c(NA,1:n_period), diff(periods_UK2$intervals)+ c(rep(0,n_period),1) )
+
+```
+
+# saving
+
+```{r}
+
+saveRDS(object = Epi_param, file = 'Rdata/Epi_param.rds')
+saveRDS(object = I_fr, file = 'Rdata/I_fr.rds')
+saveRDS(object = I_UK1, file = 'Rdata/I_UK1.rds')
+saveRDS(object = I_UK2, file = 'Rdata/I_UK2.rds')
+
+saveRDS(list(periods_fr = periods_fr,
+             periods_UK1 = periods_UK1,
+             periods_UK2 = periods_UK2), file = 'Rdata/periods.rds')
+```
