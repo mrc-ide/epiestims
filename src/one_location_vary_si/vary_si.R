@@ -19,18 +19,18 @@ nsims <- ifelse(short_run, 1, 100)
 ## Other common things
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 5000L,
-  burnin = as.integer(floor(5e3 / 2)), # speed up
-  thin = 10L
+  n_iter = 20000L, burnin = 1000L, thin = 40L
 )
 
 
 sim_params <- expand.grid(
-  rt_ref = c(1.2, 3),
-  epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
-  si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
+  rt_ref = 3,
+  ##epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
+  epsilon = 1,
+  si_mu_variant = 1.5 * si_mu_ref,
   si_std_variant = si_std_ref
 )
+
 rows <- ifelse(short_run, 2, nrow(sim_params))
 sim_params <- sim_params[seq_len(rows), ]
 incid_init <- initial_incidence()

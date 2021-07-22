@@ -2,6 +2,7 @@ script: summarise_sims.R
 
 packages:
   - dplyr
+  - EpiEstim
   - Hmisc
   - purrr
   - ggforce
@@ -21,7 +22,7 @@ global_resources:
 
 depends:
   one_location_vary_si:
-    id: latest
+    id: 20210721-113146-a4c58481
     use:
       one_loc_vary_si_params.rds: param_grid.rds
       one_loc_vary_si.rds: estimate_joint_output.rds
