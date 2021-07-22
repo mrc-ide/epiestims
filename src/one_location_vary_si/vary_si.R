@@ -24,10 +24,9 @@ mcmc_controls <- list(
 
 
 sim_params <- expand.grid(
-  rt_ref = 3,
-  ##epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
-  epsilon = 1,
-  si_mu_variant = 1.5 * si_mu_ref,
+  rt_ref = c(1.2, 3),
+  epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
+  si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
   si_std_variant = si_std_ref
 )
 
