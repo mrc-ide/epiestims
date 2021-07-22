@@ -1,0 +1,21 @@
+script: wrong_si.R
+packages:
+- dplyr
+- EpiEstim
+- incidence
+- parallel
+- projections
+- purrr
+
+parameters: short_run
+
+global_resources:
+  R/sim_utils.R: sim_utils.R
+
+artefacts:
+  data:
+    description: Parameter grid, simulated incidence and results from estimate_joint
+    filenames:
+      - param_grid.rds
+      - estimate_joint_output.rds
+      - sim_incid.rds
