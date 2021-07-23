@@ -1,0 +1,20 @@
+script: sims_vary_si.R
+packages:
+- dplyr
+- EpiEstim
+- incidence
+- projections
+- purrr
+
+parameters: short_run
+
+artefacts:
+  data:
+    description: SI for estimation and simulated incidence
+    filenames:
+      - incid.rds
+      - si_for_est.rds
+      - param_grid.rds
+
+global_resources:
+  R/sim_utils.R: sim_utils.R
