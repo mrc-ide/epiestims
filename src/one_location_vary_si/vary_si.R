@@ -1,9 +1,10 @@
+## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = TRUE))
 simulated_incid <- readRDS("incid.rds")
 si_for_est <- readRDS("si_for_est.rds")
 
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 5000L, burnin = 2500L, thin = 10L
+  n_iter = 15000L, burnin = 7500L, thin = 20L
 )
 
 tmax_all <- seq(10, 50, by = 10)
@@ -27,8 +28,9 @@ results <- map2(
         t_max = t_max,
         mcmc_control = mcmc_controls
         )
-      attempts <- 1
-      while (! out$convergence) {
+      attempt <- 1
+      while (! out[["convergence"]]) {
+        message("Attempt ", attempt)
         message("Not yet converged")
         mcmc_controls <- lapply(
           mcmc_controls, function(x) x * 2L
@@ -39,14 +41,14 @@ results <- map2(
           t_max = t_max,
           mcmc_control = mcmc_controls
           )
-        attempts <- attempts + 1
+        attempt <- attempt + 1
         ## so that we don't end in an infinite loop
-        if (attempts > 3) {
+        if (attempt > 3) {
           message("Aborting after 3 attempts")
           break
         }
       }
-      out
+      list(out, out[["convergence"]])
     }
     )
     }
