@@ -27,7 +27,7 @@ cbind_rep <- function(x,n){
 wrapper_joint_Rt <- function(I, periods,Epi_param, 
                              plot_Rt = TRUE, plot_epsilon_trace = TRUE ){
   
-  name_epsi <- c('All',colnames(I[[1]][-1]),paste0('Quarter',1:4))
+  name_epsi <- c('All',colnames(I[[1]][-1]),paste0('Quarter ',1:4))
   epsi_template <- data.frame(name = name_epsi,
                               med = NA,
                               low = NA,

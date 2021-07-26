@@ -36,8 +36,8 @@ errb <- function(d1,d2,title){
     scale_y_continuous(breaks=1:nrow(d1),labels = rev(d1$name)) +
     scale_x_continuous(limits = c(0,3)) +
     ggtitle(title) +
-    geom_vline(xintercept=c(1), linetype="dashed",color='red3') +
-    geom_hline(yintercept = c(4.5,nrow(d1)-4+3.5), linetype="dashed", color='blue3')+
+    geom_vline(xintercept=c(1), linetype="dashed",color='grey50') +
+    geom_hline(yintercept = c(4.5,nrow(d1)-4+3.5), linetype="dashed", color='grey50')+
     theme(legend.position="bottom")
   return(p)
 }
@@ -72,7 +72,7 @@ heatplot<- function(x,dealing_with,xlab,ylab,title){
     stat_bin2d(bins=25) + 
     xlim(0,max(x,na.rm=TRUE)) + ylim(0,max(x,na.rm=TRUE)) +
     scale_fill_gradientn(colours=r) + 
-    geom_abline(intercept = 0,slope = 1,col='red3') +
+    geom_abline(intercept = 0,slope = 1,col='grey50',linetype="dashed") +
     ggtitle(title) 
   
   return(p)
@@ -234,7 +234,7 @@ p <- errb(d1 = Jestim_fr$epsilon$wild_alpha,
 
 q <- errb(d1 = Jestim_UK1$epsilon$wild_alpha,
           d2 = naive_epsilon_UK1$sum_epsilon$wild_alpha,
-          title = 'UK - alpha vs. wild')
+          title = 'England - alpha vs. wild')
 
 
 
@@ -256,7 +256,7 @@ p <- errb(d1 =  Jestim_fr$epsilon$`wild_beta/gamma`,
 
 q <- errb(d1 = Jestim_UK2$epsilon$alpha_delta,
           d2 = naive_epsilon_UK2$sum_epsilon$alpha_delta,
-          title = 'UK - delta vs. alpha')
+          title = 'England - delta vs. alpha')
 
 
 
@@ -283,7 +283,7 @@ q <- heatplot(x = Rt_epi_UK1,
               dealing_with = c(1,2),
               xlab = 'Rt - wild',
               ylab = 'Rt - alpha',
-              title = 'UK')
+              title = 'England')
 
 grid.arrange(p, q, nrow = 1)
 ```
@@ -310,7 +310,7 @@ q <- heatplot(x = Rt_epi_UK2,
               dealing_with = c(1,2),
               xlab = 'Rt - alpha',
               ylab = 'Rt - delta',
-              title = 'UK')
+              title = 'England')
 
 grid.arrange(p, p2, q, nrow = 1)
 ```

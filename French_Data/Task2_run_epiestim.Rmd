@@ -138,7 +138,7 @@ Rt_epi_UK1$alpha$Rt_incl[,2]
 
 naive_epsilon <- function(I, Rt_epi, periods){
   
-  name_epsi <- c('All',colnames(I[[1]][-1]),paste0('Quarter',1:4))
+  name_epsi <- c('All',colnames(I[[1]][-1]),paste0('Quarter ',1:4))
   epsi_template <- data.frame(name = name_epsi,
                               med = NA,
                               low = NA,
