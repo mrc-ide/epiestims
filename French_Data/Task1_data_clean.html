@@ -276,7 +276,22 @@ england &lt;- england %&gt;%
   rename(date = specimen_date)</code></pre>
 <pre><code>## Adding missing grouping variables: `over_25`</code></pre>
 <pre><code>## `summarise()` has grouped output by &#39;specimen_date&#39;. You can override using the `.groups` argument.</code></pre>
-<pre class="r"><code>## there are some samples not identified as negative or positive, we split those
+<pre class="r"><code># clean names
+unique(england$region)</code></pre>
+<pre><code>## [1] &quot;london&quot;                   &quot;midlands&quot;                
+## [3] &quot;south_east&quot;               &quot;south_west&quot;              
+## [5] &quot;east_of_england&quot;          &quot;north_west&quot;              
+## [7] &quot;north_east_and_yorkshire&quot;</code></pre>
+<pre class="r"><code>england$region[which(england$region %in% &#39;london&#39;)] &lt;- &#39;London&#39;
+england$region[which(england$region %in% &#39;midlands&#39;)] &lt;- &#39;Midlands&#39;
+england$region[which(england$region %in% &#39;south_east&#39;)] &lt;- &#39;South East&#39;
+england$region[which(england$region %in% &#39;south_west&#39;)] &lt;- &#39;South West&#39;
+england$region[which(england$region %in% &#39;east_of_england&#39;)] &lt;- &#39;East of England&#39;
+england$region[which(england$region %in% &#39;north_west&#39;)] &lt;- &#39;North West&#39;
+england$region[which(england$region %in% &#39;north_east_and_yorkshire&#39;)] &lt;- &#39;North East and Yorkshire&#39;
+
+
+## there are some samples not identified as negative or positive, we split those
 ## according to the ratio of the two. In the hopefully rare case that none are
 ## identified as negative or positive, these are split 50/50 - probably another
 ## way could be better?

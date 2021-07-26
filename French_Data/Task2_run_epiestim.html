@@ -217,7 +217,7 @@ Rt_epi_UK1$alpha$Rt_incl[,2]</code></pre>
 <h2>function</h2>
 <pre class="r"><code>naive_epsilon &lt;- function(I, Rt_epi, periods){
   
-  name_epsi &lt;- c(&#39;All&#39;,colnames(I[[1]][-1]),paste0(&#39;Quarter&#39;,1:4))
+  name_epsi &lt;- c(&#39;All&#39;,colnames(I[[1]][-1]),paste0(&#39;Quarter &#39;,1:4))
   epsi_template &lt;- data.frame(name = name_epsi,
                               med = NA,
                               low = NA,
@@ -280,29 +280,29 @@ Rt_epi_UK1$alpha$Rt_incl[,2]</code></pre>
 
 naive_epsilon_fr$sum_epsilon$wild_alpha</code></pre>
 <pre><code>##                          name       med       low       up
-## 1                         All 1.2088110 0.7462115 1.651348
-## 2        Auvergne-Rhône-Alpes 1.2504201 0.8896585 1.667725
-## 3     Bourgogne-Franche-Comté 1.2755101 0.9090653 1.778405
-## 4                    Bretagne 1.3483585 0.8924520 1.795715
-## 5         Centre-Val de Loire 1.1825672 0.7855315 1.613349
+## 1                         All 1.2094591 0.7484756 1.652455
+## 2        Auvergne-Rhône-Alpes 1.2517254 0.8891240 1.668238
+## 3     Bourgogne-Franche-Comté 1.2789900 0.9056766 1.782990
+## 4                    Bretagne 1.3467092 0.8933316 1.788447
+## 5         Centre-Val de Loire 1.1842570 0.7868000 1.609425
 ## 6                       Corse        NA        NA       NA
-## 7                   Grand Est 1.2531937 0.7010208 1.481321
+## 7                   Grand Est 1.2527176 0.6947973 1.490051
 ## 8                  Guadeloupe        NA        NA       NA
 ## 9                      Guyane        NA        NA       NA
-## 10            Hauts-de-France 1.1900548 0.9710593 1.410636
-## 11              Île-de-France 1.0841400 0.8705234 1.471537
-## 12                 La Réunion 1.1319254 0.6723632 2.056435
+## 10            Hauts-de-France 1.1907644 0.9755113 1.409615
+## 11              Île-de-France 1.0854113 0.8709407 1.475018
+## 12                 La Réunion 1.1216297 0.6821506 2.099014
 ## 13                 Martinique        NA        NA       NA
 ## 14                    Mayotte        NA        NA       NA
-## 15                  Normandie 1.2016616 0.9089289 1.578472
-## 16         Nouvelle-Aquitaine 1.2153766 0.6991539 1.625858
-## 17                  Occitanie 1.1769449 0.8072228 1.498834
-## 18           Pays de la Loire 1.2031986 0.6574323 1.554910
-## 19 Provence-Alpes-Côte d&#39;Azur 1.2241077 0.6719651 1.577242
-## 20                   Quarter1 1.4475395 1.2567264 1.716487
-## 21                   Quarter2 1.2768225 0.9867730 1.608205
-## 22                   Quarter3 1.1433650 0.8284688 1.524579
-## 23                   Quarter4 0.9958155 0.6710858 1.527654</code></pre>
+## 15                  Normandie 1.2017178 0.9080962 1.594953
+## 16         Nouvelle-Aquitaine 1.2139043 0.6993084 1.629657
+## 17                  Occitanie 1.1821235 0.8085448 1.500098
+## 18           Pays de la Loire 1.2024196 0.6650645 1.549721
+## 19 Provence-Alpes-Côte d&#39;Azur 1.2267797 0.6730440 1.580477
+## 20                  Quarter 1 1.4480958 1.2591178 1.715781
+## 21                  Quarter 2 1.2769651 0.9849339 1.612811
+## 22                  Quarter 3 1.1446848 0.8322248 1.514601
+## 23                  Quarter 4 0.9960444 0.6692152 1.531526</code></pre>
 </div>
 <div id="uk1" class="section level2">
 <h2>UK1</h2>
@@ -311,19 +311,19 @@ naive_epsilon_fr$sum_epsilon$wild_alpha</code></pre>
                                    periods = periods$periods_UK1)
 
 naive_epsilon_UK1$sum_epsilon$wild_alpha</code></pre>
-<pre><code>##                        name       med       low       up
-## 1                       All 1.4100525 0.8640727 2.017455
-## 2           east_of_england 1.3757074 1.0102739 2.135901
-## 3                    london 1.3995546 0.9272317 1.815460
-## 4                  midlands 1.4396067 0.9199974 2.049669
-## 5  north_east_and_yorkshire 1.4144932 0.8573168 2.038468
-## 6                north_west 1.4969035 0.7187356 2.076744
-## 7                south_east 1.3450023 0.9977472 1.874214
-## 8                south_west 1.4076195 0.7836161 1.816708
-## 9                  Quarter1 0.8933852 0.6316034 1.153007
-## 10                 Quarter2 1.3598367 0.8244668 1.952405
-## 11                 Quarter3 1.4507120 1.0697149 2.018518
-## 12                 Quarter4 1.3910040 0.9272250 2.123040</code></pre>
+<pre><code>##                        name      med       low       up
+## 1                       All 1.410296 0.8615942 2.013145
+## 2           East of England 1.377866 1.0093864 2.141569
+## 3                    London 1.398770 0.9174860 1.812628
+## 4                  Midlands 1.440600 0.9155513 2.046600
+## 5  North East and Yorkshire 1.411122 0.8616834 2.035442
+## 6                North West 1.493406 0.7127558 2.084274
+## 7                South East 1.348142 0.9964161 1.880014
+## 8                South West 1.408497 0.7805673 1.827052
+## 9                 Quarter 1 0.889163 0.6218711 1.153161
+## 10                Quarter 2 1.357434 0.8172422 1.953868
+## 11                Quarter 3 1.450853 1.0646297 2.015520
+## 12                Quarter 4 1.390317 0.9287715 2.121789</code></pre>
 <pre class="r"><code>I_fr[[1]]$date[periods$periods_fr$intervals]</code></pre>
 <pre><code>## [1] &quot;2021-02-18&quot; &quot;2021-02-28&quot; &quot;2021-03-23&quot; &quot;2021-04-14&quot; &quot;2021-05-07&quot;
 ## [6] &quot;2021-05-30&quot;</code></pre>
@@ -336,18 +336,18 @@ naive_epsilon_UK1$sum_epsilon$wild_alpha</code></pre>
 
 naive_epsilon_UK2$sum_epsilon$alpha_delta</code></pre>
 <pre><code>##                        name      med       low        up
-## 1                       All 2.088684 1.1074640  6.378049
-## 2           east_of_england       NA        NA        NA
-## 3                    london 1.221641 0.7965577  2.886142
-## 4                  midlands 1.870918 1.3255871  2.880667
-## 5  north_east_and_yorkshire 2.553711 1.7234162  3.595322
-## 6                north_west 1.856209 1.3260768  2.925263
-## 7                south_east       NA        NA        NA
-## 8                south_west 7.916135 4.1189612 18.677560
-## 9                  Quarter1       NA        NA        NA
-## 10                 Quarter2       NA        NA        NA
-## 11                 Quarter3 1.732668 0.9399356  2.492387
-## 12                 Quarter4 2.358903 1.4048855  8.167378</code></pre>
+## 1                       All 2.098667 1.1125542  6.093570
+## 2           East of England       NA        NA        NA
+## 3                    London 1.246381 0.8094025  2.862024
+## 4                  Midlands 1.913164 1.4001562  2.728777
+## 5  North East and Yorkshire 2.585538 1.7207404  3.530067
+## 6                North West 1.856843 1.3377011  2.903596
+## 7                South East       NA        NA        NA
+## 8                South West 7.632358 3.9895087 20.750943
+## 9                 Quarter 1       NA        NA        NA
+## 10                Quarter 2       NA        NA        NA
+## 11                Quarter 3 1.734961 0.9433736  2.426218
+## 12                Quarter 4 2.372018 1.4446221  7.748584</code></pre>
 </div>
 </div>
 <div id="save" class="section level1">
