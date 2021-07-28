@@ -1,4 +1,5 @@
 ## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = TRUE))
+dir.create("outputs")
 simulated_incid <- readRDS("incid.rds")
 si_for_est <- readRDS("si_for_est.rds")
 
@@ -9,52 +10,64 @@ mcmc_controls <- list(
 
 tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
-
+max_attempts <- 3
 ## Estimate epsilon
-results <- map2(
-  simulated_incid, si_for_est,
-  function(incid, si) {
-    map(tmax_all, function(tmax) {
-    message("tmax = ", tmax)
-    ## Loop over the first dimension which is
-    ## the set of simulations
-    map(incid, function(x) {
-      t_min <- EpiEstim::compute_t_min(x, si)
-      t_max <- as.integer(t_min + tmax)
-      t_max <- min(t_max, nrow(x))
-      out <- EpiEstim:::estimate_joint(
-        x, si, priors, seed = 1,
-        t_min = t_min,
-        t_max = t_max,
-        mcmc_control = mcmc_controls
-        )
-      attempt <- 1
-      while (! out[["convergence"]]) {
-        message("Attempt ", attempt)
-        message("Not yet converged")
-        mcmc_controls <- lapply(
-          mcmc_controls, function(x) x * 2L
-        )
-        out <- EpiEstim:::estimate_joint(
-          x, si, priors, seed = 1,
-          t_min = t_min,
-          t_max = t_max,
-          mcmc_control = mcmc_controls
+plan(multicore)
+pwalk(
+  list(
+    incid = simulated_incid, si = si_for_est,
+    index = seq_along(simulated_incid)
+  ),
+  function(incid, si, index) {
+    res <- map(
+      tmax_all, function(tmax) {
+        message("tmax = ", tmax)
+        ## Loop over the first dimension which is
+        ## the set of simulations
+        future_map(incid, function(x) {
+          t_min <- EpiEstim::compute_t_min(x, si)
+          t_max <- as.integer(t_min + tmax)
+          t_max <- min(t_max, nrow(x))
+          out <- estimate_joint(
+            x, si, priors, seed = 1,
+            t_min = t_min,
+            t_max = t_max,
+            mcmc_control = mcmc_controls
           )
-        attempt <- attempt + 1
-        ## so that we don't end in an infinite loop
-        if (attempt > 3) {
-          message("Aborting after 3 attempts")
-          break
-        }
+          attempt <- 1
+          ## if convergence is achieved, out[["convergence"]] is TRUE
+          while (! out[["convergence"]]) {
+            message("Attempt ", attempt)
+            message("Not yet converged")
+            mcmc_controls <- lapply(
+              mcmc_controls, function(x) x * 2L
+            )
+            out <- estimate_joint(
+              x, si, priors, seed = 1,
+              t_min = t_min,
+              t_max = t_max,
+              mcmc_control = mcmc_controls
+            )
+            attempt <- attempt + 1
+            ## so that we don't end in an infinite loop
+            if (attempt > max_attempts) {
+              message("Aborting after 3 attempts")
+              ## return whatever you've got.
+              return(list(out, out[["convergence"]]))
+            }
+          }
+          list(out, out[["convergence"]])
+        }, .options = furrr_options(seed = TRUE),
+        .progress = TRUE
+        )
       }
-      list(out, out[["convergence"]])
-    }
     )
-    }
+    saveRDS(
+      res, glue("outputs/estimate_joint_{index}.rds")
     )
   }
 )
 
-saveRDS(results, "estimate_joint_output.rds")
+files2zip <- dir('outputs', full.names = TRUE)
+zip(zipfile = "estimate_joint_output.zip", files = files2zip)
 

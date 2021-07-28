@@ -2,9 +2,12 @@ script: vary_si.R
 packages:
 - dplyr
 - EpiEstim
+- furrr
+- glue
 - incidence
 - projections
 - purrr
+- utils
 
 parameters: short_run
 
@@ -15,7 +18,7 @@ artefacts:
   data:
     description: Results from estimate_joint
     filenames:
-      - estimate_joint_output.rds
+      - estimate_joint_output.zip
 
 depends:
   sims_one_location_vary_si:
