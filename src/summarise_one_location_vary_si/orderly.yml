@@ -21,9 +21,12 @@ global_resources:
   R/utils.R: summary_utils.R
 
 depends:
-  one_location_vary_si:
-    id: 20210721-113146-a4c58481
+  sims_one_location_vary_si:
+    id: 20210728-130505-7cab1b5b
     use:
-      one_loc_vary_si_params.rds: param_grid.rds
-      one_loc_vary_si.rds: estimate_joint_output.rds
-      one_loc_vary_si_incid.rds: sim_incid.rds
+      param_grid.rds: param_grid.rds
+      incid.rds: incid.rds
+  one_location_vary_si:
+    id: 20210728-132348-645f594e
+    use:
+      output.zip: estimate_joint_output.zip

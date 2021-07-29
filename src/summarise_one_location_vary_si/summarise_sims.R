@@ -2,47 +2,18 @@
 ## see comments in previous tasks
 source("R/utils.R")
 dir.create("figures")
-sim_params <- readRDS("one_loc_vary_si_params.rds")
-incid <- readRDS("one_loc_vary_si_incid.rds")
-output <- readRDS("one_loc_vary_si.rds")
+unzip("output.zip")
+sim_params <- readRDS("param_grid.rds")
+incid <- readRDS("incid.rds")
+
 
 ## Summarise simulated incidence, summarise
 ## epsilon and epsilon error.
 tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
-si_mu_ref <- 6.83
-si_std_ref <- 3.8
+si_mu_ref <- 5.4
+si_std_ref <- 1.5
 si_distr_ref <- discr_si(0:30, mu = si_mu_ref, sigma = si_std_ref)
-## Estimate epsilon
-days_used <- pmap_dfr(
-  list(
-    incid = incid,
-    si_mu_variant = sim_params$si_mu_variant,
-    si_std_variant = sim_params$si_std_variant
-  ),
-  function(incid, si_mu_variant, si_std_variant) {
-    si_distr_variant <- discr_si(
-      0:30, mu = si_mu_variant, sigma = si_std_variant
-    )
-    si_distr_variant <- si_distr_variant / sum(si_distr_variant)
-    si_for_est <- cbind(si_distr_ref, si_distr_variant)
-    map_dfr(tmax_all, function(tmax) {
-      message("tmax = ", tmax)
-      imap_dfr(incid, function(x, sim) {
-        t_min <- compute_t_min(x, si_for_est)
-        t_max <- as.integer(t_min + tmax)
-        t_max <- min(t_max, nrow(x))
-        data.frame(
-          t_min = t_min, t_max = t_max,
-          sim = sim
-        )
-      }
-      )
-    }, .id = "tmax_in"
-    )
-  }
-)
-
 incid_summary <- map_depth(
   incid, 2, function(x) {
     map_dfr(
@@ -72,19 +43,28 @@ incid_summary <- map(
 ## Finally within that, we have a list of length
 ## 2, which is the output from estimate_joint.
 eps_summary <- map(
-  output, function(res) {
+  seq_len(nrow(sim_params)),
+  function(index) {
+    infile <- glue("outputs/estimate_joint_{index}.rds")
+    if (!file.exists(infile)) {
+      warning(infile, " not present")
+      return(NULL)
+    }
+    res <- readRDS(infile)
+    message("At ", infile)
     names(res) <- tmax_all
     map_dfr(
       res, function(res_tmax) {
         map_dfr(
           res_tmax, function(res_sim) {
-            summarise_epsilon(res_sim)
+            summarise_epsilon(res_sim[[1]])
           }, .id = "sim"
         )
       }, .id = "tmax"
     )
   }
 )
+
 ## One of the problematic ones
 ##bad <- output[[105]][[5]][[98]]
 ##bad <- output[[1]][[5]][[68]]
@@ -130,23 +110,45 @@ eps_summary_df$true_eps <- round(eps_summary_df$true_eps, 3)
 
 ## Summarise by parameters that vary
 ## 1. by tmax
-by_tmax <- summarise_sims(group_by(eps_summary_df, tmax))
+by_tmax <- split(eps_summary_df, eps_summary_df$tmax) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "tmax"
+  )
 ## 2. by epsilon
-by_eps <- summarise_sims(group_by(eps_summary_df, true_eps))
-## 3. by si_mu
-by_mu_var <- summarise_sims(group_by(eps_summary_df, si_mu_variant))
-## 4. by rt_ref
-by_rt_ref <- summarise_sims(group_by(eps_summary_df, rt_ref))
-## 5. by rt_ref and si_mu
-by_rt_and_mu <- summarise_sims(
-  group_by(eps_summary_df, rt_ref, si_mu_variant)
+by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "true_eps"
 )
+## 3. by si_mu
+by_mu_var <- split(eps_summary_df, eps_summary_df$si_mu_variant) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "si_mu_variant"
+  )
+## 4. by rt_ref
+by_rt_ref <- split(eps_summary_df, eps_summary_df$rt_ref) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "rt_ref"
+  )
+## 5. by rt_ref and si_mu
+by_rt_and_mu <- split(
+  eps_summary_df, list(eps_summary_df$rt_ref, eps_summary_df$si_mu_variant),
+  sep = "_"
+) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "var"
+  )
 ## 6. by all variables
-by_all_vars <- summarise_sims(
-  group_by(eps_summary_df, rt_ref, si_mu_variant, tmax)
-) %>% ungroup()
+by_all_vars <-  split(
+  eps_summary_df,
+  list(eps_summary_df$rt_ref, eps_summary_df$si_mu_variant, eps_summary_df$tmax),
+  sep = "_"
+) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "var"
+  )
 
-
+by_all_vars <- tidyr::separate(by_all_vars, col = "var", into = c("rt_ref", "si_mu_variant", "tmax"), sep = "_")
+by_all_vars$si_mu_variant <- as.numeric(by_all_vars$si_mu_variant)
 by_all_vars$si_label <- glue(
   "X {round(by_all_vars$si_mu_variant / si_mu_ref, 1)}"
 )
@@ -168,21 +170,30 @@ p <- ggplot(by_all_vars) +
 
 ggsave(glue("figures/vary_si_prop_in_95.png"), p)
 
-eps_err_summary <- pmap(
-  list(res = output, epsilon = sim_params$epsilon),
-  function(res, epsilon) {
+eps_err_summary <- map2(
+  seq_len(nrow(sim_params)),
+  sim_params$epsilon,
+  function(index, epsilon) {
+    infile <- glue("outputs/estimate_joint_{index}.rds")
+    if (!file.exists(infile)) {
+      warning(infile, " not present")
+      return(NULL)
+    }
+    res <- readRDS(infile)
+    message("At ", infile)
     names(res) <- tmax_all
     map_dfr(
       res, function(res_tmax) {
         map_dfr(
           res_tmax, function(res_sim) {
-            summarise_epsilon_error(res_sim, epsilon)
+            summarise_epsilon_error(res_sim[[1]], epsilon)
           }, .id = "sim"
         )
       }, .id = "tmax"
     )
   }
 )
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_err_summary))
 
@@ -194,7 +205,7 @@ eps_err_summary_df <- pmap_dfr(
     summary
   }
 )
-
+eps_err_summary_df <- na.omit(eps_err_summary_df)
 x <- group_by(eps_err_summary_df, rt_ref, si_mu_variant, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
