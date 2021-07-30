@@ -27,7 +27,8 @@ incid_init <- initial_incidence()
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
-simulated_incid <- pmap(
+plan(multicore)
+simulated_incid <- future_pmap(
   sim_params,
   function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(
@@ -41,7 +42,7 @@ simulated_incid <- pmap(
   }
 )
 
-si_for_est <- pmap(
+si_for_est <- future_pmap(
   sim_params,
   function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(

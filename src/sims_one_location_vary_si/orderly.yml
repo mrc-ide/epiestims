@@ -2,6 +2,7 @@ script: sims_vary_si.R
 packages:
 - dplyr
 - EpiEstim
+- furrr
 - incidence
 - projections
 - purrr

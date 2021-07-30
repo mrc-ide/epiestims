@@ -21,7 +21,6 @@ pwalk(
   function(incid, si, index) {
     res <- map(
       tmax_all, function(tmax) {
-        message("tmax = ", tmax)
         ## Loop over the first dimension which is
         ## the set of simulations
         future_map(incid, function(x) {
@@ -57,7 +56,7 @@ pwalk(
             }
           }
           list(out, out[["convergence"]])
-        }, .options = furrr_options(seed = TRUE),
+        }, .options = furrr_options(seed = TRUE, stdout = FALSE),
         .progress = TRUE
         )
       }
