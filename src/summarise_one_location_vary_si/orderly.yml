@@ -22,11 +22,11 @@ global_resources:
 
 depends:
   sims_one_location_vary_si:
-    id: 20210728-130505-7cab1b5b
+    id: latest
     use:
       param_grid.rds: param_grid.rds
       incid.rds: incid.rds
   one_location_vary_si:
-    id: 20210728-132348-645f594e
+    id: latest
     use:
       output.zip: estimate_joint_output.zip
