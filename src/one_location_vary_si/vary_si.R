@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = TRUE))
+## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = FALSE))
 dir.create("outputs")
 simulated_incid <- readRDS("incid.rds")
 si_for_est <- readRDS("si_for_est.rds")
@@ -23,7 +23,9 @@ pwalk(
       tmax_all, function(tmax) {
         ## Loop over the first dimension which is
         ## the set of simulations
-        future_map(incid, function(x) {
+        message("tmax = ", tmax)
+        future_imap(incid, function(x, i) {
+          message("sim = ", i)
           t_min <- EpiEstim::compute_t_min(x, si)
           t_max <- as.integer(t_min + tmax)
           t_max <- min(t_max, nrow(x))
@@ -55,8 +57,12 @@ pwalk(
               return(list(out, out[["convergence"]]))
             }
           }
+          ## For debugging only, will delete later.
+          saveRDS(
+            out, glue("outputs/estimate_joint_{index}_{i}.rds")
+          )
           list(out, out[["convergence"]])
-        }, .options = furrr_options(seed = TRUE, stdout = FALSE),
+        }, .options = furrr_options(seed = TRUE, stdout = TRUE),
         .progress = TRUE
         )
       }
