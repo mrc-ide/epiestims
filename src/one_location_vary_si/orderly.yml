@@ -2,9 +2,12 @@ script: vary_si.R
 packages:
 - dplyr
 - EpiEstim
+- furrr
+- glue
 - incidence
 - projections
 - purrr
+- utils
 
 parameters: short_run
 
@@ -13,8 +16,13 @@ global_resources:
 
 artefacts:
   data:
-    description: Parameter grid, simulated incidence and results from estimate_joint
+    description: Results from estimate_joint
     filenames:
-      - param_grid.rds
-      - estimate_joint_output.rds
-      - sim_incid.rds      
+      - estimate_joint_output.zip
+
+depends:
+  sims_one_location_vary_si:
+    id: latest(parameter:short_run == short_run)
+    use:
+      incid.rds: incid.rds
+      si_for_est.rds: si_for_est.rds

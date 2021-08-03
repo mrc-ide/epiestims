@@ -1,95 +1,74 @@
-source("R/sim_utils.R")
-set.seed(42)
+## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = FALSE))
+dir.create("outputs")
+simulated_incid <- readRDS("incid.rds")
+si_for_est <- readRDS("si_for_est.rds")
 
-ndays <- 100
-n_loc <- 1
-n_v <- 2
-
-# SI distr
-
-si_mu_ref <- 6.83
-si_std_ref <- 3.8
-si_distr_ref <- discr_si(0:30, mu = si_mu_ref, sigma = si_std_ref)
-si_distr_ref <- si_distr_ref / sum(si_distr_ref)
-si_no_zero_ref <- si_distr_ref[-1]
-
-# Number of simulations
-nsims <- ifelse(short_run, 1, 100)
-
-## Other common things
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
-  n_iter = 20000L, burnin = 1000L, thin = 40L
+  n_iter = 15000L, burnin = 7500L, thin = 20L
 )
-
-
-sim_params <- expand.grid(
-  rt_ref = c(1.2, 3),
-  epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
-  si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
-  si_std_variant = si_std_ref
-)
-
-rows <- ifelse(short_run, 2, nrow(sim_params))
-sim_params <- sim_params[seq_len(rows), ]
-incid_init <- initial_incidence()
-##############################################################################
-## Simulate epidemic incidence data with input reproduction numbers and si  ##
-##############################################################################
-simulated_incid <- pmap(
-  sim_params,
-  function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
-    si_distr_variant <- discr_si(
-      0:30, mu = si_mu_variant, sigma = si_std_variant
-    )
-    si_distr_variant <- si_distr_variant / sum(si_distr_variant)
-    si_no_zero_var <- si_distr_variant[-1]
-    si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
-    simulate_incid_wrapper(
-      rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims)
-  }
-)
-
 
 tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
-
+max_attempts <- 3
 ## Estimate epsilon
-results <- pmap(
+plan(multicore)
+pwalk(
   list(
-    incid = simulated_incid,
-    si_mu_variant = sim_params$si_mu_variant,
-    si_std_variant = sim_params$si_std_variant
+    incid = simulated_incid, si = si_for_est,
+    index = seq_along(simulated_incid)
   ),
-  function(incid, si_mu_variant, si_std_variant) {
-    si_distr_variant <- discr_si(
-      0:30, mu = si_mu_variant, sigma = si_std_variant
+  function(incid, si, index) {
+    res <- map(
+      tmax_all, function(tmax) {
+        ## Loop over the first dimension which is
+        ## the set of simulations
+        message("tmax = ", tmax)
+        future_imap(incid, function(x, i) {
+          message("sim = ", i)
+          t_min <- EpiEstim::compute_t_min(x, si)
+          t_max <- as.integer(t_min + tmax)
+          t_max <- min(t_max, nrow(x))
+          out <- estimate_joint(
+            x, si, priors, seed = 1,
+            t_min = t_min,
+            t_max = t_max,
+            mcmc_control = mcmc_controls
+          )
+          attempt <- 1
+          ## if convergence is achieved, out[["convergence"]] is TRUE
+          while (! out[["convergence"]]) {
+            message("Attempt ", attempt)
+            message("Not yet converged")
+            mcmc_controls <- lapply(
+              mcmc_controls, function(x) x * 2L
+            )
+            out <- estimate_joint(
+              x, si, priors, seed = 1,
+              t_min = t_min,
+              t_max = t_max,
+              mcmc_control = mcmc_controls
+            )
+            attempt <- attempt + 1
+            ## so that we don't end in an infinite loop
+            if (attempt > max_attempts) {
+              message("Aborting after 3 attempts")
+              ## return whatever you've got.
+              return(list(out, out[["convergence"]]))
+            }
+          }
+          list(out, out[["convergence"]])
+        }, .options = furrr_options(seed = TRUE, stdout = TRUE),
+        .progress = TRUE
+        )
+      }
     )
-    si_distr_variant <- si_distr_variant / sum(si_distr_variant)
-    si_for_est <- cbind(si_distr_ref, si_distr_variant)
-    map(tmax_all, function(tmax) {
-    message("tmax = ", tmax)
-    ## Loop over the first dimension which is
-    ## the set of simulations
-    map(incid, function(x) {
-      t_min <- EpiEstim::compute_t_min(x, si_for_est)
-      t_max <- as.integer(t_min + tmax)
-      t_max <- min(t_max, nrow(x))
-      EpiEstim:::estimate_joint(
-        x, si_for_est, priors, seed = 1,
-        t_min = t_min,
-        t_max = t_max,
-        mcmc_control = mcmc_controls
-      )
-
-    }
-    )
-    }
+    saveRDS(
+      res, glue("outputs/estimate_joint_{index}.rds")
     )
   }
 )
 
+files2zip <- dir('outputs', full.names = TRUE)
+zip(zipfile = "estimate_joint_output.zip", files = files2zip)
 
-saveRDS(sim_params, "param_grid.rds")
-saveRDS(results, "estimate_joint_output.rds")
-saveRDS(simulated_incid, "sim_incid.rds")
