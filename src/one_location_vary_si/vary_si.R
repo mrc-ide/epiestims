@@ -57,10 +57,6 @@ pwalk(
               return(list(out, out[["convergence"]]))
             }
           }
-          ## For debugging only, will delete later.
-          saveRDS(
-            out, glue("outputs/estimate_joint_{index}_{i}.rds")
-          )
           list(out, out[["convergence"]])
         }, .options = furrr_options(seed = TRUE, stdout = TRUE),
         .progress = TRUE
