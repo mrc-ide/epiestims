@@ -43,7 +43,7 @@ simulated_incid <- future_pmap(
     simulate_incid_wrapper2(
       rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims
     )
-  }, .options = furrr_options(seed = TRUE, stdout = NULL)
+  }, .options = furrr_options(seed = TRUE, stdout = FALSE)
 )
 
 si_for_est <- future_pmap(

@@ -1,0 +1,28 @@
+script: vary_si.R
+packages:
+- dplyr
+- EpiEstim
+- furrr
+- glue
+- incidence
+- projections
+- purrr
+- utils
+
+parameters: short_run
+
+global_resources:
+  R/sim_utils.R: sim_utils.R
+
+artefacts:
+  data:
+    description: Results from estimate_joint
+    filenames:
+      - estimate_joint_output.zip
+
+depends:
+  sims_two_locations:
+    id: latest(parameter:short_run == short_run)
+    use:
+      incid.rds: incid.rds
+      si_for_est.rds: si_for_est.rds
