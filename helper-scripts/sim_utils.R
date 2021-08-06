@@ -119,21 +119,27 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
 ## number of locations but if we create
 ## simulate_incid_wrapper3, we should refactor the
 ## function!
+## rt_ref2 is the reproduction number for reference in
+## location 2.
 simulate_incid_wrapper2 <- function(rt_ref, epsilon, si, incid_init,
                                     n_loc = 2, n_v = 2,
-                                    ndays = 100, nsims = 100) {
+                                    ndays = 100, nsims = 100, rt_ref2 = NULL) {
   ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
   min_var_cases <- 5
   ## Calculate reproduction number for variant
-  rt_variant <- epsilon * rt_ref
+  rt_variant1 <- epsilon * rt_ref
+  if (is.null(rt_ref2)) rt_variant2 <- rt_variant1
+  else rt_variant2 <- epsilon * rt_ref2
   ## Assume reproduction number remains the same
   ## over the time period
   ## Make a vector that goes across rows
   R <- array(NA, dim = c(ndays, n_loc, n_v))
   R[, 1, 1] <- rep(rt_ref, each = ndays)
-  R[, 2, 1] <- rep(rt_ref, each = ndays)
-  R[, 1, 2] <- rep(rt_variant, each = ndays)
-  R[, 2, 2] <- rep(rt_variant, each = ndays)
+  ## For similar locations scenario, rt_ref2 is NULL.
+  if (is.null(rt_ref2)) R[, 2, 1] <- rep(rt_ref, each = ndays)
+  else R[, 2, 1] <- rep(rt_ref2, each = ndays)
+  R[, 1, 2] <- rep(rt_variant1, each = ndays)
+  R[, 2, 2] <- rep(rt_variant2, each = ndays)
   out <- rerun(
     nsims,
     simulate_incidence(
