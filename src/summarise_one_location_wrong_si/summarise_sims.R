@@ -6,7 +6,8 @@ unzip("output.zip")
 sim_params <- readRDS("param_grid.rds")
 incid <- readRDS("incid.rds")
 
-
+si_mu_ref <- 5.4
+si_std_ref <- 1.5
 ## Summarise simulated incidence, summarise
 ## epsilon and epsilon error.
 tmax_all <- seq(10, 50, by = 10)
