@@ -2,6 +2,7 @@ script: summarise_sims.R
 
 packages:
   - dplyr
+  - EpiEstim
   - Hmisc
   - purrr
   - ggforce
