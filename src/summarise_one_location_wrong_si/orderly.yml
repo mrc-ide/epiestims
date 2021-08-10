@@ -19,9 +19,12 @@ global_resources:
   R/utils.R: summary_utils.R
 
 depends:
+  sims_one_location_vary_si:
+    id: latest
+    use:
+      param_grid.rds: param_grid.rds
+      incid.rds: incid.rds
   one_location_wrong_si:
     id: latest
     use:
-      one_loc_wrong_si_params.rds: param_grid.rds
-      one_loc_wrong_si.rds: estimate_joint_output.rds
-      one_loc_wrong_si_incid.rds: sim_incid.rds
+      output.zip: estimate_joint_output.zip
