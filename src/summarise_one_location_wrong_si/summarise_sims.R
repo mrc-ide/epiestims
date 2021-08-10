@@ -11,9 +11,6 @@ incid <- readRDS("incid.rds")
 ## epsilon and epsilon error.
 tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
-si_mu_ref <- 5.4
-si_std_ref <- 1.5
-si_distr_ref <- discr_si(0:30, mu = si_mu_ref, sigma = si_std_ref)
 incid_summary <- map_depth(
   incid, 2, function(x) {
     map_dfr(
