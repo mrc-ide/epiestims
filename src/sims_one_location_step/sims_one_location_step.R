@@ -52,7 +52,8 @@ simulated_incid <- future_pmap(
 
 si_for_est <- future_pmap(
   sim_params,
-  function(rt_ref, epsilon, si_mu_variant, si_std_variant) {
+  function(rt_ref, rt_post_step, step_time,
+           epsilon, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(
       0:30, mu = si_mu_variant, sigma = si_std_variant
     )
