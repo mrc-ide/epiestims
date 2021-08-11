@@ -174,7 +174,7 @@ p <- ggplot(by_all_vars) +
   ylab("Proportion in 95% CrI") +
   xlab("tmax") +
   ylim(0, 1) +
-  facet_grid(rt_post_step ~ rt_ref) +
+  facet_grid(rt_post_step ~ rt_ref, labeller = label_both) +
   theme_minimal() +
   labs(color = "Reference Rt") +
   theme(
@@ -243,7 +243,7 @@ p <- ggplot(x) +
     aes(tmax, ymin = low, ymax = high),
     position = position_dodge(width = 0.5)
   ) +
-  facet_grid(rt_post_step ~ rt_ref) +
+  facet_grid(rt_post_step ~ rt_ref, labeller = label_both) +
   theme_minimal() +
   labs(color = "Reference Rt") +
   theme(legend.position = "top")
