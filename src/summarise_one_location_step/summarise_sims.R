@@ -168,20 +168,20 @@ by_all_vars$rt_ref <- as.factor(by_all_vars$rt_ref)
 by_all_vars$rt_post_step <- as.factor(by_all_vars$rt_post_step)
 
 p <- ggplot(by_all_vars) +
-  geom_point(aes(tmax, pt_est, col = rt_ref)) +
-  geom_linerange(aes(tmax, ymin = lower, ymax = upper, col = rt_ref)) +
+  geom_point(aes(tmax, pt_est)) +
+  geom_linerange(aes(tmax, ymin = lower, ymax = upper)) +
   geom_hline(yintercept = 0.95, linetype = "dashed") +
   ylab("Proportion in 95% CrI") +
   xlab("tmax") +
   ylim(0, 1) +
-  facet_wrap(~ si_label, nrow = 3) +
+  facet_grid(rt_post_step ~ rt_ref) +
   theme_minimal() +
   labs(color = "Reference Rt") +
   theme(
     legend.position = "top"
   )
 
-ggsave(glue("figures/vary_si_prop_in_95.png"), p)
+ggsave(glue("figures/one_loc_step_prop_in_95.png"), p)
 
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),
@@ -211,15 +211,18 @@ x <- as.list(sim_params)
 x <- append(x, list(summary = eps_err_summary))
 
 eps_err_summary_df <- pmap_dfr(
-  x, function(rt_ref, epsilon, si_mu_variant, si_std_variant, summary) {
+  x, function(rt_ref, rt_post_step, step_time, epsilon,
+              si_mu_variant, si_std_variant, summary) {
     summary$rt_ref <- rt_ref
+    summary$rt_post_step <- rt_post_step
+    summary$step_time <- step_time
     summary$true_eps <- epsilon
     summary$si_mu_variant <- si_mu_variant
     summary
   }
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
-x <- group_by(eps_err_summary_df, rt_ref, si_mu_variant, tmax) %>%
+x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, si_mu_variant, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
@@ -229,17 +232,18 @@ x$si_label <- glue(
   "X {round(x$si_mu_variant / si_mu_ref, 1)}"
 )
 x$rt_ref <- as.factor(x$rt_ref)
+x$rt_post_step <- as.factor(x$rt_post_step)
 
 p <- ggplot(x) +
   geom_point(
-    aes(tmax, med, col = factor(rt_ref)),
+    aes(tmax, med),
     position = position_dodge(width = 0.5)
   ) +
   geom_linerange(
-    aes(tmax, ymin = low, ymax = high, col = factor(rt_ref)),
+    aes(tmax, ymin = low, ymax = high),
     position = position_dodge(width = 0.5)
   ) +
-  facet_wrap(~si_label) +
+  facet_grid(rt_post_step ~ rt_ref) +
   theme_minimal() +
   labs(color = "Reference Rt") +
   theme(legend.position = "top")
