@@ -12,7 +12,7 @@ tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
 max_attempts <- 3
 ## Estimate epsilon
-plan(multicore)
+# plan(multicore) # mask this so that we can run on cluster
 pwalk(
   list(
     incid = simulated_incid, si = si_for_est,
