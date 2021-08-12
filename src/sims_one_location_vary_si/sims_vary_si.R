@@ -16,7 +16,8 @@ si_no_zero_ref <- si_distr_ref[-1]
 ## This is to prevent simulating unrealistically
 ## large numbers
 sim_params <- expand.grid(
-  rt_ref = c(0.9, 1.6),
+  ##rt_ref = c(0.9, 1.6),
+  rt_ref = 0.9,
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
   si_std_variant = si_std_ref
@@ -26,7 +27,7 @@ sim_params <- expand.grid(
 nsims <- ifelse(short_run, 1, 100)
 rows <- ifelse(short_run, 2, nrow(sim_params))
 sim_params <- sim_params[seq_len(rows), ]
-incid_init <- initial_incidence()
+
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
@@ -40,9 +41,12 @@ simulated_incid <- future_pmap(
     si_distr_variant <- si_distr_variant / sum(si_distr_variant)
     si_no_zero_var <- si_distr_variant[-1]
     si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
+    if (rt_ref > 1) incid_init <- initial_incidence("growing")
+    else incid_init <- initial_incidence("falling")
+
     simulate_incid_wrapper(
       rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims)
-  }, .options = furrr_options(seed = TRUE)
+  }, .options = furrr_options(seed = TRUE, stdout = FALSE)
 )
 
 si_for_est <- future_pmap(

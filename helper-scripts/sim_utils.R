@@ -1,17 +1,18 @@
 ## For 1 location now, edit for 2 locations later.
-initial_incidence <- function(n_loc = 1L) {
+initial_incidence <- function(type = "growing", n_loc = 1L) {
+  ref_i0 <- ifelse(type == "growing", 20, 2000)
   if (n_loc < 2) {
     out <- list(
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       incidence::incidence(dates = 10, first_date = 1, last_date = 10)
     )
   } else {
     ## Assume 2 locations, refactor later if needed.
     out <- list(
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       incidence::incidence(dates = 10, first_date = 1, last_date = 10),
       ## Location 2, wildtype
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       ## Location 2, variant
       incidence::incidence(dates = 10, first_date = 1, last_date = 10)
     )
