@@ -78,5 +78,5 @@ iwalk(
 )
 
 files2zip <- dir('outputs', full.names = TRUE)
-zip(zipfile = "estimate_joint_output.zip", files = files2zip)
+zip::zip(zipfile = "estimate_joint_output.zip", files = files2zip)
 

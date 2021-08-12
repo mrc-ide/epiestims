@@ -7,7 +7,7 @@ packages:
 - incidence
 - projections
 - purrr
-- utils
+- zip
 
 parameters: short_run
 
