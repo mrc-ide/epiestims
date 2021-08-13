@@ -16,8 +16,7 @@ si_no_zero_ref <- si_distr_ref[-1]
 ## This is to prevent simulating unrealistically
 ## large numbers
 sim_params <- expand.grid(
-  ##rt_ref = c(0.9, 1.6),
-  rt_ref = 0.9,
+  rt_ref = c(0.9, 1.6),
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   si_mu_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_mu_ref,
   si_std_variant = si_std_ref
