@@ -8,6 +8,7 @@ packages:
   - ggforce
   - ggplot2
   - glue
+  - zip
   
 artefacts:
   data:
@@ -19,6 +20,7 @@ artefacts:
       
 global_resources:
   R/utils.R: summary_utils.R
+  R/summarise_sims.R: summarise_sims.R
 
 depends:
   sims_one_location_vary_si:

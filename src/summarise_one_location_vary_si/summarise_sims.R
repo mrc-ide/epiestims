@@ -1,10 +1,8 @@
-## orderly::orderly_develop_start(use_draft = "newer")
+## orderly::orderly_develop_start()
 ## see comments in previous tasks
 prefix <- "vary_si"
 source("R/utils.R")
 source("R/summarise_sims.R")
-dir.create("figures")
-unzip("output.zip")
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_summary))
 
@@ -98,33 +96,21 @@ by_all_vars <-  split(
 by_all_vars <- tidyr::separate(by_all_vars, col = "var", into = c("rt_ref", "true_eps", "tmax"), sep = "_")
 by_all_vars$rt_ref <- as.factor(by_all_vars$rt_ref)
 eps_vals <- unique(by_all_vars$true_eps)
-split(by_all_vars, by_all_vars$tmax) %>%
-  iwalk(
-    function(x, tmax) {
-      x$rt_ref <- factor(x$rt_ref)
-      x$true_eps <- factor(x$true_eps, levels = eps_vals, ordered = TRUE)
-      p <- ggplot(x) +
-        geom_point(
-          aes(true_eps, pt_est, col = rt_ref),
-          position = position_dodge(width = 0.3)
-        ) +
-        geom_linerange(
-          aes(true_eps, ymin = lower, ymax = upper, col = rt_ref),
-          position = position_dodge(width = 0.3)
-        ) +
-        geom_hline(yintercept = 0.95, linetype = "dashed") +
-        ylab("Proportion in 95% CrI") +
-        xlab("True transmission advantage") +
-        ylim(0, 1) +
-        theme_minimal() +
-        labs(color = "Reference Rt") +
-        theme(
-          legend.position = "top"
-        )
+## To include in manuscript
+by_all_vars$rt_ref <- factor(by_all_vars$rt_ref)
+by_all_vars$true_eps <- factor(by_all_vars$true_eps, levels = eps_vals, ordered = TRUE)
 
-      ggsave(glue("figures/{prefix}_by_true_eps_tmax_{tmax}.png"), p)
-    }
-  )
+ms_tmax <- "50"
+ms_df <- by_all_vars[by_all_vars$tmax == ms_tmax, ]
+si_df <- by_all_vars[by_all_vars$tmax != ms_tmax, ]
+p1 <- true_epsilon_vs_95CrI(ms_df)
+ggsave(glue("figures/{prefix}_by_true_eps_tmax_{ms_tmax}.png"), p1)
+
+p2 <- true_epsilon_vs_95CrI(si_df) +
+  facet_wrap(~tmax)
+
+ggsave(glue("figures/{prefix}_by_true_eps_tmax_si.png"), p2)
+
 
 
 ## Error
@@ -140,32 +126,23 @@ eps_err_summary_df <- pmap_dfr(
   }
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
-x <- group_by(eps_err_summary_df, rt_ref, si_mu_variant, tmax) %>%
+
+x <- group_by(eps_err_summary_df, rt_ref, true_eps, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
   )
-
-x$si_label <- glue(
-  "X {round(x$si_mu_variant / si_mu_ref, 1)}"
-)
+x <- ungroup(x)
 x$rt_ref <- as.factor(x$rt_ref)
+x$true_eps <- factor(x$true_eps, levels = eps_vals, ordered = TRUE)
 
-p <- ggplot(x) +
-  geom_point(
-    aes(tmax, med, col = factor(rt_ref)),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_linerange(
-    aes(tmax, ymin = low, ymax = high, col = factor(rt_ref)),
-    position = position_dodge(width = 0.5)
-  ) +
-  facet_wrap(~si_label) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(legend.position = "top")
 
-ggsave(glue("figures/eps_error.png"), p)
+
+p1 <- true_epsilon_vs_error(x) +
+  facet_wrap(~tmax)
+
+ggsave(glue("figures/{prefix}_by_true_eps_error.png"), p1)
+
 
 saveRDS(eps_err_summary, "eps_err_summary.rds")
 saveRDS(eps_summary_df, "eps_summary_df.rds")
