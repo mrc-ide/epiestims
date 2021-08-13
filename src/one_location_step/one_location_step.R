@@ -1,7 +1,16 @@
 ## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = FALSE))
 dir.create("outputs")
 simulated_incid <- readRDS("incid.rds")
-si_for_est <- readRDS("si_for_est.rds")
+
+# SI distr
+
+si_mu_ref <- 5.4
+si_std_ref <- 1.5
+si_distr_ref <- discr_si(0:30, mu = si_mu_ref, sigma = si_std_ref)
+si_distr_ref <- si_distr_ref / sum(si_distr_ref)
+si_no_zero_ref <- si_distr_ref[-1]
+
+## Other common things
 
 priors <- EpiEstim:::default_priors()
 mcmc_controls <- list(
@@ -11,14 +20,13 @@ mcmc_controls <- list(
 tmax_all <- seq(10, 50, by = 10)
 names(tmax_all) <- tmax_all
 max_attempts <- 3
-## Estimate epsilon
+
+## Estimate epsilon with reference SI
+si_for_est <- cbind(si_distr_ref, si_distr_ref)
 # plan(multicore) # mask this so that we can run on cluster
-pwalk(
-  list(
-    incid = simulated_incid, si = si_for_est,
-    index = seq_along(simulated_incid)
-  ),
-  function(incid, si, index) {
+iwalk(
+  simulated_incid,
+  function(incid, index) {
     res <- map(
       tmax_all, function(tmax) {
         ## Loop over the first dimension which is
@@ -26,11 +34,11 @@ pwalk(
         message("tmax = ", tmax)
         future_imap(incid, function(x, i) {
           message("sim = ", i)
-          t_min <- EpiEstim::compute_t_min(x, si)
+          t_min <- EpiEstim::compute_t_min(x, si_for_est)
           t_max <- as.integer(t_min + tmax)
           t_max <- min(t_max, nrow(x))
           out <- estimate_joint(
-            x, si, priors, seed = 1,
+            x, si_for_est, priors, seed = 1,
             t_min = t_min,
             t_max = t_max,
             mcmc_control = mcmc_controls
@@ -44,7 +52,7 @@ pwalk(
               mcmc_controls, function(x) x * 2L
             )
             out <- estimate_joint(
-              x, si, priors, seed = 1,
+              x, si_for_est, priors, seed = 1,
               t_min = t_min,
               t_max = t_max,
               mcmc_control = mcmc_controls

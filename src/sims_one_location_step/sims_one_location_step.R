@@ -32,7 +32,7 @@ incid_init <- initial_incidence()
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
-plan(multicore)
+# plan(multicore)
 simulated_incid <- future_pmap(
   sim_params,
   function(rt_ref, rt_post_step, step_time,
