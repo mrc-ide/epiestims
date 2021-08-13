@@ -1,6 +1,6 @@
 ## This is common to all summary tasks
 dir.create("figures")
-unzip("output.zip")
+zip::unzip("output.zip")
 sim_params <- readRDS("param_grid.rds")
 incid <- readRDS("incid.rds")
 
