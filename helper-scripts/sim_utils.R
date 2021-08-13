@@ -1,17 +1,18 @@
 ## For 1 location now, edit for 2 locations later.
-initial_incidence <- function(n_loc = 1L) {
+initial_incidence <- function(type = "growing", n_loc = 1L) {
+  ref_i0 <- ifelse(type == "growing", 20, 2000)
   if (n_loc < 2) {
     out <- list(
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       incidence::incidence(dates = 10, first_date = 1, last_date = 10)
     )
   } else {
     ## Assume 2 locations, refactor later if needed.
     out <- list(
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       incidence::incidence(dates = 10, first_date = 1, last_date = 10),
       ## Location 2, wildtype
-      incidence::incidence(rep(seq(1, 10), each = 20)),
+      incidence::incidence(rep(seq(1, 10), each = ref_i0)),
       ## Location 2, variant
       incidence::incidence(dates = 10, first_date = 1, last_date = 10)
     )
@@ -38,12 +39,13 @@ initial_incidence <- function(n_loc = 1L) {
 ##' @author Sangeeta Bhatia, Jack Wardle
 simulate_incidence <- function(incid_init, nlocations,
                                nvariants, ndays, rmatrix,
-                               simatrix) {
+                               simatrix, ...) {
 
   init_days <- nrow(incid_init[[1]]$counts)
   incid <- array(
     NA, dim = c(ndays + init_days, nlocations, nvariants)
   )
+  ##message(paste(list(...)))
   for (loc in seq_len(nlocations)) {
     for (v in seq_len(nvariants)) {
       incid[, loc, v] <- rbind(
@@ -59,7 +61,7 @@ simulate_incidence <- function(incid_init, nlocations,
             instantaneous_R = TRUE,
             time_change = seq_len(
               length(rmatrix[, loc, v]) - 2
-            ) - 1
+            ) - 1, ...
           )
         )
       )
@@ -71,7 +73,7 @@ simulate_incidence <- function(incid_init, nlocations,
 
 simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
                                    n_loc = 1, n_v = 2,
-                                   ndays = 100, nsims = 100) {
+                                   ndays = 100, nsims = 100, ...) {
   ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
   min_var_cases <- 5
   ## Calculate reproduction number for variant
@@ -101,7 +103,7 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
     more <- rerun(
       nsims - success,
       simulate_incidence(
-        incid_init, n_loc, n_v, ndays, R, si
+        incid_init, n_loc, n_v, ndays, R, si, ...
       )
     )
     out <- append(out, more)
