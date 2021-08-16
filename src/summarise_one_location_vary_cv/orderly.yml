@@ -1,14 +1,12 @@
-script: summarise_sims.R
+script: vary_cv_summarise_sims.R
 
 packages:
   - dplyr
   - EpiEstim
   - Hmisc
   - purrr
-  - ggforce
   - ggplot2
   - glue
-  - zip
   
 artefacts:
   data:
@@ -23,12 +21,12 @@ global_resources:
   R/summarise_sims.R: summarise_sims.R
 
 depends:
-  sims_one_location_vary_si:
+  sims_one_location_vary_cv:
     id: latest
     use:
       param_grid.rds: param_grid.rds
       incid.rds: incid.rds
-  one_location_vary_si:
+  one_location_vary_cv:
     id: latest
     use:
       output.zip: estimate_joint_output.zip
