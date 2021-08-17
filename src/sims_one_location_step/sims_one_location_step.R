@@ -16,13 +16,17 @@ si_no_zero_ref <- si_distr_ref[-1]
 ## This is to prevent simulating unrealistically
 ## large numbers
 sim_params <- expand.grid(
-  rt_ref = c(1.2, 1.6),
-  rt_post_step = c(0.9, 1.6),
+  rt_ref = c(1.4, 1.6),
+  rt_post_step = c(1.1, 1.2),
   step_time = 30,
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   si_mu_variant = 1 * si_mu_ref,
   si_std_variant = si_std_ref
 )
+
+sim_params <- sim_params %>% 
+  filter(!(rt_ref == 1.4 & rt_post_step == 1.2)) %>% 
+  filter(!(rt_ref == 1.6 & rt_post_step == 1.1))
 
 # Number of simulations
 nsims <- ifelse(short_run, 1, 100)
