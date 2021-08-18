@@ -71,7 +71,7 @@ simulate_incidence <- function(incid_init, nlocations,
   reported <- array(
     NA, dim = c(ndays + init_days, nlocations, nvariants)
   )
-  for (day in seq_len(ndays+init_days)) {
+  for (day in seq_len(ndays + init_days)) {
     for (loc in seq_len(nlocations)) {
       for (v in seq_len(nvariants)) {
   reported[day,loc,var] <- sum(rbinom(1,n=incid[day,loc,var],p=p_report))
