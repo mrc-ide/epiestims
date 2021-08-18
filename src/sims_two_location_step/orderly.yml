@@ -1,4 +1,4 @@
-script: sims_two_location_step.R
+script: sims_two_locations_step.R
 packages:
 - dplyr
 - EpiEstim

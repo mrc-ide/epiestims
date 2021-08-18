@@ -33,7 +33,7 @@ sim_params <- sim_params %>%
 nsims <- ifelse(short_run, 1, 100)
 rows <- ifelse(short_run, 2, nrow(sim_params))
 sim_params <- sim_params[seq_len(rows), ]
-incid_init <- initial_incidence(2L)
+incid_init <- initial_incidence(type = "growing", n_loc = 2L)
 ##############################################################################
 ## Simulate epidemic incidence data with input reproduction numbers and si  ##
 ##############################################################################
@@ -48,8 +48,8 @@ simulated_incid <- future_pmap(
     si_distr_variant <- si_distr_variant / sum(si_distr_variant)
     si_no_zero_var <- si_distr_variant[-1]
     si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
-    simulate_stepwise_incid_wrapper(
-      rt_ref, rt_post_step, step_time, epsilon, si_for_sim,
+    simulate_stepwise_incid_wrapper2(
+      rt_ref, rt_post_step, step_time_l1, step_time_l2, epsilon, si_for_sim,
       incid_init = incid_init, nsims = nsims
     )
   }, .options = furrr_options(seed = TRUE)
@@ -57,7 +57,7 @@ simulated_incid <- future_pmap(
 
 si_for_est <- future_pmap(
   sim_params,
-  function(rt_ref, rt_post_step, step_time,
+  function(rt_ref, rt_post_step, step_time_l1, step_time_l2,
            epsilon, si_mu_variant, si_std_variant) {
     si_distr_variant <- discr_si(
       0:30, mu = si_mu_variant, sigma = si_std_variant

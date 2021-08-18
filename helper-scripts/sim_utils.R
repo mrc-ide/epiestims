@@ -225,3 +225,61 @@ simulate_stepwise_incid_wrapper <- function(rt_ref, rt_post_step, step_time,
   names(out) <- seq_len(nsims)
   out
 }
+
+
+## Wrapper for simulating stepwise incidence in two locations
+simulate_stepwise_incid_wrapper2 <- function(rt_ref, rt_post_step, step_time_l1, step_time_l2,
+                                            epsilon, si, incid_init,
+                                            n_loc = 2, n_v = 2,
+                                            ndays = 100, nsims = 100) {
+  ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
+  min_var_cases <- 5
+  ## Calculate reproduction number for variant
+  rt_variant <- epsilon * rt_ref
+  rt_variant_post_step <- epsilon * rt_post_step
+  ## Assume reproduction number changes after t = step_time
+  ## Make a vector that goes across rows
+  R <- array(NA, dim = c(ndays, n_loc, n_v))
+  R[,1,1] <- c(rep(rt_ref, each = step_time_l1),
+              rep(rt_post_step, each = ndays - step_time_l1))
+  R[,2,1] <- c(rep(rt_ref, each = step_time_l2),
+               rep(rt_post_step, each = ndays - step_time_l2))
+  R[,1,2] <- c(rep(rt_variant, each = step_time_l1),
+              rep(rt_variant_post_step, each = ndays - step_time_l1))
+  R[,2,2] <- c(rep(rt_variant, each = step_time_l2),
+               rep(rt_variant_post_step, each = ndays - step_time_l2))
+  ## Because we are starting with a small seed
+  ## we simulate 10 times as many trajectories
+  ## as we need so that we have nsim after
+  ## filtering
+  out <- rerun(
+    nsims,
+    simulate_incidence(
+      incid_init, n_loc, n_v, ndays, R, si
+    )
+  )
+  ## total number of cases at the end of the first 10 days
+  ## simulation for the variant.
+  ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
+  out <- out[ncases > min_var_cases]
+  message("# of simulations with more than 20 cases ", length(out))
+  ## At this point out may have less than
+  ## the desired number of simulations
+  success <- length(out)
+  while (success < nsims) {
+    message("More sims needed ", nsims - success)
+    more <- rerun(
+      nsims - success,
+      simulate_incidence(
+        incid_init, n_loc, n_v, ndays, R, si
+      )
+    )
+    out <- append(out, more)
+    ## check if new simulations have enough cases
+    ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
+    out <- out[ncases > min_var_cases]
+    success <- length(out)
+  }
+  names(out) <- seq_len(nsims)
+  out
+}
