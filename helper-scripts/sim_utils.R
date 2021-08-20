@@ -228,26 +228,29 @@ simulate_stepwise_incid_wrapper <- function(rt_ref, rt_post_step, step_time,
 
 
 ## Wrapper for simulating stepwise incidence in two locations
-simulate_stepwise_incid_wrapper2 <- function(rt_ref, rt_post_step, step_time_l1, step_time_l2,
+simulate_stepwise_incid_wrapper2 <- function(rt_ref_l1, rt_post_step_l1, step_time_l1,
+                                             rt_ref_l2, rt_post_step_l2, step_time_l2,
                                             epsilon, si, incid_init,
                                             n_loc = 2, n_v = 2,
                                             ndays = 100, nsims = 100) {
   ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
   min_var_cases <- 5
   ## Calculate reproduction number for variant
-  rt_variant <- epsilon * rt_ref
-  rt_variant_post_step <- epsilon * rt_post_step
+  rt_variant_l1 <- epsilon * rt_ref_l1
+  rt_variant_post_step_l1 <- epsilon * rt_post_step_l1
+  rt_variant_l2 <- epsilon * rt_ref_l2
+  rt_variant_post_step_l2 <- epsilon * rt_post_step_l2
   ## Assume reproduction number changes after t = step_time
   ## Make a vector that goes across rows
   R <- array(NA, dim = c(ndays, n_loc, n_v))
-  R[,1,1] <- c(rep(rt_ref, each = step_time_l1),
-              rep(rt_post_step, each = ndays - step_time_l1))
-  R[,2,1] <- c(rep(rt_ref, each = step_time_l2),
-               rep(rt_post_step, each = ndays - step_time_l2))
-  R[,1,2] <- c(rep(rt_variant, each = step_time_l1),
-              rep(rt_variant_post_step, each = ndays - step_time_l1))
-  R[,2,2] <- c(rep(rt_variant, each = step_time_l2),
-               rep(rt_variant_post_step, each = ndays - step_time_l2))
+  R[,1,1] <- c(rep(rt_ref_l1, each = step_time_l1),
+              rep(rt_post_step_l1, each = ndays - step_time_l1))
+  R[,2,1] <- c(rep(rt_ref_l2, each = step_time_l2),
+               rep(rt_post_step_l2, each = ndays - step_time_l2))
+  R[,1,2] <- c(rep(rt_variant_l1, each = step_time_l1),
+              rep(rt_variant_post_step_l1, each = ndays - step_time_l1))
+  R[,2,2] <- c(rep(rt_variant_l2, each = step_time_l2),
+               rep(rt_variant_post_step_l2, each = ndays - step_time_l2))
   ## Because we are starting with a small seed
   ## we simulate 10 times as many trajectories
   ## as we need so that we have nsim after
