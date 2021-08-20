@@ -1,4 +1,4 @@
-script: two_location_step.R
+script: two_location_step_diff.R
 packages:
 - dplyr
 - EpiEstim
@@ -21,7 +21,7 @@ artefacts:
       - estimate_joint_output.zip
 
 depends:
-  sims_two_location_step:
+  sims_two_location_step_diff:
     id: latest(parameter:short_run == short_run)
     use:
       incid.rds: incid.rds
