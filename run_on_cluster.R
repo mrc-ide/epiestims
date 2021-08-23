@@ -1,16 +1,16 @@
 config <- didehpc::didehpc_config(cores = 8, parallel = TRUE)
 library(context)
-packages <- c("dplyr", "epitrix", "glue", "incidence",
+packages <- c("dplyr", "epitrix", "furrr" ,"glue", "incidence",
               "orderly", "projections", "purrr")
-root <- 'context'
+root <- 'vary_si'
 ctx <-context_save(root, packages = packages)
 # [ open:db   ]  rds
-# [ save:id   ]  ed59bb10737dc761b869e66663baef1d
-# [ save:name ]  unadored_lemur
-ctx <- context_read('ed59bb10737dc761b869e66663baef1d', root)
+# [ save:id   ]  c061ec7f3677d8e8765c86e53326c716
+# [ save:name ]  quasiobjective_indianspinyloach
+ctx <- context_read('c061ec7f3677d8e8765c86e53326c716', root)
 # orderly::orderly_bundle_pack(".", "one_location_vary_si", parameters = list(short_run = FALSE))
 obj <- didehpc::queue_didehpc(ctx, config = config)
 obj$install_packages('abind')
-obj$install_packages('mrc-ide/EpiEstim@draw_eps_debug')
-res <- obj$enqueue(orderly::orderly_bundle_run('20210716-121320-d1cfd238.zip', "cluster-runs"))
-# task id: 7d851b4088f1abe608d50ebd78d865ca
+obj$install_packages('mrc-ide/EpiEstim@multiv')
+res <- obj$enqueue(orderly::orderly_bundle_run("Z:\\sbhatia\\epiestims\\20210813-183738-87e2789a.zip", "Z:\\sbhatia\\epiestims\\cluster-runs"))
+# task id: 3623f0cea161fbee7fa60bab1a006bfe
