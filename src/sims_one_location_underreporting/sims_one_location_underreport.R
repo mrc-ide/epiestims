@@ -1,3 +1,4 @@
+## setwd("/Volumes/outbreak_analysis/rnash/epiestims/src/sims_one_location_underreporting")
 ## orderly::orderly_develop_start(parameters = list(short_run = TRUE))
 source("R/sim_utils.R")
 set.seed(42)
@@ -22,7 +23,7 @@ sim_params <- expand.grid(
   rt_ref = c(1.1, 1.6),
   #epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   epsilon = 2,
-  p_report = 0.8
+  p_report = c(0.2,0.5,0.8)
 )
 
 # Number of simulations
