@@ -83,7 +83,8 @@ simulate_incidence <- function(incid_init, nlocations,
 
 simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
                                    n_loc = 1, n_v = 2,
-                                   ndays = 100, nsims = 100) {
+                                   ndays = 100, nsims = 100,
+                                   p_report=1) {
   ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
   min_var_cases <- 5
   ## Calculate reproduction number for variant
@@ -97,7 +98,7 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
   out <- rerun(
     nsims,
     simulate_incidence(
-      incid_init, n_loc, n_v, ndays, R, si, p_report=1
+      incid_init, n_loc, n_v, ndays, R, si, p_report
     )
   )
   ## total number of cases at the end of the first 10 days
@@ -113,7 +114,7 @@ simulate_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
     more <- rerun(
       nsims - success,
       simulate_incidence(
-        incid_init, n_loc, n_v, ndays, R, si, p_report=1
+        incid_init, n_loc, n_v, ndays, R, si, p_report
       )
     )
     out <- append(out, more)

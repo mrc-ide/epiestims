@@ -19,7 +19,8 @@ si_std_variant <- si_std_ref
 ## large numbers
 sim_params <- expand.grid(
   rt_ref = c(1.1, 1.6),
-  epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
+  #epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
+  epsilon = 2,
   p_report = 1
 )
 
@@ -45,7 +46,7 @@ simulated_incid <- future_pmap(
     else incid_init <- initial_incidence("falling")
     
     simulate_incid_wrapper(
-      rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims, p_report)
+      rt_ref, epsilon, si_for_sim, incid_init = incid_init, nsims = nsims, p_report = p_report)
   }, .options = furrr_options(seed = TRUE, stdout = FALSE)
 )
 
