@@ -7,14 +7,14 @@ packages <- c("dplyr", "epitrix", "furrr", "glue", "incidence",
               "projections", "purrr")
 
 root <- 'underreport'
-ctx <-context_save(root, packages = packages)
+# ctx <-context_save(root, packages = packages)
 #[ init:id   ]  4b34ac5ee19b12d136267421b8027cd0
 #[ init:db   ]  rds
 #[ init:path ]  underreport
 #[ save:id   ]  158bf86a28432169c9de38d6a2a2dd48
 #[ save:name ]  batty_hogget
 # Line number 13 is Needed next time you login to the cluster
-# ctx <- context_read('158bf86a28432169c9de38d6a2a2dd48', root)
+ ctx <- context_read('158bf86a28432169c9de38d6a2a2dd48', root)
 
 # pack your task so that it can be run on the cluster:
 orderly::orderly_bundle_pack(".", "sims_one_location_underreporting", 
@@ -28,6 +28,11 @@ orderly::orderly_bundle_pack(".", "sims_one_location_underreporting",
 orderly::orderly_bundle_pack(".", "one_location_underreporting", 
                              parameters = list(short_run = FALSE))
 
+#$id
+#[1] "20210824-135040-7401739c"
+
+#$path
+#[1] "Z:\\rnash\\epiestims\\20210824-135040-7401739c.zip"
 
 obj <- didehpc::queue_didehpc(ctx, config = config)
 obj$install_packages('abind')
@@ -49,9 +54,12 @@ t1 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210823-16
 #[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210823-165536-ac28064f.zip"
 
 
-t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\CHANGE.zip", 
+t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210824-135040-7401739c.zip", 
                                               "Z:\\rnash\\epiestims\\cluster-runs"))
 
+# t2$id "0e312998a33cc4b7e3dda6b2f7b69e2c"
+# check t2$status()
+# when t2$status() is 'complete', look for t2$result() and note id and path
 #$id
 #[1] 
 #$path
