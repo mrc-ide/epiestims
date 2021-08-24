@@ -25,6 +25,10 @@ orderly::orderly_bundle_pack(".", "sims_one_location_underreporting",
 #$path
 #[1] "Z:\\rnash\\epiestims\\20210823-165536-ac28064f.zip"
 
+orderly::orderly_bundle_pack(".", "one_location_underreporting", 
+                             parameters = list(short_run = FALSE))
+
+
 obj <- didehpc::queue_didehpc(ctx, config = config)
 obj$install_packages('abind')
 obj$install_packages('mrc-ide/EpiEstim@return_diag')
@@ -44,7 +48,18 @@ t1 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210823-16
 #$path
 #[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210823-165536-ac28064f.zip"
 
+
+t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\CHANGE.zip", 
+                                              "Z:\\rnash\\epiestims\\cluster-runs"))
+
+#$id
+#[1] 
+#$path
+#[1] 
+
 # now run orderly::orderly_bundle_import(<path from t1$result()>)
 orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210823-165536-ac28064f.zip")
+
+orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\CHANGE.zip")
 
 

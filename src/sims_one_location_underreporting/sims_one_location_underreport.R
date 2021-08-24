@@ -1,5 +1,7 @@
 ## setwd("/Volumes/outbreak_analysis/rnash/epiestims/src/sims_one_location_underreporting")
 ## orderly::orderly_develop_start(parameters = list(short_run = TRUE))
+## setwd("/Volumes/outbreak_analysis/rnash/epiestims/")
+## orderly::orderly_run("sims_one_location_underreporting", parameters = list(short_run = TRUE))
 source("R/sim_utils.R")
 set.seed(42)
 
