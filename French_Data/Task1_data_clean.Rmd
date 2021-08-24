@@ -225,6 +225,16 @@ periods_UK1$periods <- rep(c(NA,1:n_period), diff(periods_UK1$intervals)+ c(rep(
 periods_UK2 <- list(intervals =c(1,round(seq(trim_time, nrow(I_UK2$alpha),length.out = n_period+1))) )
 periods_UK2$periods <- rep(c(NA,1:n_period), diff(periods_UK2$intervals)+ c(rep(0,n_period),1) )
 
+temp <- I_fr$wild$date[periods_fr$intervals]
+temp
+diff(temp)
+temp <- I_UK1$wild$date[periods_UK1$intervals]
+temp
+diff(temp)
+temp <- I_UK2$alpha$date[periods_UK2$intervals]
+temp
+diff(temp)
+
 ```
 
 # saving
