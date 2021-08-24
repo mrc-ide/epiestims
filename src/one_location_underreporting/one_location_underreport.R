@@ -1,5 +1,6 @@
 ## setwd("/Volumes/outbreak_analysis/rnash/epiestims/src/one_location_underreporting")
 ## orderly::orderly_develop_start(use_draft = "newer", parameters = list(short_run = TRUE))
+## orderly::orderly_run("one_location_underreporting", use_draft = "newer", parameters = list(short_run = TRUE))
 
 dir.create("outputs")
 simulated_incid <- readRDS("incid.rds")
