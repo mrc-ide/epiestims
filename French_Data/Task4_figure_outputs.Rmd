@@ -245,14 +245,39 @@ p <- errb(d1 = Jestim_fr$epsilon$wild_alpha,
           d2 = naive_epsilon_fr$sum_epsilon$wild_alpha,
           title = 'France - alpha vs. wild')
 
+d1 <- Jestim_fr$epsilon$wild_alpha
+d2 = naive_epsilon_fr$sum_epsilon$wild_alpha
+print('median and 95')
+d1[1,]
+d2[1,]
+print('across region')
+quantile(d1[-c(1,20:23),2],c(.25,.75))
+quantile(d2[-c(1,20:23),2],c(.25,.75),na.rm=TRUE)
+print('time')
+range(d1[-c(1:19),2],na.rm=TRUE)
+range(d2[-c(1:19),2],na.rm=TRUE)
+
 
 q <- errb(d1 = Jestim_UK1$epsilon$wild_alpha,
           d2 = naive_epsilon_UK1$sum_epsilon$wild_alpha,
           title = 'England - alpha vs. wild')
 
+d1x = Jestim_UK1$epsilon$wild_alpha
+d2x = naive_epsilon_UK1$sum_epsilon$wild_alpha
+print('median and 95')
+d1x[1,]
+d2x[1,]
+print('across region')
+quantile(d1x[-c(1,9:12),2],c(.25,.75))
+quantile(d2x[-c(1,9:12),2],c(.25,.75),na.rm=TRUE)
+print('time')
+range(d1x[-c(1:8),2],na.rm=TRUE)
+range(d2x[-c(1:8),2],na.rm=TRUE)
 
 
 grid.arrange(p, q, nrow = 1)
+
+
 
 ```
 
@@ -268,11 +293,36 @@ p <- errb(d1 =  Jestim_fr$epsilon$`wild_beta/gamma`,
           title = 'France - beta/gamma vs. wild')
 
 
+
+d1 <- Jestim_fr$epsilon$`wild_beta/gamma`
+d2 = naive_epsilon_fr$sum_epsilon$`wild_beta/gamma`
+print('median and 95')
+d1[1,]
+d2[1,]
+print('across region')
+quantile(d1[-c(1,20:23),2],c(.25,.75))
+quantile(d2[-c(1,20:23),2],c(.25,.75),na.rm=TRUE)
+print('time')
+range(d1[-c(1:19),2],na.rm=TRUE)
+range(d2[-c(1:19),2],na.rm=TRUE)
+
+
+
 q <- errb(d1 = Jestim_UK2$epsilon$alpha_delta,
           d2 = naive_epsilon_UK2$sum_epsilon$alpha_delta,
           title = 'England - delta vs. alpha')
 
-
+d1x = Jestim_UK2$epsilon$alpha_delta
+d2x = naive_epsilon_UK2$sum_epsilon$alpha_delta
+print('median and 95')
+d1x[1,]
+d2x[1,]
+print('across region')
+quantile(d1x[-c(1,9:12),2],c(.25,.75))
+quantile(d2x[-c(1,9:12),2],c(.25,.75),na.rm=TRUE)
+print('time')
+range(d1x[-c(1:8),2],na.rm=TRUE)
+range(d2x[-c(1:8),2],na.rm=TRUE)
 
 grid.arrange(p, q, nrow = 1)
 
