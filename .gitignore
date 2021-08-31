@@ -7,3 +7,7 @@ simulations/.Rhistory
 archive/
 draft/
 orderly.sqlite
+*.png
+src/produce_summary_figures/wrong_si_eps.rds
+*.rds
+*.zip
