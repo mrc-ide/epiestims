@@ -1,0 +1,24 @@
+script: wrong_si.R
+packages:
+- dplyr
+- EpiEstim
+- furrr
+- glue
+- incidence
+- projections
+- purrr
+- zip
+
+parameters: short_run
+
+artefacts:
+  data:
+    description: Results from estimate_joint using reference SI for estimation
+    filenames:
+      - estimate_joint_output.zip
+
+depends:
+  sims_one_location_vary_si:
+    id: latest(parameter:short_run == short_run)
+    use:
+      incid.rds: incid.rds
