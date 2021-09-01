@@ -1,7 +1,6 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 ## see comments in previous tasks
 prefix <- "vary_offspring"
-dir.create("figures")
 source("R/utils.R")
 source("R/summarise_sims.R")
 

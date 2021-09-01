@@ -28,4 +28,12 @@ depends:
       vary_si_incid_summary.rds: incid_summary.rds
       vary_si_eps_err_summary_df.rds: eps_err_summary_df.rds
       vary_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+  summarise_one_location_vary_offspring:
+    id: latest
+    use:
+      vary_offs_eps_summary_df.rds: eps_summary_df.rds
+      vary_offs_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      vary_offs_incid_summary.rds: incid_summary.rds
+      vary_offs_eps_err_summary_df.rds: eps_err_summary_df.rds
+      vary_offs_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
       

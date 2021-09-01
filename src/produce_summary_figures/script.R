@@ -9,9 +9,7 @@ ms_si <- c("X 0.5", "X 1.2", "X 1.5")
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
 
-vary_si_err <- readRDS(
-  "vary_si_err_summary_by_all_vars.rds"
-)
+vary_si_err <- readRDS("vary_si_err_summary_by_all_vars.rds")
 eps_vals <- unique(vary_si_err$true_eps)
 vary_si_err$true_eps <- factor(
   vary_si_err$true_eps,
@@ -115,3 +113,28 @@ p <- ggplot(vary_si_classified) +
   theme(legend.title = element_blank())
 
 save_multiple(p, "figures/vary_si_classification")
+######################################################################
+######################################################################
+################## VARY OFFSPRING ####################################
+######################################################################
+vary_offs_err <- readRDS("vary_offs_err_summary_by_all_vars.rds")
+vary_offs_err$true_eps <- factor(
+  vary_offs_err$true_eps, levels = eps_vals, ordered = TRUE
+)
+vary_offs_err$rt_ref <- factor(vary_offs_err$rt_ref)
+vary_offs_err$label <- round(vary_offs_err$kappa, 1)
+vary_offs_err$label <- factor(vary_offs_err$label)
+vary_offs_err_tab <- select(vary_offs_err, -label) %>%
+  group_by(true_eps, tmax) %>%
+  summarise(
+    median_low = quantile(med, 0.025),
+    median_med = quantile(med, 0.5),
+    median_high = quantile(med, 0.975)
+  ) %>% ungroup()
+
+vary_offs_ms <- vary_offs_err[vary_offs_err$tmax == ms_tmax, ]
+p1a <- true_epsilon_vs_error(vary_offs_ms, "Over-dispersion") +
+      facet_wrap(
+      ~rt_ref, ncol = 1,
+      labeller = labeller(rt_ref = rt_labeller)
+    )
