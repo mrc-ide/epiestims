@@ -1,5 +1,3 @@
-## setwd("/Volumes/outbreak_analysis/rnash/epiestims/src/summarise_one_location_underreporting")
-## orderly::orderly_develop_start(use_draft = "newer")
 
 ## see comments in previous tasks
 prefix <- "underreport"
@@ -63,10 +61,6 @@ by_all_vars <-  split(
   )
 
 by_all_vars <- tidyr::separate(by_all_vars, col = "var", into = c("rt_ref", "p_report", "tmax"), sep = "_")
-#by_all_vars$si_mu_variant <- as.numeric(by_all_vars$si_mu_variant)
-# by_all_vars$si_label <- glue(
-#   "X {round(by_all_vars$si_mu_variant / si_mu_ref, 1)}"
-# )
 by_all_vars$p_report <- as.factor(by_all_vars$p_report)
 by_all_vars$rt_ref <- as.factor(by_all_vars$rt_ref)
 
@@ -107,13 +101,14 @@ by_all_vars$true_eps <- factor(by_all_vars$true_eps, levels = eps_vals, ordered 
 ms_tmax <- "50"
 ms_df <- by_all_vars[by_all_vars$tmax == ms_tmax, ]
 si_df <- by_all_vars[by_all_vars$tmax != ms_tmax, ]
-p1 <- true_epsilon_vs_95CrI(ms_df)
+p1 <- true_epsilon_vs_95CrI(ms_df)+
+  facet_wrap(~p_report)
 ggsave(glue("figures/{prefix}_by_true_eps_tmax_{ms_tmax}.png"), p1)
 
-p2 <- true_epsilon_vs_95CrI(si_df) +
+p2 <- true_epsilon_vs_95CrI(by_all_vars) +
   facet_wrap(~tmax + p_report)
 
-ggsave(glue("figures/{prefix}_by_true_eps_tmax_si.png"), p2)
+ggsave(glue("figures/{prefix}_by_true_eps_tmax_report.png"), p2)
 
 
 
@@ -141,13 +136,47 @@ x$rt_ref <- as.factor(x$rt_ref)
 x$p_report <- as.factor(x$p_report)
 x$true_eps <- factor(x$true_eps, levels = eps_vals, ordered = TRUE)
 
-
-
 p1 <- true_epsilon_vs_error(x) +
-  facet_wrap(~tmax + p_report)
+  facet_wrap(~p_report)
 
 ggsave(glue("figures/{prefix}_by_true_eps_error.png"), p1)
 
+
+# Facet by rt_ref
+x50 <- filter(x, tmax==50)
+x40 <- filter(x, tmax==40)
+x30 <- filter(x, tmax==30)
+x20 <- filter(x, tmax==20)
+x10 <- filter(x, tmax==10)
+
+plot_underreport <- function(x){
+  p <- ggplot(x) +
+    geom_point(
+      aes(true_eps, med, col = p_report),
+      position = position_dodge(width = 0.3)
+    ) +
+    geom_linerange(
+      aes(true_eps, ymin = low, ymax = high, col = p_report),
+      position = position_dodge(width = 0.3)
+    ) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    ylab("Estimated - True transmission advantage") +
+    xlab("True transmission advantage") +
+    theme_minimal() +
+    labs(color = "Probability of being reported") +
+    theme(legend.position = "top")
+  p + facet_wrap(~rt_ref, dir="v", labeller = labeller(rt_ref = rt.label))
+}
+
+rt.label = c("Rt reference 1.1","Rt reference 1.6")
+names(rt.label) = c(1.1,1.6)
+t50 <- plot_underreport(x50)
+t40 <- plot_underreport(x40)
+t30 <- plot_underreport(x30)
+t20 <- plot_underreport(x20)
+t10 <- plot_underreport(x10)
+
+ggsave(glue("figures/{prefix}_by_true_eps_error_tmax50.png"), t50)
 
 saveRDS(eps_err_summary, "eps_err_summary.rds")
 saveRDS(eps_summary_df, "eps_summary_df.rds")

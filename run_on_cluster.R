@@ -20,54 +20,54 @@ root <- 'underreport'
 orderly::orderly_bundle_pack(".", "sims_one_location_underreporting", 
                              parameters = list(short_run = FALSE))
 #$id
-#[1] "20210823-165536-ac28064f"
+#[1] "20210824-171904-1c0b630e"
 
 #$path
-#[1] "Z:\\rnash\\epiestims\\20210823-165536-ac28064f.zip"
+#[1] "Z:\\rnash\\epiestims\\20210824-171904-1c0b630e.zip"
 
 orderly::orderly_bundle_pack(".", "one_location_underreporting", 
                              parameters = list(short_run = FALSE))
 
 #$id
-#[1] "20210824-135040-7401739c"
+#[1] "20210825-084703-0b03952d"
 
 #$path
-#[1] "Z:\\rnash\\epiestims\\20210824-135040-7401739c.zip"
+#[1] "Z:\\rnash\\epiestims\\20210825-084703-0b03952d.zip"
 
 obj <- didehpc::queue_didehpc(ctx, config = config)
 obj$install_packages('abind')
-obj$install_packages('mrc-ide/EpiEstim@return_diag')
+obj$install_packages('mrc-ide/EpiEstim@multiv')
 obj$install_packages("vimc/orderly@fix-zip-list")
 
 # Now run your task on the server
 # 1) first argument is the $path from orderly_bundle_pack
 # 2) second argument is the dir where you want orderly to write outputs
-t1 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210823-165536-ac28064f.zip", 
+t1 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210824-171904-1c0b630e.zip", 
                                               "Z:\\rnash\\epiestims\\cluster-runs"))
-# t1$id b1d05d9ea2473d57a687ac1a56f6a88f
+# t1$id "64376932b71466e78d4e933bf77b591c"
 # check t1$status()
-# when t1$status() is complete, look for t1$result()
+# when t1$status() is complete, look for t1$result() and note id and path
 
 #$id
-#[1] "20210823-165536-ac28064f"
+#[1] "20210824-171904-1c0b630e"
 #$path
-#[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210823-165536-ac28064f.zip"
+#[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210824-171904-1c0b630e.zip"
 
 
-t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210824-135040-7401739c.zip", 
+t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210825-084703-0b03952d.zip", 
                                               "Z:\\rnash\\epiestims\\cluster-runs"))
 
-# t2$id "0e312998a33cc4b7e3dda6b2f7b69e2c"
+# t2$id "14c2464a74bac2970a0694ac5fe9021b"
 # check t2$status()
 # when t2$status() is 'complete', look for t2$result() and note id and path
 #$id
-#[1] 
+#[1] "20210825-084703-0b03952d"
 #$path
-#[1] 
+#[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210825-084703-0b03952d.zip"
 
 # now run orderly::orderly_bundle_import(<path from t1$result()>)
-orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210823-165536-ac28064f.zip")
+orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210824-171904-1c0b630e.zip")
 
-orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\CHANGE.zip")
+orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210825-084703-0b03952d.zip")
 
 
