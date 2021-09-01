@@ -4,6 +4,10 @@ packages:
 - dplyr
 - ggplot2
 - glue
+- stargazer
+- tidyr
+
+sources: R/utils.R
 
 depends:
   summarise_one_location_vary_si:
