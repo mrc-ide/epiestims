@@ -23,7 +23,6 @@ eps_summary_df$true_eps <- round(
   eps_summary_df$true_eps, 3
 )
 
-
 by_all_vars <-  group_by(
   eps_summary_df,
   rt_ref, si_cv_variant, tmax, true_eps
@@ -45,7 +44,7 @@ eps_err_summary_df <- pmap_dfr(
 saveRDS(eps_err_summary_df, "eps_err_summary_df.rds")
 
 eps_err_summary_df <- na.omit(eps_err_summary_df)
-x <- group_by(eps_err_summary_df, rt_ref, tmax, true_eps) %>%
+x <- group_by(eps_err_summary_df, rt_ref, tmax, true_eps, si_cv_variant) %>%
   summarise(
     low = quantile(`50%`, 0.025),
     med = quantile(`50%`, 0.5),
