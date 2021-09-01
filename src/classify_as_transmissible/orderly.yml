@@ -1,0 +1,22 @@
+script: additional_summary.R
+packages:
+- dplyr
+- ggplot2
+- janitor
+- tidyr
+
+artefacts:
+  data:
+    description: Classified for cases where 95% CrI does not contain true value
+    filenames:
+      - vary_si_classified.rds
+
+depends:
+  sims_one_location_vary_si:
+    id: latest
+    use:
+      vary_si_param_grid.rds: param_grid.rds
+  summarise_one_location_vary_si:
+    id: latest
+    use:
+      vary_si_eps_summary_df.rds: eps_summary_df.rds
