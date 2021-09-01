@@ -1,0 +1,34 @@
+script: summarise_sims.R
+
+packages:
+  - dplyr
+  - EpiEstim
+  - Hmisc
+  - purrr
+  - ggforce
+  - ggplot2
+  - glue
+  
+artefacts:
+  data:
+    description: 1 location, 2 variants, summary objects
+    filenames:
+      - eps_summary_df.rds
+      - eps_summary_by_all_vars.rds
+      - incid_summary.rds
+      - eps_err_summary_df.rds
+      - err_summary_by_all_vars.rds
+      
+global_resources:
+  R/utils.R: summary_utils.R
+
+depends:
+  sims_one_location_vary_offspring:
+    id: latest
+    use:
+      param_grid.rds: param_grid.rds
+      incid.rds: incid.rds
+  one_location_vary_offspring:
+    id: latest
+    use:
+      output.zip: estimate_joint_output.zip
