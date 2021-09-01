@@ -45,7 +45,7 @@ x <- group_by(eps_err_summary_df, rt_ref, kappa, true_eps, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
-  ) %>% ungroup(x)
+  ) %>% ungroup()
 
 saveRDS(x, "err_summary_by_all_vars.rds")
 
