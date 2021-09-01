@@ -24,6 +24,8 @@ missed_true <- which(
   vary_si_eps_summary$true_eps >= vary_si_eps_summary$`2.5%` &
   vary_si_eps_summary$true_eps <= vary_si_eps_summary$`97.5%`
 )
+## True value not in 95% CrI in 64986 rows
+## True value not in 95% CrI proportion 0.062
 missed_true <- vary_si_eps_summary[-missed_true, ]
 missed_true <- classify_epsilon(missed_true)
 
@@ -35,4 +37,19 @@ tall <- gather(x, label, val, -true_eps, -tmax)
 
 saveRDS(tall, "vary_si_classified.rds")
 
+## Summary across tmax
+y <- tabyl(missed_true, tmax, bias) %>%
+  adorn_percentages("row")
+cat(
+  stargazer(y, summary = FALSE, row.names = FALSE),
+  file = "vary_si_by_tmax_classification.tex"
+)
 
+## Summary across true epsilon values
+y <- tabyl(missed_true, true_eps, bias) %>%
+  adorn_percentages("row")
+
+cat(
+  stargazer(y, summary = FALSE, row.names = FALSE),
+  file = "vary_si_by_eps_classification.tex"
+)

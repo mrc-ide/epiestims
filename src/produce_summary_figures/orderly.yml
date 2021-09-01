@@ -9,7 +9,17 @@ packages:
 
 sources: R/utils.R
 
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/vary_si_classification.pdf
+
 depends:
+  classify_as_transmissible:
+    id: latest
+    use:
+      vary_si_classified.rds: vary_si_classified.rds
   summarise_one_location_vary_si:
     id: latest
     use:
@@ -18,3 +28,4 @@ depends:
       vary_si_incid_summary.rds: incid_summary.rds
       vary_si_eps_err_summary_df.rds: eps_err_summary_df.rds
       vary_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      

@@ -1,5 +1,6 @@
 ## orderly::orderly_develop_start()
 ## Aesthetics
+dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
 ms_tmax <- "50"
@@ -88,3 +89,29 @@ psi <- true_epsilon_vs_error(vary_si_err, "Variant SI Mean") +
                           tmax = tmax_labeller)
     )
 save_multiple(psi, "figures/vary_si_error_by_tmax")
+
+
+vary_si_classified <- readRDS("vary_si_classified.rds")
+
+p <- ggplot(vary_si_classified) +
+  geom_point(
+    aes(as.factor(true_eps), val, col = label)
+  ) +
+  scale_color_discrete(
+    breaks = c("low_greater_than_1",
+               "high_less_than_1",
+               "CrI_includes_1"),
+    labels = c("More transmissible",
+               "Less transmissible",
+               "Unclear")
+  ) +
+  facet_wrap(
+    ~tmax, labeller = labeller(tmax = tmax_labeller),
+    ncol = 2
+  ) +
+  xlab("True transmission advantage") +
+  ylab("Proportion") +
+  theme_manuscript() +
+  theme(legend.title = element_blank())
+
+save_multiple(p, "figures/vary_si_classification")
