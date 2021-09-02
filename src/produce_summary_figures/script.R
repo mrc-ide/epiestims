@@ -1,14 +1,44 @@
 ## orderly::orderly_develop_start()
 ## Aesthetics
+## df is a dataframe with column med which is the
+## median error
+summarise_median_err <- function(df, round_to = 3) {
+  x <- group_by(df, true_eps, tmax) %>%
+  summarise(
+    median_low = quantile(med, 0.025),
+    median_med = quantile(med, 0.5),
+    median_high = quantile(med, 0.975)
+  ) %>% ungroup()
+  x <- mutate_if(x, is.numeric, round, round_to)
+  x
+}
+## df is the output of summarise_median_err
+format_median_err <- function(df) {
+  df$formatted <-
+  glue("{df$median_med}",
+       " ({df$median_low}, {df$median_high})")
+
+  df <- select(df, true_eps, tmax, formatted) %>%
+    spread(key = tmax, value = formatted)
+
+  df
+
+}
+
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
 ms_tmax <- "50"
-## SIs of interest
-ms_si <- c("X 0.5", "X 1.2", "X 1.5")
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
-
+round_to <- 3 ## Number of digits to round to
+#################################################
+#################################################
+######### SI MEAN SENSITIVITY ###################
+#################################################
+#################################################
+## SIs of interest
+ms_si <- c("X 0.5", "X 1.2", "X 1.5")
 vary_si_err <- readRDS("vary_si_err_summary_by_all_vars.rds")
 eps_vals <- unique(vary_si_err$true_eps)
 vary_si_err$true_eps <- factor(
@@ -34,22 +64,9 @@ vary_si_err <- vary_si_err[vary_si_err$label %in% ms_si, ]
 ## various tmax values. To show that error becomes small.
 ## the bounds represent the variation in median error.
 vary_si_err_tab <- select(vary_si_err, -label) %>%
-  group_by(true_eps, tmax) %>%
-  summarise(
-    median_low = quantile(med, 0.025),
-    median_med = quantile(med, 0.5),
-    median_high = quantile(med, 0.975)
-  ) %>% ungroup()
-## Format
-vary_si_err_tab <- mutate_if(
-  vary_si_err_tab, is.numeric, round, 3
-)
-vary_si_err_tab$formatted <-
-  glue("{vary_si_err_tab$median_med}",
-       " ({vary_si_err_tab$median_low}, {vary_si_err_tab$median_high})"
-       )
-vary_si_err_tab <- select(vary_si_err_tab, true_eps, tmax, formatted) %>%
-  spread(key = tmax, value = formatted)
+ summarise_median_err() %>%
+  format_median_err()
+
 ## Ordered factors are being converted to
 ## integers when dumping them into a file.
 vary_si_err_tab$true_eps <- eps_vals
@@ -62,7 +79,8 @@ cat(
 
 ## Main text figures
 vary_si_err1 <- vary_si_err[vary_si_err$tmax == ms_tmax, ]
-
+## Top panel, mean for both variant and widltype
+## the same.
 p1a <- true_epsilon_vs_error(same_si_mu1, "Variant SI Mean") +
       facet_wrap(
       ~rt_ref, ncol = 1,
@@ -70,7 +88,7 @@ p1a <- true_epsilon_vs_error(same_si_mu1, "Variant SI Mean") +
     ) +
   theme(legend.position = "none")
 save_multiple(p1a, "figures/same_si_error")
-
+## Middle panel, variant SI mean = X wildtype SI mean
 p1b <- true_epsilon_vs_error(vary_si_err1, "Variant SI Mean") +
       facet_wrap(
       ~rt_ref, ncol = 1,
@@ -80,6 +98,7 @@ p1b <- true_epsilon_vs_error(vary_si_err1, "Variant SI Mean") +
 save_multiple(p1b, "figures/vary_si_error")
 
 ## Supplementary figures
+## Show error reducing by tmax
 psi <- true_epsilon_vs_error(vary_si_err, "Variant SI Mean") +
       facet_grid(
       tmax~rt_ref,
@@ -88,7 +107,7 @@ psi <- true_epsilon_vs_error(vary_si_err, "Variant SI Mean") +
     )
 save_multiple(psi, "figures/vary_si_error_by_tmax")
 
-
+## Classification
 vary_si_classified <- readRDS("vary_si_classified.rds")
 
 p <- ggplot(vary_si_classified) +
@@ -124,17 +143,41 @@ vary_offs_err$true_eps <- factor(
 vary_offs_err$rt_ref <- factor(vary_offs_err$rt_ref)
 vary_offs_err$label <- round(vary_offs_err$kappa, 1)
 vary_offs_err$label <- factor(vary_offs_err$label)
-vary_offs_err_tab <- select(vary_offs_err, -label) %>%
-  group_by(true_eps, tmax) %>%
-  summarise(
-    median_low = quantile(med, 0.025),
-    median_med = quantile(med, 0.5),
-    median_high = quantile(med, 0.975)
-  ) %>% ungroup()
 
 vary_offs_ms <- vary_offs_err[vary_offs_err$tmax == ms_tmax, ]
+vary_offs_si <- vary_offs_err[vary_offs_err$tmax != ms_tmax, ]
 p1a <- true_epsilon_vs_error(vary_offs_ms, "Over-dispersion") +
       facet_wrap(
       ~rt_ref, ncol = 1,
       labeller = labeller(rt_ref = rt_labeller)
     )
+save_multiple(p1a, "figures/vary_si_offs")
+
+## Error over tmax
+p1b <- true_epsilon_vs_error(vary_offs_si, "Over-dispersion") +
+      facet_grid(
+      tmax~rt_ref,
+      labeller = labeller(rt_ref = rt_labeller,
+                          tmax = tmax_labeller)
+    )
+save_multiple(p1a, "figures/vary_si_offs_by_tmax")
+
+vary_offs_err_tab <- select(vary_offs_err, -label) %>%
+ summarise_median_err() %>%
+  format_median_err()
+
+## Ordered factors are being converted to
+## integers when dumping them into a file.
+vary_offs_err_tab$true_eps <- eps_vals
+cat(
+  stargazer(
+    vary_offs_err_tab[, c("true_eps", "10", "50")],
+    summary = FALSE, row.names = FALSE
+  ),
+  file = "vary_offs_error.tex"
+)
+
+######################################################################
+######################################################################
+################## VARY CV############################################
+######################################################################
