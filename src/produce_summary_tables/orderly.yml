@@ -1,0 +1,35 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- purrr
+- stargazer
+- tidyr
+
+sources: R/utils.R
+
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/vary_si_classification.pdf
+
+depends:
+  summarise_one_location_vary_si:
+    id: latest
+    use:
+      vary_si_eps_summary_df.rds: eps_summary_df.rds
+      vary_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_vary_offspring:
+    id: latest
+    use:
+      Vary_offs_eps_summary_df.rds: eps_summary_df.rds
+      vary_offs_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_vary_cv:
+    id: latest
+    use:
+      vary_cv_eps_summary_df.rds: eps_summary_df.rds
+      vary_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds      
