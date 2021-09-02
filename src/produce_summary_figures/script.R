@@ -52,6 +52,15 @@ vary_si_err$label <- multiplier_label(
 ## Separate the case when si_mu_variant = si_ref_variant
 same_si_mu <- vary_si_err[vary_si_err$label == "X 1", ]
 same_si_mu1 <- same_si_mu[same_si_mu$tmax == ms_tmax, ]
+same_si_mu2 <- same_si_mu[same_si_mu$tmax != ms_tmax, ]
+psi <- true_epsilon_vs_error(same_si_mu2, " ") +
+      facet_grid(
+      tmax~rt_ref,
+      labeller = labeller(rt_ref = rt_labeller,
+                          tmax = tmax_labeller)
+    )
+save_multiple(psi, "figures/same_si_error_by_tmax")
+
 ## At tmax = 50, across all epsilon values
 ## summarise_median_err(same_si_mu1)
 ## # A tibble: 1 × 3
