@@ -17,12 +17,9 @@ format_median_err <- function(df) {
   df$formatted <-
   glue("{df$median_med}",
        " ({df$median_low}, {df$median_high})")
-
   df <- select(df, true_eps, tmax, formatted) %>%
     spread(key = tmax, value = formatted)
-
   df
-
 }
 
 dir.create("figures")
@@ -179,5 +176,49 @@ cat(
 
 ######################################################################
 ######################################################################
-################## VARY CV############################################
+################## VARY CV ############################################
 ######################################################################
+ms_cv <- c("X 0.5", "X 1.2", "X 1.5")
+vary_cv_err <- readRDS("vary_cv_err_summary_by_all_vars.rds")
+vary_cv_err$true_eps <- factor(
+  vary_cv_err$true_eps, levels = eps_vals, ordered = TRUE
+)
+vary_cv_err$rt_ref <- factor(vary_cv_err$rt_ref)
+vary_cv_err$label <- multiplier_label(
+  vary_cv_err$si_cv_variant, si_std_ref / si_mu_ref
+)
+vary_cv_err <- vary_cv_err[vary_cv_err$label %in% ms_cv, ]
+vary_cv_err$label <- factor(vary_cv_err$label)
+
+vary_cv_ms <- vary_cv_err[vary_cv_err$tmax == ms_tmax, ]
+vary_cv_si <- vary_cv_err[vary_cv_err$tmax != ms_tmax, ]
+p1a <- true_epsilon_vs_error(vary_cv_ms, "SI CV") +
+      facet_wrap(
+      ~rt_ref, ncol = 1,
+      labeller = labeller(rt_ref = rt_labeller)
+    )
+save_multiple(p1a, "figures/vary_si_cv")
+
+## Error over tmax
+p1b <- true_epsilon_vs_error(vary_cv_si, "SI CV") +
+      facet_grid(
+      tmax~rt_ref,
+      labeller = labeller(rt_ref = rt_labeller,
+                          tmax = tmax_labeller)
+    )
+save_multiple(p1a, "figures/vary_si_cv_by_tmax")
+
+vary_cv_err_tab <- select(vary_cv_err, -label) %>%
+ summarise_median_err() %>%
+  format_median_err()
+
+## Ordered factors are being converted to
+## integers when dumping them into a file.
+vary_cv_err_tab$true_eps <- eps_vals
+cat(
+  stargazer(
+    vary_cv_err_tab[, c("true_eps", "10", "50")],
+    summary = FALSE, row.names = FALSE
+  ),
+  file = "vary_cv_error.tex"
+)
