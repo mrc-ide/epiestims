@@ -1,11 +1,10 @@
 ## orderly::orderly_develop_start()
 ## Aesthetics
-## df is a dataframe with column med which is the
+## df is a grouped dataframe with column med which is the
 ## median error
 summarise_median_err <- function(df, round_to = 3) {
-  x <- group_by(df, true_eps, tmax) %>%
-  summarise(
-    median_low = quantile(med, 0.025),
+  x <- summarise(
+    df, median_low = quantile(med, 0.025),
     median_med = quantile(med, 0.5),
     median_high = quantile(med, 0.975)
   ) %>% ungroup()
@@ -53,14 +52,26 @@ vary_si_err$label <- multiplier_label(
 ## Separate the case when si_mu_variant = si_ref_variant
 same_si_mu <- vary_si_err[vary_si_err$label == "X 1", ]
 same_si_mu1 <- same_si_mu[same_si_mu$tmax == ms_tmax, ]
+## At tmax = 50, across all epsilon values
+## summarise_median_err(same_si_mu1)
+## # A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+## 1     -0.054     -0.003       0.006
 ## These are the only ones we want to show, in Main and
 ## supplementary text
 vary_si_err <- vary_si_err[vary_si_err$label %in% ms_si, ]
-## Numbers for results section
-## Median error across Rt_tef and SI_mu at
-## various tmax values. To show that error becomes small.
-## the bounds represent the variation in median error.
+## summarise_median_err(vary_si_err)
+## # A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+## 1      -0.19      -0.02       0.005
+## ## Numbers for results section
+## ## Median error across Rt_tef and SI_mu at
+## ## various tmax values. To show that error becomes small.
+## ## the bounds represent the variation in median error.
 vary_si_err_tab <- select(vary_si_err, -label) %>%
+  group_by(true_eps, tmax) %>%
  summarise_median_err() %>%
   format_median_err()
 
@@ -76,6 +87,11 @@ cat(
 
 ## Main text figures
 vary_si_err1 <- vary_si_err[vary_si_err$tmax == ms_tmax, ]
+## summarise_median_err(vary_si_err1)
+# A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+## 1     -0.064     -0.003       0.006
 ## Top panel, mean for both variant and widltype
 ## the same.
 p1a <- true_epsilon_vs_error(same_si_mu1, "Variant SI Mean") +
@@ -139,6 +155,7 @@ p1b <- true_epsilon_vs_error(vary_offs_si, "Over-dispersion") +
 save_multiple(p1a, "figures/vary_si_offs_by_tmax")
 
 vary_offs_err_tab <- select(vary_offs_err, -label) %>%
+  group_by(true_eps, tmax) %>%
  summarise_median_err() %>%
   format_median_err()
 
@@ -172,6 +189,12 @@ vary_cv_err <- vary_cv_err[vary_cv_err$label %in% ms_cv, ]
 vary_cv_err$label <- factor(vary_cv_err$label)
 
 vary_cv_ms <- vary_cv_err[vary_cv_err$tmax == ms_tmax, ]
+## summarise_median_err(vary_cv_ms)
+## # A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+##      -0.101     -0.003       0.013
+
 vary_cv_si <- vary_cv_err[vary_cv_err$tmax != ms_tmax, ]
 p1a <- true_epsilon_vs_error(vary_cv_ms, "SI CV") +
       facet_wrap(
@@ -190,6 +213,7 @@ p1b <- true_epsilon_vs_error(vary_cv_si, "SI CV") +
 save_multiple(p1a, "figures/vary_si_cv_by_tmax")
 
 vary_cv_err_tab <- select(vary_cv_err, -label) %>%
+  group_by(true_eps, tmax) %>%
  summarise_median_err() %>%
   format_median_err()
 
