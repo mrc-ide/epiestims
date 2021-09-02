@@ -20,6 +20,8 @@ depends:
     id: latest
     use:
       vary_si_classified.rds: vary_si_classified.rds
+      vary_cv_classified.rds: vary_cv_classified.rds
+      vary_offs_classified.rds: vary_offs_classified.rds      
   summarise_one_location_vary_si:
     id: latest
     use:
