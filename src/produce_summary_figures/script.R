@@ -137,6 +137,20 @@ vary_offs_err$label <- round(vary_offs_err$kappa, 1)
 vary_offs_err$label <- factor(vary_offs_err$label)
 
 vary_offs_ms <- vary_offs_err[vary_offs_err$tmax == ms_tmax, ]
+## summarise_median_err(vary_offs_ms)
+# A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+## 1     -0.323     -0.007       0.001
+
+## group_by(vary_offs_ms, kappa) %>% summarise_median_err
+## # A tibble: 3 × 4
+##   kappa median_low median_med median_high
+##   <dbl>      <dbl>      <dbl>       <dbl>
+## 1   0.1     -0.376     -0.018       0.001
+## 2   0.5     -0.176     -0.004       0.001
+## 3   1       -0.163     -0.004       0.001
+
 vary_offs_si <- vary_offs_err[vary_offs_err$tmax != ms_tmax, ]
 p1a <- true_epsilon_vs_error(vary_offs_ms, "Over-dispersion") +
       facet_wrap(
