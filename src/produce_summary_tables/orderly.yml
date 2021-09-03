@@ -15,7 +15,13 @@ artefacts:
   staticgraph:
     description: Various summary figures
     filenames:
-      - figures/vary_si_classification.pdf
+      - figures/vary_si_prop_in_95_1.png
+      - figures/vary_si_prop_in_95_2.png
+      - figures/vary_si_prop_in_95_3.png      
+      - figures/vary_si_prop_in_95_4.png
+      - figures/vary_si_prop_in_95_5.png
+      - figures/vary_si_prop_in_95_6.png      
+      
 
 depends:
   summarise_one_location_vary_si:

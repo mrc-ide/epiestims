@@ -21,13 +21,20 @@ format_median_err <- function(df) {
   df
 }
 
+pretty_ci <- function(val, low, high, round_to = 2) {
+  f <- function(x) {
+    format(round(x, round_to), nsmall = 2)
+  }
+  glue("{f(val)} \n ({f(low)}, {f(high)})")
+}
+
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
 ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
-round_to <- 3 ## Number of digits to round to
+round_to <- 2 ## Number of digits to round to
 #################################################
 #################################################
 ######### SI MEAN SENSITIVITY ###################
@@ -59,11 +66,11 @@ vary_si_eps <- mutate_if(vary_si_eps, is.numeric, round, round_to)
 vary_si_pt <- select(vary_si_eps, rt_ref, label, true_eps, tmax, pt_est)
 vary_si_pt <- spread(vary_si_pt, tmax, pt_est)
 ## Make a table of colors
-f <- scales::col_numeric("Greens", domain = c(0, 1))
+f <- scales::col_numeric("Greens", domain = c(0.5, 1))
 vary_si_fill <- mutate_at(vary_si_pt, vars(`10`:`50`), f)
 
-vary_si_eps$formatted <- glue(
-  "{vary_si_eps$pt_est} \n ({vary_si_eps$lower}, {vary_si_eps$upper})"
+vary_si_eps$formatted <- pretty_ci(
+  vary_si_eps$pt_est, vary_si_eps$lower, vary_si_eps$upper
 )
 
 x <- select(vary_si_eps, rt_ref, label, true_eps, tmax, formatted)
@@ -81,7 +88,7 @@ pwalk(
   list(df = x, fillinfo = y, i = seq_along(x)),
   function(df, fillinfo, i) {
     tab <- ggtexttable(
-      df, rows = NULL, theme = ttheme(base_size = 6),
+      df, rows = NULL, theme = ttheme(base_size = 8),
       cols = c("Reference Rt", "Variant SI Mean", "True epsilon",
                "10", "20", "30", "40", "50")
     )
@@ -91,10 +98,13 @@ pwalk(
         ## row + 1 is needed because header is in fact row 1
         tab <- table_cell_bg(
           tab, row = row + 1, column = col, fill = fill,
-          alpha = 0.1
+          color = fill, alpha = 0.7
         )
       }
     }
-    ggsave(glue("vary_si_prop_in_95_{i}.png"), tab)
+    ggsave(
+      glue("figures/vary_si_prop_in_95_{i}.png"),
+      tab
+    )
   }
 )
