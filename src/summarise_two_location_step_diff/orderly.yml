@@ -1,0 +1,32 @@
+script: summarise_sims.R
+
+packages:
+  - dplyr
+  - EpiEstim
+  - Hmisc
+  - purrr
+  - ggforce
+  - ggplot2
+  - glue
+  
+artefacts:
+  data:
+    description: 2 location, 2 variants, stepwise rt change, summary objects
+    filenames:
+      - eps_err_summary.rds
+      - eps_summary_df.rds
+      - incid_summary.rds
+      
+global_resources:
+  R/utils.R: summary_utils.R
+
+depends:
+  sims_two_location_step_diff:
+    id: latest
+    use:
+      param_grid.rds: param_grid.rds
+      incid.rds: incid.rds
+  two_location_step_diff:
+    id: latest
+    use:
+      output.zip: estimate_joint_output.zip
