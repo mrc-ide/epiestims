@@ -41,14 +41,6 @@ round_to <- 2 ## Number of digits to round to
 ms_si <- c("X 0.5", "X 1.2", "X 1.5")
 vary_si_eps <- readRDS("vary_si_eps_summary_by_all_vars.rds")
 eps_vals <- unique(vary_si_eps$true_eps)
-vary_si_eps$true_eps <- factor(
-  vary_si_eps$true_eps,
-  levels = eps_vals, ordered = TRUE
-)
-vary_si_eps$rt_ref <- factor(
-  vary_si_eps$rt_ref
-)
-
 vary_si_eps$label <- multiplier_label(
   vary_si_eps$si_mu_variant, si_mu_ref
 )
@@ -153,3 +145,51 @@ pwalk(
   }
 )
 
+#################################################
+#################################################
+########### VARY CV
+#################################################
+#################################################
+#################################################
+vary_cv_eps <- readRDS("vary_cv_eps_summary_by_all_vars.rds")
+vary_cv_eps <- ungroup(vary_cv_eps)
+vary_cv_eps <- select(vary_cv_eps, rt_ref, si_cv_variant, tmax, true_eps, pt_est:upper)
+vary_cv_eps$si_cv_variant <- multiplier_label(
+  vary_cv_eps$si_cv_variant, si_std_ref / si_mu_ref
+)
+vary_cv_eps <- mutate_if(vary_cv_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+vary_cv_pt <- select(vary_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, pt_est)
+vary_cv_pt <- spread(vary_cv_pt, tmax, pt_est)
+vary_cv_fill <- mutate_at(vary_cv_pt, vars(`10`:`50`), f)
+
+vary_cv_eps$formatted <- pretty_ci(
+  vary_cv_eps$pt_est, vary_cv_eps$lower, vary_cv_eps$upper
+)
+
+x <- select(vary_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "si_cv_variant", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Variant CV", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Variant CV"]]))
+y <- split(
+  vary_cv_fill, list(vary_cv_fill$rt_ref, vary_cv_fill$si_cv_variant)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    ggsave(
+      glue("figures/vary_cv_prop_in_95_{i}.png"),
+      tab
+    )
+  }
+)
+
+if (! is.null(dev.list())) dev.off()
