@@ -26,7 +26,7 @@ si_for_sim <- cbind(si_no_zero_ref, si_no_zero_var)
 ## This is to prevent simulating unrealistically
 ## large numbers
 sim_params <- expand.grid(
-  rt_ref = c(0.9, 1.6),
+  rt_ref = c(1.1, 1.6),
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   ## over-dispersion. 0.1 - SARS like, 0.5 - Ebola like; 1 - geommetric
   kappa = c(0.1, 0.5, 1)
