@@ -138,6 +138,14 @@ pwalk(
   list(df = x, fillinfo = y, i = seq_along(x)),
   function(df, fillinfo, i) {
     tab <- prop_in_ci_table(df, fillinfo)
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/vary_offs_prop_in_95_1_legend.png"
+        )
+    }
     ggsave(
       glue("figures/vary_offs_prop_in_95_{i}.png"),
       tab
