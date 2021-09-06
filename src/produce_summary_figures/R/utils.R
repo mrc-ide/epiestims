@@ -73,8 +73,9 @@ true_epsilon_vs_error <- function(x, color_by) {
 
 classification_fig <- function(df) {
   p <- ggplot(df) +
-  geom_point(
-    aes(as.factor(true_eps), val, col = label)
+  geom_line(
+    aes(true_eps, val, col = label),
+    size = 1.2
   ) +
   scale_color_discrete(
     breaks = c("low_greater_than_1",

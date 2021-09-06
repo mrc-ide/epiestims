@@ -63,16 +63,16 @@ vary_si_eps_summary <- mutate_at(
 vary_si_eps_summary$true_eps <- round(
   vary_si_eps_summary$true_eps, round_to
 )
-## Perhaps this is only important when 95% CrI
-## does not contain the true value
-missed_true <- which(
-  vary_si_eps_summary$true_eps >= vary_si_eps_summary$`2.5%` &
-  vary_si_eps_summary$true_eps <= vary_si_eps_summary$`97.5%`
-)
-## True value not in 95% CrI in 64986 rows
-## True value not in 95% CrI proportion 0.062
-missed_true <- vary_si_eps_summary[-missed_true, ]
-missed_true <- classify_epsilon(missed_true)
+## ## Perhaps this is only important when 95% CrI
+## ## does not contain the true value
+## missed_true <- which(
+##   vary_si_eps_summary$true_eps >= vary_si_eps_summary$`2.5%` &
+##   vary_si_eps_summary$true_eps <= vary_si_eps_summary$`97.5%`
+## )
+## ## True value not in 95% CrI in 64986 rows
+## ## True value not in 95% CrI proportion 0.062
+## missed_true <- vary_si_eps_summary[-missed_true, ]
+missed_true <- classify_epsilon(vary_si_eps_summary)
 
 x <- tabyl(missed_true, true_eps, bias, tmax) %>%
   adorn_percentages("row") %>%
