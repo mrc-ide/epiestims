@@ -2,32 +2,29 @@
 ## Aesthetics
 ## df is a grouped dataframe with column med which is the
 ## median error
-summarise_median_err <- function(df, round_to = 3) {
-  x <- summarise(
-    df, median_low = quantile(med, 0.025),
-    median_med = quantile(med, 0.5),
-    median_high = quantile(med, 0.975)
-  ) %>% ungroup()
-  x <- mutate_if(x, is.numeric, round, round_to)
-  x
-}
-## df is the output of summarise_median_err
-format_median_err <- function(df) {
-  df$formatted <-
-  glue("{df$median_med}",
-       " ({df$median_low}, {df$median_high})")
-  df <- select(df, true_eps, tmax, formatted) %>%
-    spread(key = tmax, value = formatted)
-  df
-}
-
-pretty_ci <- function(val, low, high, round_to = 2) {
-  f <- function(x) {
-    format(round(x, round_to), nsmall = 2)
+## col_start is the first column index which
+## has proportion in 95% CrI.
+prop_in_ci_table <- function(df, fillinfo, col_start = 4) {
+  tab <- ggtexttable(
+    df, rows = NULL, theme = ttheme(base_size = 9)
+  )
+  for (row in seq_len(nrow(df))) {
+    for (col in seq(col_start, ncol(df))) {
+      fill <- as.character(fillinfo[row, col])
+      ## row + 1 is needed because header is in fact row 1
+      tab <- table_cell_bg(
+        tab, row = row + 1, column = col, fill = fill,
+        color = fill, alpha = 0.7
+      )
+    }
   }
-  glue("{f(val)} \n ({f(low)}, {f(high)})")
+  tab
 }
 
+## Make a table of colors
+f <- scales::col_numeric("RdYlBu", domain = c(0, 1))
+
+source("R/fig_utils.R")
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
@@ -65,8 +62,7 @@ vary_si_eps <- mutate_if(vary_si_eps, is.numeric, round, round_to)
 ## First spread, then pick color for each cell.
 vary_si_pt <- select(vary_si_eps, rt_ref, label, true_eps, tmax, pt_est)
 vary_si_pt <- spread(vary_si_pt, tmax, pt_est)
-## Make a table of colors
-f <- scales::col_numeric("Greens", domain = c(0.5, 1))
+
 vary_si_fill <- mutate_at(vary_si_pt, vars(`10`:`50`), f)
 
 vary_si_eps$formatted <- pretty_ci(
@@ -78,33 +74,82 @@ x <- pivot_wider(
   x, id_cols = c("rt_ref", "label", "true_eps"),
   names_from = "tmax", values_from = "formatted"
 )
+## Nice column names
+colnames(x) <- c("Reference Rt", "Variant SI Mean", "True advantage",
+                 "10", "20", "30", "40", "50")
 
-x <- split(x, list(x$rt_ref, x$label))
+x <- split(x, list(x[["Reference Rt"]], x[["Variant SI Mean"]]))
 y <- split(
   vary_si_fill, list(vary_si_fill$rt_ref, vary_si_fill$label)
 )
 
+## Make dummy plot to extract legend
+p <- ggplot(vary_si_eps) +
+  geom_tile(aes(tmax, true_eps, fill = pt_est)) +
+  scale_fill_distiller(
+    palette = "RdYlBu", limits = c(0, 1),
+    direction = 1,
+    breaks = c(0, 0.5, 1),
+    labels = c(0, 0.5, 1),
+    name = "Proportion in 95% CrI"
+  ) +
+  theme_manuscript()
+
+legend <- get_legend(p)
+
+ggsave("figures/legend.png", as_ggplot(legend))
+
 pwalk(
   list(df = x, fillinfo = y, i = seq_along(x)),
   function(df, fillinfo, i) {
-    tab <- ggtexttable(
-      df, rows = NULL, theme = ttheme(base_size = 8),
-      cols = c("Reference Rt", "Variant SI Mean", "True epsilon",
-               "10", "20", "30", "40", "50")
-    )
-    for (row in seq_len(nrow(df))) {
-      for (col in seq(4, ncol(df))) {
-        fill <- as.character(fillinfo[row, col])
-        ## row + 1 is needed because header is in fact row 1
-        tab <- table_cell_bg(
-          tab, row = row + 1, column = col, fill = fill,
-          color = fill, alpha = 0.7
-        )
-      }
-    }
+    tab <- prop_in_ci_table(df, fillinfo)
     ggsave(
       glue("figures/vary_si_prop_in_95_{i}.png"),
       tab
     )
   }
 )
+#################################################
+#################################################
+########### VARY OFFSPRING
+#################################################
+#################################################
+#################################################
+vary_offs_eps <- readRDS("vary_offs_eps_summary_by_all_vars.rds")
+vary_offs_eps <- ungroup(vary_offs_eps)
+vary_offs_eps <- select(vary_offs_eps, rt_ref, kappa, tmax, true_eps, pt_est:upper)
+vary_offs_eps <- mutate_if(vary_offs_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+vary_offs_pt <- select(vary_offs_eps, rt_ref, kappa, true_eps, tmax, pt_est)
+vary_offs_pt <- spread(vary_offs_pt, tmax, pt_est)
+vary_offs_fill <- mutate_at(vary_offs_pt, vars(`10`:`50`), f)
+
+vary_offs_eps$formatted <- pretty_ci(
+  vary_offs_eps$pt_est, vary_offs_eps$lower, vary_offs_eps$upper
+)
+
+x <- select(vary_offs_eps, rt_ref, kappa, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "kappa", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Overdispersion", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Overdispersion"]]))
+y <- split(
+  vary_offs_fill, list(vary_offs_fill$rt_ref, vary_offs_fill$kappa)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    ggsave(
+      glue("figures/vary_offs_prop_in_95_{i}.png"),
+      tab
+    )
+  }
+)
+

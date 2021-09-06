@@ -11,6 +11,8 @@ packages:
 
 sources: R/utils.R
 
+global_resources:
+  R/fig_utils.R: fig_utils.R
 artefacts:
   staticgraph:
     description: Various summary figures
