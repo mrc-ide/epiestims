@@ -77,15 +77,10 @@ classification_fig <- function(df) {
     aes(true_eps, val, col = classification),
     size = 1.2
   ) +
-  scale_color_discrete(
-    breaks = c("CORRECT", "INCORRECT"),
-    labels = c("Correct", "Incorrect")
-  ) +
   facet_wrap(
     ~tmax, labeller = labeller(tmax = tmax_labeller),
     ncol = 2
   ) +
-    ylim(0, 1) +
   xlab("True transmission advantage") +
   ylab("Proportion") +
   theme_manuscript() +

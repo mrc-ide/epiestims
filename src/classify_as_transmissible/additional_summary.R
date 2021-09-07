@@ -23,10 +23,11 @@ true_class <- function(df) {
 ## Summarise classification performance as a
 ## function of tmax and true advantage.
 summary_tmax_eps <- function(x) {
-  x <- tabyl(x, tmax, true_eps, est_class) %>%
+  x <- tabyl(x, true_eps, est_class, tmax) %>%
   adorn_percentages("row") %>%
-  bind_rows(.id = "classification")
-  gather(x, true_eps, val, -classification, -tmax)
+    bind_rows(.id = "tmax")
+
+  gather(x, classification, val, -tmax, -true_eps)
 }
 
 ## More coarse summary
