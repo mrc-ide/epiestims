@@ -74,16 +74,12 @@ true_epsilon_vs_error <- function(x, color_by) {
 classification_fig <- function(df) {
   p <- ggplot(df) +
   geom_line(
-    aes(true_eps, val, col = label),
+    aes(true_eps, val, col = classification),
     size = 1.2
   ) +
   scale_color_discrete(
-    breaks = c("low_greater_than_1",
-               "high_less_than_1",
-               "CrI_includes_1"),
-    labels = c("More transmissible",
-               "Less transmissible",
-               "Unclear")
+    breaks = c("CORRECT", "INCORRECT"),
+    labels = c("Correct", "Incorrect")
   ) +
   facet_wrap(
     ~tmax, labeller = labeller(tmax = tmax_labeller),

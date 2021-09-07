@@ -3,6 +3,7 @@ packages:
 - dplyr
 - ggplot2
 - janitor
+- purrr
 - stargazer
 - tidyr
 
