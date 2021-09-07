@@ -75,7 +75,7 @@ cat(
 #################################################
 ####### VARY CV #######
 #################################################
-################################################
+#################################################
 vary_cv_eps_summary <- readRDS("vary_cv_eps_summary_df.rds")
 vary_cv_eps_summary <- mutate_at(
   vary_cv_eps_summary, vars(`2.5%`:`97.5%`),
@@ -85,32 +85,14 @@ vary_cv_eps_summary$true_eps <- round(
   vary_cv_eps_summary$true_eps, round_to
 )
 
-vary_cv_eps_summary$true_class <- case_when(
-  ## In our case this is when eps is actually 1
-  vary_cv_eps_summary$true_eps <= 1 ~ "CrI_includes_1",
-  ## All other scenarios are "More transmissible"
-  ## so the CrI should comfortably exclude 1.
-  TRUE ~ "low_greater_than_1"
-)
-
+vary_cv_eps_summary$true_label <- true_class(vary_cv_eps_summary)
 classified <- classify_epsilon(vary_cv_eps_summary)
-classified$classification <- case_when(
-  classified$true_class == classified$est_class ~ "CORRECT",
-  TRUE ~ "INCORRECT"
-)
-
-
-x <- tabyl(classified, tmax, true_eps, est_class) %>%
-  adorn_percentages("row") %>%
-  bind_rows(.id = "classification")
-
-
-tall <- gather(x, true_eps, val, -classification, -tmax)
+tall <- summary_tmax_eps(classified)
 saveRDS(tall, "vary_cv_classified.rds")
 
-## Summary across SI Mean
-y <- tabyl(classified, si_cv_variant, classification) %>%
-  adorn_percentages("row")
+## Summary across SI CV
+y <- split(classified, classified$si_cv_variant) %>%
+  map_dfr(summary_other, .id = "Variant SI CV")
 
 cat(
   stargazer(y, summary = FALSE, row.names = FALSE),
@@ -118,8 +100,8 @@ cat(
 )
 
 ## Summary across tmax
-y <- tabyl(classified, tmax, classification) %>%
-  adorn_percentages("row")
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
 
 cat(
   stargazer(y, summary = FALSE, row.names = FALSE),
@@ -128,6 +110,7 @@ cat(
 
 #############################################
 ########### vary offspring
+#############################################
 vary_offs_eps_summary <- readRDS("vary_offs_eps_summary_df.rds")
 vary_offs_eps_summary <- mutate_at(
   vary_offs_eps_summary, vars(`2.5%`:`97.5%`),
@@ -137,32 +120,14 @@ vary_offs_eps_summary$true_eps <- round(
   vary_offs_eps_summary$true_eps, round_to
 )
 
-vary_offs_eps_summary$true_class <- case_when(
-  ## In our case this is when eps is actually 1
-  vary_offs_eps_summary$true_eps <= 1 ~ "CrI_includes_1",
-  ## All other scenarios are "More transmissible"
-  ## so the CrI should comfortably exclude 1.
-  TRUE ~ "low_greater_than_1"
-)
-
+vary_offs_eps_summary$true_label <- true_class(vary_offs_eps_summary)
 classified <- classify_epsilon(vary_offs_eps_summary)
-classified$classification <- case_when(
-  classified$true_class == classified$est_class ~ "CORRECT",
-  TRUE ~ "INCORRECT"
-)
-
-
-x <- tabyl(classified, tmax, true_eps, est_class) %>%
-  adorn_percentages("row") %>%
-  bind_rows(.id = "classification")
-
-
-tall <- gather(x, true_eps, val, -classification, -tmax)
+tall <- summary_tmax_eps(classified)
 saveRDS(tall, "vary_offs_classified.rds")
 
-## Summary across SI Mean
-y <- tabyl(classified, kappa, classification) %>%
-  adorn_percentages("row")
+## Summary across SI CV
+y <- split(classified, classified$kappa) %>%
+  map_dfr(summary_other, .id = "Dispersion")
 
 cat(
   stargazer(y, summary = FALSE, row.names = FALSE),
@@ -170,16 +135,10 @@ cat(
 )
 
 ## Summary across tmax
-y <- tabyl(classified, tmax, classification) %>%
-  adorn_percentages("row")
-
-
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
 
 cat(
   stargazer(y, summary = FALSE, row.names = FALSE),
   file = "vary_offs_by_tmax_classification.tex"
 )
-
-y <- tabyl(classified, tmax, kappa, classification) %>%
-  adorn_percentages("row")
-
