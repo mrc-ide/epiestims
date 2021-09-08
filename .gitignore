@@ -7,3 +7,5 @@ simulations/.Rhistory
 archive/
 draft/
 orderly.sqlite
+*.rds
+*.zip
