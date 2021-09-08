@@ -200,4 +200,52 @@ pwalk(
   }
 )
 
+
+#################################################
+#################################################
+########### WRONG CV
+#################################################
+#################################################
+#################################################
+wrong_cv_eps <- readRDS("wrong_cv_eps_summary_by_all_vars.rds")
+wrong_cv_eps <- ungroup(wrong_cv_eps)
+wrong_cv_eps <- select(wrong_cv_eps, rt_ref, si_cv_variant, tmax, true_eps, pt_est:upper)
+wrong_cv_eps$si_cv_variant <- multiplier_label(
+  wrong_cv_eps$si_cv_variant, si_std_ref / si_mu_ref
+)
+wrong_cv_eps <- mutate_if(wrong_cv_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+wrong_cv_pt <- select(wrong_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, pt_est)
+wrong_cv_pt <- spread(wrong_cv_pt, tmax, pt_est)
+wrong_cv_fill <- mutate_at(wrong_cv_pt, vars(`10`:`50`), f)
+
+wrong_cv_eps$formatted <- pretty_ci(
+  wrong_cv_eps$pt_est, wrong_cv_eps$lower, wrong_cv_eps$upper
+)
+
+x <- select(wrong_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "si_cv_variant", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Variant CV", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Variant CV"]]))
+y <- split(
+  wrong_cv_fill, list(wrong_cv_fill$rt_ref, wrong_cv_fill$si_cv_variant)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    ggsave(
+      glue("figures/wrong_cv_prop_in_95_{i}.png"),
+      tab
+    )
+  }
+)
+
 if (! is.null(dev.list())) dev.off()
