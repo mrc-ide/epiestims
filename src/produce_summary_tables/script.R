@@ -272,7 +272,7 @@ pwalk(
     }
     ggexport(
       tab,
-      glue("figures/wrong_cv_prop_in_95_{i}.png"),
+      filename = glue("figures/wrong_cv_prop_in_95_{i}.png"),
       width = 520
     )
   }

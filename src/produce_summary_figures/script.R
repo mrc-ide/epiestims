@@ -283,7 +283,7 @@ p1a <- true_epsilon_vs_error(wrong_cv_ms, "SI CV") +
       ~rt_ref, ncol = 1,
       labeller = labeller(rt_ref = rt_labeller)
     )
-save_multiple(p1a, "figures/vary_si_cv")
+save_multiple(p1a, "figures/wrong_cv")
 
 ## Error over tmax
 p1b <- true_epsilon_vs_error(wrong_cv_si, "SI CV") +
@@ -292,7 +292,7 @@ p1b <- true_epsilon_vs_error(wrong_cv_si, "SI CV") +
       labeller = labeller(rt_ref = rt_labeller,
                           tmax = tmax_labeller)
     )
-save_multiple(p1b, "figures/vary_si_cv_by_tmax")
+save_multiple(p1b, "figures/wrong_cv_by_tmax")
 
 wrong_cv_err_tab <- select(wrong_cv_err, -label) %>%
   group_by(true_eps, tmax) %>%
