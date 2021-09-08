@@ -53,5 +53,3 @@ x <- group_by(eps_err_summary_df, rt_ref, tmax, true_eps, si_cv_variant) %>%
 
 
 saveRDS(x, "err_summary_by_all_vars.rds")
-
-
