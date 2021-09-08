@@ -175,7 +175,7 @@ p1b <- true_epsilon_vs_error(vary_offs_si, "Over-dispersion") +
       labeller = labeller(rt_ref = rt_labeller,
                           tmax = tmax_labeller)
     )
-save_multiple(p1a, "figures/vary_si_offs_by_tmax")
+save_multiple(p1b, "figures/vary_si_offs_by_tmax")
 
 vary_offs_err_tab <- select(vary_offs_err, -label) %>%
   group_by(true_eps, tmax) %>%
@@ -233,7 +233,7 @@ p1b <- true_epsilon_vs_error(vary_cv_si, "SI CV") +
       labeller = labeller(rt_ref = rt_labeller,
                           tmax = tmax_labeller)
     )
-save_multiple(p1a, "figures/vary_si_cv_by_tmax")
+save_multiple(p1b, "figures/vary_si_cv_by_tmax")
 
 vary_cv_err_tab <- select(vary_cv_err, -label) %>%
   group_by(true_eps, tmax) %>%
@@ -292,7 +292,7 @@ p1b <- true_epsilon_vs_error(wrong_cv_si, "SI CV") +
       labeller = labeller(rt_ref = rt_labeller,
                           tmax = tmax_labeller)
     )
-save_multiple(p1a, "figures/vary_si_cv_by_tmax")
+save_multiple(p1b, "figures/vary_si_cv_by_tmax")
 
 wrong_cv_err_tab <- select(wrong_cv_err, -label) %>%
   group_by(true_eps, tmax) %>%
@@ -313,3 +313,42 @@ wrong_cv_classified <- readRDS("wrong_cv_classified.rds")
 wrong_cv_classified$true_eps <- as.numeric(wrong_cv_classified$true_eps)
 p <- classification_fig(wrong_cv_classified)
 save_multiple(p, "figures/wrong_cv_classification")
+######################################################################
+######################################################################
+################## UNDERREPORTING ####################################
+######################################################################
+underrep_err <- readRDS("underrep_err_summary_by_all_vars.rds")
+underrep_err$true_eps <- factor(
+  underrep_err$true_eps, levels = eps_vals, ordered = TRUE
+)
+underrep_err$rt_ref <- factor(underrep_err$rt_ref)
+underrep_err$label <- round(underrep_err$p_report, 1)
+underrep_err$label <- factor(underrep_err$label)
+
+## Error over tmax
+p1b <- true_epsilon_vs_error(underrep_err, "Reporting probability") +
+      facet_grid(
+      tmax~rt_ref,
+      labeller = labeller(rt_ref = rt_labeller,
+                          tmax = tmax_labeller)
+    )
+save_multiple(p1b, "figures/underrep_by_tmax")
+
+underrep_err_tab <- select(underrep_err, -label) %>%
+  group_by(true_eps, tmax) %>%
+ summarise_median_err() %>%
+  format_median_err()
+
+## Ordered factors are being converted to
+## integers when dumping them into a file.
+underrep_err_tab$true_eps <- eps_vals
+cat(
+  stargazer(
+    underrep_err_tab[, c("true_eps", "10", "50")],
+    summary = FALSE
+  ),
+  file = "underrep_error.tex"
+)
+underrep_classified <- readRDS("underrep_classified.rds")
+p <- classification_fig(underrep_classified)
+save_multiple(p, "figures/underrep_classification")

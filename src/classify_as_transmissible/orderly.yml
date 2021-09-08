@@ -14,7 +14,8 @@ artefacts:
       - vary_si_classified.rds
       - wrong_cv_classified.rds      
       - vary_cv_classified.rds
-      - vary_offs_classified.rds      
+      - vary_offs_classified.rds
+      - underrep_classified.rds
 
 depends:
   sims_one_location_vary_si:
@@ -37,3 +38,7 @@ depends:
     id: latest
     use:
       vary_offs_eps_summary_df.rds: eps_summary_df.rds
+  summarise_one_location_underreporting:
+    id: latest
+    use:
+      underrep_eps_summary_df.rds: eps_summary_df.rds

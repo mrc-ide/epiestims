@@ -182,3 +182,38 @@ cat(
   stargazer(y, summary = FALSE),
   file = "vary_offs_by_tmax_classification.tex"
 )
+
+#############################################
+########### Under-reporting
+#############################################
+underrep_eps_summary <- readRDS("underrep_eps_summary_df.rds")
+underrep_eps_summary <- mutate_at(
+  underrep_eps_summary, vars(`2.5%`:`97.5%`),
+  round, round_to
+)
+underrep_eps_summary$true_eps <- round(
+  underrep_eps_summary$true_eps, round_to
+)
+
+underrep_eps_summary$true_label <- true_class(underrep_eps_summary)
+classified <- classify_epsilon(underrep_eps_summary)
+tall <- summary_tmax_eps(classified)
+saveRDS(tall, "underrep_classified.rds")
+
+## Summary across SI CV
+y <- split(classified, classified$p_report) %>%
+  map_dfr(summary_other, .id = "Reporting probability")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "underrep_by_preport_classification.tex"
+)
+
+## Summary across tmax
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "underrep_by_tmax_classification.tex"
+)
