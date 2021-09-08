@@ -41,10 +41,13 @@ depends:
     use:
       vary_cv_eps_summary_df.rds: eps_summary_df.rds
       vary_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
-      vary_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds            
   summarise_one_location_wrong_cv:
     id: latest
     use:
       wrong_cv_eps_summary_df.rds: eps_summary_df.rds
       wrong_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds            
-      wrong_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_underreporting:
+    id: latest
+    use:
+      underrep_eps_summary_df.rds: eps_summary_df.rds
+      underrep_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
