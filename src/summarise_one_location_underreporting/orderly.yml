@@ -14,7 +14,7 @@ artefacts:
   data:
     description: 1 location, 2 variants, underreporting, summary objects
     filenames:
-      - eps_err_summary.rds
+      - eps_err_summary_df.rds
       - eps_summary_df.rds
       - incid_summary.rds
       
