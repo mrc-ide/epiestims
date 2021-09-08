@@ -251,5 +251,6 @@ cat(
   file = "vary_cv_error.tex"
 )
 vary_cv_classified <- readRDS("vary_cv_classified.rds")
+vary_cv_classified$true_eps <- as.numeric(vary_cv_classified$true_eps)
 p <- classification_fig(vary_cv_classified)
 save_multiple(p, "figures/vary_cv_classification")
