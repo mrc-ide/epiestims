@@ -30,6 +30,7 @@ incid_summary <- map(
   incid_summary, ~ bind_rows(., .id = "sim")
 )
 
+saveRDS(incid_summary, "incid_summary.rds")
 
 ## Structure of output: list with one element
 ## for each row of params.

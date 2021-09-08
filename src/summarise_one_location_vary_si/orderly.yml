@@ -5,8 +5,6 @@ packages:
   - EpiEstim
   - Hmisc
   - purrr
-  - ggforce
-  - ggplot2
   - glue
   - zip
   
@@ -14,9 +12,11 @@ artefacts:
   data:
     description: 1 location, 2 variants, summary objects
     filenames:
-      - eps_err_summary.rds
       - eps_summary_df.rds
+      - eps_summary_by_all_vars.rds
       - incid_summary.rds
+      - eps_err_summary_df.rds
+      - err_summary_by_all_vars.rds
       
 global_resources:
   R/utils.R: summary_utils.R

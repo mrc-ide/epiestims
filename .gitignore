@@ -3,9 +3,12 @@
 .RData
 .Ruserdata
 .rds
-simulations/.Rhistory
 archive/
 draft/
 orderly.sqlite
 *.rds
 *.zip
+*.png
+*.pdf
+*.tex
+
