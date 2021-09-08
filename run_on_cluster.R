@@ -1,63 +1,73 @@
 library(orderly)
 library(context)
-packages <- c("dplyr", "epitrix", "furrr" ,"glue", "incidence",
-              "orderly", "projections", "purrr")
-root <- 'vary_si'
-ctx <-context_save(root, packages = packages)
-# [ open:db   ]  rds
-# [ save:id   ]  c061ec7f3677d8e8765c86e53326c716
-# [ save:name ]  quasiobjective_indianspinyloach
-ctx <- context_read('c061ec7f3677d8e8765c86e53326c716', root)
-# orderly::orderly_bundle_pack(".", "one_location_vary_si", parameters = list(short_run = FALSE))
-obj <- didehpc::queue_didehpc(ctx, config = config)
-obj$install_packages('abind')
-obj$install_packages('mrc-ide/EpiEstim@multiv')
-res <- obj$enqueue(orderly::orderly_bundle_run("Z:\\sbhatia\\epiestims\\20210813-183738-87e2789a.zip", "Z:\\sbhatia\\epiestims\\cluster-runs"))
-# task id: 3623f0cea161fbee7fa60bab1a006bfe
-options(
-  # didehpc.cluster = "fi--didemrchnb",
-  didehpc.cluster = "fi--dideclusthn",
-  didehpc.username = "jw2519",
-  didehpc.home = "Q:/")
 
 config <- didehpc::didehpc_config(cores = 8, parallel = TRUE)
 
-packages <- c("dplyr", "furrr", "glue", "incidence",
-              "orderly", "projections", "purrr", "utils")
+packages <- c("dplyr", "epitrix", "furrr", "glue", "incidence",
+              "projections", "purrr")
 
-root <- 'context'
-ctx <-context_save(root, packages = packages)
-# [ init:id   ]  6b39f6628ea252c37ab705e9aa91861c
-# [ init:db   ]  rds
-# [ init:path ]  context
-# [ save:id   ]  f1d1ce5a48c80487db1dfe49a7e2c8b0
-# [ save:name ]  centrifugal_paintedladybutterfly
-# ctx <- context_read('f1d1ce5a48c80487db1dfe49a7e2c8b0', root)
+root <- 'underreport'
+# ctx <-context_save(root, packages = packages)
+#[ init:id   ]  4b34ac5ee19b12d136267421b8027cd0
+#[ init:db   ]  rds
+#[ init:path ]  underreport
+#[ save:id   ]  158bf86a28432169c9de38d6a2a2dd48
+#[ save:name ]  batty_hogget
+# Line number 13 is Needed next time you login to the cluster
+ ctx <- context_read('158bf86a28432169c9de38d6a2a2dd48', root)
 
+# pack your task so that it can be run on the cluster:
+orderly::orderly_bundle_pack(".", "sims_one_location_underreporting", 
+                             parameters = list(short_run = FALSE))
+#$id
+#[1] "20210824-171904-1c0b630e"
 
-a <- orderly::orderly_run("sims_one_location_step",
-                          parameters = list(short_run = TRUE))
-b <- orderly::orderly_run("sims_one_location_step",
-                          parameters = list(short_run = FALSE))
-orderly::orderly_commit(b)
+#$path
+#[1] "Z:\\rnash\\epiestims\\20210824-171904-1c0b630e.zip"
 
-path_bundles <- "Q:/cluster"
-
-bundle <- orderly::orderly_bundle_pack(path_bundles, "one_location_step",
+orderly::orderly_bundle_pack(".", "one_location_underreporting", 
                              parameters = list(short_run = FALSE))
 
-bundle$path # bundle path name to include in orderly_bundle_run
+#$id
+#[1] "20210825-084703-0b03952d"
+
+#$path
+#[1] "Z:\\rnash\\epiestims\\20210825-084703-0b03952d.zip"
 
 obj <- didehpc::queue_didehpc(ctx, config = config)
 obj$install_packages('abind')
 obj$install_packages('mrc-ide/EpiEstim@multiv')
+obj$install_packages("vimc/orderly@fix-zip-list")
 
-# orderly_bundle_run arguments
-# 1) where bundle_pack was saved (find with bundle$path)
-# 2) where bundle_run outputs should go (seem to need to specify full file path)
-res <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20210817-114617-7314fda5.zip",
-                                               "Z:\\jwardle\\epiestims\\cluster-runs"))
-# task id: bdb4fe069f5f908f5565af1c5b162079
+# Now run your task on the server
+# 1) first argument is the $path from orderly_bundle_pack
+# 2) second argument is the dir where you want orderly to write outputs
+t1 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210824-171904-1c0b630e.zip", 
+                                              "Z:\\rnash\\epiestims\\cluster-runs"))
+# t1$id "64376932b71466e78d4e933bf77b591c"
+# check t1$status()
+# when t1$status() is complete, look for t1$result() and note id and path
 
-orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20210813-175522-5ed36934.zip")
+#$id
+#[1] "20210824-171904-1c0b630e"
+#$path
+#[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210824-171904-1c0b630e.zip"
+
+
+t2 <- obj$enqueue(orderly::orderly_bundle_run("Z:\\rnash\\epiestims\\20210825-084703-0b03952d.zip", 
+                                              "Z:\\rnash\\epiestims\\cluster-runs"))
+
+# t2$id "14c2464a74bac2970a0694ac5fe9021b"
+# check t2$status()
+# when t2$status() is 'complete', look for t2$result() and note id and path
+#$id
+#[1] "20210825-084703-0b03952d"
+#$path
+#[1] "Z:\\rnash\\epiestims\\cluster-runs\\20210825-084703-0b03952d.zip"
+
+# now run orderly::orderly_bundle_import(<path from t1$result()>)
+orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210824-171904-1c0b630e.zip")
+
+orderly::orderly_bundle_import("Z:\\rnash\\epiestims\\cluster-runs\\20210825-084703-0b03952d.zip")
+
 

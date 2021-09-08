@@ -1,0 +1,34 @@
+script: summarise_sims.R
+
+packages:
+  - dplyr
+  - EpiEstim
+  - Hmisc
+  - purrr
+  - ggforce
+  - ggplot2
+  - glue
+  - zip
+  
+artefacts:
+  data:
+    description: 1 location, 2 variants, underreporting, summary objects
+    filenames:
+      - eps_err_summary.rds
+      - eps_summary_df.rds
+      - incid_summary.rds
+      
+global_resources:
+  R/utils.R: summary_utils.R
+  R/summarise_sims.R: summarise_sims.R
+
+depends:
+  sims_one_location_underreporting:
+    id: latest
+    use:
+      param_grid.rds: param_grid.rds
+      incid.rds: incid.rds
+  one_location_underreporting:
+    id: latest
+    use:
+      output.zip: estimate_joint_output.zip
