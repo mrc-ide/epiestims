@@ -12,6 +12,7 @@ artefacts:
     description: Classified for cases where 95% CrI does not contain true value
     filenames:
       - vary_si_classified.rds
+      - wrong_cv_classified.rds      
       - vary_cv_classified.rds
       - vary_offs_classified.rds      
 
@@ -28,6 +29,10 @@ depends:
     id: latest
     use:
       vary_cv_eps_summary_df.rds: eps_summary_df.rds
+  summarise_one_location_wrong_cv:
+    id: latest
+    use:
+      wrong_cv_eps_summary_df.rds: eps_summary_df.rds      
   summarise_one_location_vary_offspring:
     id: latest
     use:

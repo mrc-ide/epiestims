@@ -188,7 +188,7 @@ vary_offs_err_tab$true_eps <- eps_vals
 cat(
   stargazer(
     vary_offs_err_tab[, c("true_eps", "10", "50")],
-    summary = FALSE, row.names = FALSE
+    summary = FALSE
   ),
   file = "vary_offs_error.tex"
 )
@@ -246,7 +246,7 @@ vary_cv_err_tab$true_eps <- eps_vals
 cat(
   stargazer(
     vary_cv_err_tab[, c("true_eps", "10", "50")],
-    summary = FALSE, row.names = FALSE
+    summary = FALSE
   ),
   file = "vary_cv_error.tex"
 )
@@ -254,3 +254,62 @@ vary_cv_classified <- readRDS("vary_cv_classified.rds")
 vary_cv_classified$true_eps <- as.numeric(vary_cv_classified$true_eps)
 p <- classification_fig(vary_cv_classified)
 save_multiple(p, "figures/vary_cv_classification")
+
+
+
+#################################################
+
+wrong_cv_err <- readRDS("wrong_cv_err_summary_by_all_vars.rds")
+wrong_cv_err$true_eps <- factor(
+  wrong_cv_err$true_eps, levels = eps_vals, ordered = TRUE
+)
+wrong_cv_err$rt_ref <- factor(wrong_cv_err$rt_ref)
+wrong_cv_err$label <- multiplier_label(
+  wrong_cv_err$si_cv_variant, si_std_ref / si_mu_ref
+)
+wrong_cv_err <- wrong_cv_err[wrong_cv_err$label %in% ms_cv, ]
+wrong_cv_err$label <- factor(wrong_cv_err$label)
+
+wrong_cv_ms <- wrong_cv_err[wrong_cv_err$tmax == ms_tmax, ]
+## summarise_median_err(wrong_cv_ms)
+## # A tibble: 1 × 3
+##   median_low median_med median_high
+##        <dbl>      <dbl>       <dbl>
+##      -0.101     -0.003       0.013
+
+wrong_cv_si <- wrong_cv_err[wrong_cv_err$tmax != ms_tmax, ]
+p1a <- true_epsilon_vs_error(wrong_cv_ms, "SI CV") +
+      facet_wrap(
+      ~rt_ref, ncol = 1,
+      labeller = labeller(rt_ref = rt_labeller)
+    )
+save_multiple(p1a, "figures/vary_si_cv")
+
+## Error over tmax
+p1b <- true_epsilon_vs_error(wrong_cv_si, "SI CV") +
+      facet_grid(
+      tmax~rt_ref,
+      labeller = labeller(rt_ref = rt_labeller,
+                          tmax = tmax_labeller)
+    )
+save_multiple(p1a, "figures/vary_si_cv_by_tmax")
+
+wrong_cv_err_tab <- select(wrong_cv_err, -label) %>%
+  group_by(true_eps, tmax) %>%
+ summarise_median_err() %>%
+  format_median_err()
+
+## Ordered factors are being converted to
+## integers when dumping them into a file.
+wrong_cv_err_tab$true_eps <- eps_vals
+cat(
+  stargazer(
+    wrong_cv_err_tab[, c("true_eps", "10", "50")],
+    summary = FALSE
+  ),
+  file = "wrong_cv_error.tex"
+)
+wrong_cv_classified <- readRDS("wrong_cv_classified.rds")
+wrong_cv_classified$true_eps <- as.numeric(wrong_cv_classified$true_eps)
+p <- classification_fig(wrong_cv_classified)
+save_multiple(p, "figures/wrong_cv_classification")

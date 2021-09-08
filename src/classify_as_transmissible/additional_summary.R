@@ -59,7 +59,7 @@ y <- split(classified, classified$si_mu_variant) %>%
   map_dfr(summary_other, .id = "Variant SI Mean")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_si_by_simu_classification.tex"
 )
 
@@ -68,7 +68,7 @@ y <- split(classified, classified$tmax) %>%
   map_dfr(summary_other, .id = "tmax")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_si_by_tmax_classification.tex"
 )
 
@@ -96,7 +96,7 @@ y <- split(classified, classified$si_cv_variant) %>%
   map_dfr(summary_other, .id = "Variant SI CV")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_cv_by_sicv_classification.tex"
 )
 
@@ -105,8 +105,47 @@ y <- split(classified, classified$tmax) %>%
   map_dfr(summary_other, .id = "tmax")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_cv_by_tmax_classification.tex"
+)
+
+
+
+#################################################
+#################################################
+####### WRONG CV #######
+#################################################
+#################################################
+wrong_cv_eps_summary <- readRDS("wrong_cv_eps_summary_df.rds")
+wrong_cv_eps_summary <- mutate_at(
+  wrong_cv_eps_summary, vars(`2.5%`:`97.5%`),
+  round, round_to
+)
+wrong_cv_eps_summary$true_eps <- round(
+  wrong_cv_eps_summary$true_eps, round_to
+)
+
+wrong_cv_eps_summary$true_label <- true_class(wrong_cv_eps_summary)
+classified <- classify_epsilon(wrong_cv_eps_summary)
+tall <- summary_tmax_eps(classified)
+saveRDS(tall, "wrong_cv_classified.rds")
+
+## Summary across SI CV
+y <- split(classified, classified$si_cv_variant) %>%
+  map_dfr(summary_other, .id = "Variant SI CV")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_cv_by_sicv_classification.tex"
+)
+
+## Summary across tmax
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_cv_by_tmax_classification.tex"
 )
 
 #############################################
@@ -131,7 +170,7 @@ y <- split(classified, classified$kappa) %>%
   map_dfr(summary_other, .id = "Dispersion")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_offs_by_kappa_classification.tex"
 )
 
@@ -140,6 +179,6 @@ y <- split(classified, classified$tmax) %>%
   map_dfr(summary_other, .id = "tmax")
 
 cat(
-  stargazer(y, summary = FALSE, row.names = FALSE),
+  stargazer(y, summary = FALSE),
   file = "vary_offs_by_tmax_classification.tex"
 )
