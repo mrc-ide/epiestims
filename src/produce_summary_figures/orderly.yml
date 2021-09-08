@@ -21,7 +21,9 @@ depends:
     use:
       vary_si_classified.rds: vary_si_classified.rds
       vary_cv_classified.rds: vary_cv_classified.rds
-      vary_offs_classified.rds: vary_offs_classified.rds      
+      wrong_cv_classified.rds: wrong_cv_classified.rds      
+      vary_offs_classified.rds: vary_offs_classified.rds
+      underrep_classified.rds: underrep_classified.rds
   summarise_one_location_vary_si:
     id: latest
     use:
@@ -46,4 +48,17 @@ depends:
       vary_cv_incid_summary.rds: incid_summary.rds
       vary_cv_eps_err_summary_df.rds: eps_err_summary_df.rds
       vary_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+  summarise_one_location_wrong_cv:
+    id: latest
+    use:
+      wrong_cv_eps_summary_df.rds: eps_summary_df.rds
+      wrong_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      wrong_cv_incid_summary.rds: incid_summary.rds
+      wrong_cv_eps_err_summary_df.rds: eps_err_summary_df.rds
+      wrong_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+  summarise_one_location_underreporting:
+    id: latest
+    use:
+      underrep_eps_err_summary_df.rds: eps_err_summary_df.rds
+      underrep_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
       

@@ -89,15 +89,25 @@ p <- ggplot(vary_si_eps) +
 
 legend <- get_legend(p)
 
-ggsave("figures/legend.png", as_ggplot(legend))
+##ggsave("figures/legend.png", as_ggplot(legend))
 
 pwalk(
   list(df = x, fillinfo = y, i = seq_along(x)),
   function(df, fillinfo, i) {
     tab <- prop_in_ci_table(df, fillinfo)
-    ggsave(
-      glue("figures/vary_si_prop_in_95_{i}.png"),
-      tab
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/vary_si_prop_in_95_1_legend.png",
+          width = 520
+        )
+    }
+    ggexport(
+      tab,
+      filename = glue("figures/vary_si_prop_in_95_{i}.png"),
+      width = 520
     )
   }
 )
@@ -143,12 +153,14 @@ pwalk(
         legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
       ) %>%
         ggexport(
-          filename = "figures/vary_offs_prop_in_95_1_legend.png"
+          filename = "figures/vary_offs_prop_in_95_1_legend.png",
+          width = 520
         )
     }
-    ggsave(
-      glue("figures/vary_offs_prop_in_95_{i}.png"),
-      tab
+    ggexport(
+      tab,
+      filename = glue("figures/vary_offs_prop_in_95_{i}.png"),
+      width = 520
     )
   }
 )
@@ -193,9 +205,131 @@ pwalk(
   list(df = x, fillinfo = y, i = seq_along(x)),
   function(df, fillinfo, i) {
     tab <- prop_in_ci_table(df, fillinfo)
-    ggsave(
-      glue("figures/vary_cv_prop_in_95_{i}.png"),
-      tab
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/vary_cv_prop_in_95_1_legend.png",
+          width = 520
+        )
+    }
+    ggexport(
+      tab,
+      filename = glue("figures/vary_cv_prop_in_95_{i}.png"),
+      width = 520
+    )
+  }
+)
+#################################################
+#################################################
+########### WRONG CV
+#################################################
+#################################################
+#################################################
+wrong_cv_eps <- readRDS("wrong_cv_eps_summary_by_all_vars.rds")
+wrong_cv_eps <- ungroup(wrong_cv_eps)
+wrong_cv_eps <- select(wrong_cv_eps, rt_ref, si_cv_variant, tmax, true_eps, pt_est:upper)
+wrong_cv_eps$si_cv_variant <- multiplier_label(
+  wrong_cv_eps$si_cv_variant, si_std_ref / si_mu_ref
+)
+wrong_cv_eps <- mutate_if(wrong_cv_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+wrong_cv_pt <- select(wrong_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, pt_est)
+wrong_cv_pt <- spread(wrong_cv_pt, tmax, pt_est)
+wrong_cv_fill <- mutate_at(wrong_cv_pt, vars(`10`:`50`), f)
+
+wrong_cv_eps$formatted <- pretty_ci(
+  wrong_cv_eps$pt_est, wrong_cv_eps$lower, wrong_cv_eps$upper
+)
+
+x <- select(wrong_cv_eps, rt_ref, si_cv_variant, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "si_cv_variant", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Variant CV", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Variant CV"]]))
+y <- split(
+  wrong_cv_fill, list(wrong_cv_fill$rt_ref, wrong_cv_fill$si_cv_variant)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/wrong_cv_prop_in_95_1_legend.png",
+          width = 520
+        )
+    }
+    ggexport(
+      tab,
+      glue("figures/wrong_cv_prop_in_95_{i}.png"),
+      width = 520
+    )
+  }
+)
+#################################################
+#################################################
+########### UNDERREPORTING
+#################################################
+#################################################
+#################################################
+underrep_eps <- readRDS("underrep_eps_summary_by_all_vars.rds")
+underrep_eps <- ungroup(underrep_eps)
+underrep_eps <- select(underrep_eps, rt_ref, p_report, tmax, true_eps, pt_est:upper)
+underrep_eps$p_report <- round(
+  underrep_eps$p_report, 1
+)
+underrep_eps <- mutate_if(underrep_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+underrep_pt <- select(underrep_eps, rt_ref, p_report, true_eps, tmax, pt_est)
+underrep_pt <- spread(underrep_pt, tmax, pt_est)
+underrep_fill <- mutate_at(underrep_pt, vars(`10`:`50`), f)
+
+underrep_eps$formatted <- pretty_ci(
+  underrep_eps$pt_est, underrep_eps$lower, underrep_eps$upper
+)
+
+x <- select(underrep_eps, rt_ref, p_report, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "p_report", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Reporting probability", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Reporting probability"]]))
+y <- split(
+  underrep_fill, list(underrep_fill$rt_ref, underrep_fill$p_report)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/underrep_prop_in_95_1_legend.png",
+          width = 520
+        )
+    }
+    ggexport(
+      tab,
+      filename = glue("figures/underrep_prop_in_95_{i}.png"),
+      width = 520
     )
   }
 )
