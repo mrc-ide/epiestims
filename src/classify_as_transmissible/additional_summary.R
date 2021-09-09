@@ -39,6 +39,11 @@ summary_other <- function(x) {
 }
 
 round_to <- 3
+#################################################
+#################################################
+####### VARY SI #######
+#################################################
+#################################################
 vary_si_eps_summary <- readRDS("vary_si_eps_summary_df.rds")
 vary_si_eps_summary <- mutate_at(
   vary_si_eps_summary, vars(`2.5%`:`97.5%`),
@@ -70,6 +75,45 @@ y <- split(classified, classified$tmax) %>%
 cat(
   stargazer(y, summary = FALSE),
   file = "vary_si_by_tmax_classification.tex"
+)
+
+
+#################################################
+#################################################
+####### VARY SI #######
+#################################################
+#################################################
+wrong_si_eps_summary <- readRDS("wrong_si_eps_summary_df.rds")
+wrong_si_eps_summary <- mutate_at(
+  wrong_si_eps_summary, vars(`2.5%`:`97.5%`),
+  round, round_to
+)
+wrong_si_eps_summary$true_eps <- round(
+  wrong_si_eps_summary$true_eps, round_to
+)
+## What should be the correct classification,
+## based on true advantage.
+wrong_si_eps_summary$true_label <- true_class(wrong_si_eps_summary)
+classified <- classify_epsilon(wrong_si_eps_summary)
+tall <- summary_tmax_eps(classified)
+saveRDS(tall, "wrong_si_classified.rds")
+
+## Summary across SI Mean
+y <- split(classified, classified$si_mu_variant) %>%
+  map_dfr(summary_other, .id = "Variant SI Mean")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_si_by_simu_classification.tex"
+)
+
+## Summary across tmax
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_si_by_tmax_classification.tex"
 )
 
 #################################################
