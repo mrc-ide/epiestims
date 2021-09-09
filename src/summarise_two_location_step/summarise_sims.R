@@ -1,6 +1,10 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 ## see comments in previous tasks
+prefix <- "two_loc_step"
 source("R/utils.R")
+# source("R/summarise_sims.R")
+
+
 dir.create("figures")
 unzip("output.zip")
 sim_params <- readRDS("param_grid.rds")
@@ -65,9 +69,7 @@ eps_summary <- map(
   }
 )
 
-## One of the problematic ones
-##bad <- output[[105]][[5]][[98]]
-##bad <- output[[1]][[5]][[68]]
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_summary))
 
@@ -87,33 +89,12 @@ eps_summary_df <- pmap_dfr(
   }
 )
 
-## idx <- which(
-##   sim_params$rt_ref == sim_params$rt_ref[1] &
-##   sim_params$si_mu_variant == sim_params$si_mu_variant[130]
-## )
-## x <- as.list(sim_params[idx, ])
-## x <- append(x, list(summary = eps_summary[idx]))
-
-## bad_summary_df <- pmap_dfr(
-##   x, function(rt_ref, epsilon, si_mu_variant, si_std_variant, summary) {
-##     summary$rt_ref <- rt_ref
-##     summary$true_eps <- epsilon
-##     summary$si_mu_variant <- si_mu_variant
-##     summary
-##   }
-## )
-
-
-
 eps_summary_df <- mutate_at(
   eps_summary_df, vars(`2.5%`:`sd`), round, 3
 )
 eps_summary_df$true_eps <- round(eps_summary_df$true_eps, 3)
 
-## bad_summary_df <- mutate_at(
-##   bad_summary_df, vars(`2.5%`:`sd`), round, 3
-## )
-##bad_summary_df$true_eps <- round(bad_summary_df$true_eps, 3)
+saveRDS(eps_summary_df, "eps_summary_df.rds")
 
 ## Summarise by parameters that vary
 ## 1. by tmax
@@ -144,62 +125,46 @@ by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
 #   map_dfr(
 #     function(x) summarise_sims(na.omit(x)), .id = "var"
 #   )
-# ## 6. by rt_ref and rt_post_step
-by_eps_with_rt_change <- split(
-  eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref_l1),
-  sep = "_"
-) %>%
-  map_dfr(
-    function(x) summarise_sims(na.omit(x)), .id = "var"
-  )
-
-by_eps_with_rt_change <- tidyr::separate(by_eps_with_rt_change, col = "var",
-                               into = c("true_eps", "rt_ref"), sep = "_")
-
-by_eps_with_rt_change$rt_ref <- as.factor(by_eps_with_rt_change$rt_ref)
-
-eps_vals <- unique(by_eps_with_rt_change$true_eps)
-
-by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
-                                         levels = eps_vals, ordered = TRUE)
-
-## 7. by all variables (rt_ref, rt_post_step, tmax)
-# by_all_vars <-  split(
-#   eps_summary_df,
-#   list(eps_summary_df$rt_ref, eps_summary_df$rt_post_step, eps_summary_df$tmax),
+# # ## 6. by rt_ref and rt_post_step
+# by_eps_with_rt_change <- split(
+#   eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref_l1),
 #   sep = "_"
 # ) %>%
 #   map_dfr(
 #     function(x) summarise_sims(na.omit(x)), .id = "var"
 #   )
 # 
-# by_all_vars <- tidyr::separate(by_all_vars, col = "var",
-#                                into = c("rt_ref", "rt_post_step", "tmax"), sep = "_")
-# # by_all_vars$si_mu_variant <- as.numeric(by_all_vars$si_mu_variant)
-# # by_all_vars$si_label <- glue(
-# #   "X {round(by_all_vars$si_mu_variant / si_mu_ref, 1)}"
-# # )
-# by_all_vars$rt_ref <- as.factor(by_all_vars$rt_ref)
-# by_all_vars$rt_post_step <- as.factor(by_all_vars$rt_post_step)
+# by_eps_with_rt_change <- tidyr::separate(by_eps_with_rt_change, col = "var",
+#                                into = c("true_eps", "rt_ref"), sep = "_")
+# 
+# by_eps_with_rt_change$rt_ref <- as.factor(by_eps_with_rt_change$rt_ref)
+# 
+# eps_vals <- unique(by_eps_with_rt_change$true_eps)
+# 
+# by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
+#                                          levels = eps_vals, ordered = TRUE)
 
-p <-
-  ggplot(by_eps_with_rt_change) +
-  geom_point(aes(true_eps, pt_est, colour = rt_ref),
-             position = position_dodge(width = 0.5)) +
-  geom_linerange(aes(true_eps, ymin = lower, ymax = upper, colour = rt_ref),
-                 position = position_dodge(width = 0.5)) +
-  geom_hline(yintercept = 0.95, linetype = "dashed") +
-  ylab("Proportion in 95% CrI") +
-  xlab("True transmission advantage") +
-  ylim(0, 1) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(
-    legend.position = "top"
-  )
 
-ggsave(glue("figures/two_loc_step_prop_in_95.png"), p)
+## 7. by all variables (rt_ref_l1, rt_post_step_l1, step_time_l1,
+## rt_ref_l2, rt_post_step_l2, step_time_l2, true_eps)
+by_all_vars <-  split(eps_summary_df,
+list(eps_summary_df$rt_ref_l1, eps_summary_df$rt_post_step_l1, eps_summary_df$step_time_l1,
+     eps_summary_df$rt_ref_l2, eps_summary_df$rt_post_step_l2, eps_summary_df$step_time_l2,
+     eps_summary_df$true_eps, eps_summary_df$tmax),
+ sep = "_"
+ ) %>% 
+   map_dfr(
+     function(x) summarise_sims(na.omit(x)), .id = "var"
+   )
+by_all_vars <- tidyr::separate(by_all_vars, col = "var",
+                               into = c("rt_ref_l1", "rt_post_step_l1", "step_time_l1",
+                                        "rt_ref_l2", "rt_post_step_l2", "step_time_l2",
+                                        "true_eps", "tmax"), sep = "_")
 
+saveRDS(by_all_vars, "eps_summary_by_all_vars.rds")
+
+
+# Error summary
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),
   sim_params$epsilon,
