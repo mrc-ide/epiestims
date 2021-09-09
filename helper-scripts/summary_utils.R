@@ -63,9 +63,15 @@ summarise_epsilon <- function(fit, ...) {
 
 ## Summarise epsilon - true_epsilon
 ## true_eps is the true epsilon value.
-summarise_epsilon_error <- function(fit, true_eps, ...) {
-  eps_df <- summarise_vec(fit$epsilon - true_eps)
-  eps_df$param <- "epsilon_error"
+## error can be absolute or relative;
+summarise_epsilon_error <- function(fit, true_eps, error = "absolute", ...) {
+  if (error != "absolute") {
+    eps_df <- summarise_vec((fit$epsilon - true_eps) / true_eps)
+    eps_df$param <- "epsilon_rel_error"
+  } else {
+    eps_df <- summarise_vec(fit$epsilon - true_eps)
+    eps_df$param <- "epsilon_error"
+  }
   eps_df
 }
 

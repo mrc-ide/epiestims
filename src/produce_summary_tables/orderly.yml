@@ -31,6 +31,11 @@ depends:
     use:
       vary_si_eps_summary_df.rds: eps_summary_df.rds
       vary_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_wrong_si:
+    id: latest
+    use:
+      wrong_si_eps_summary_df.rds: eps_summary_df.rds
+      wrong_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds      
   summarise_one_location_vary_offspring:
     id: latest
     use:
