@@ -20,7 +20,7 @@ sim_params <- expand.grid(
   rt_ref = c(1.1, 1.6),
   epsilon = c(seq(from = 1, to = 2, by = 0.1), 2.5, 3),
   si_mu_variant = si_mu_ref,
-  si_cv_variant = c(0.5, 0.75, 1, 1.25, 1.5) * si_cv_ref
+  si_cv_variant = c(0.5, 1, 1.5, 2) * si_cv_ref
 )
 
 # Number of simulations
