@@ -12,6 +12,3 @@ artefacts:
       - figures/rt_two_location_step.png
       - figures/rt_two_location_step_diff.pdf
       - figures/rt_two_location_step_diff.png
-
-global_resources:
-  R/sim_utils.R: sim_utils.R
