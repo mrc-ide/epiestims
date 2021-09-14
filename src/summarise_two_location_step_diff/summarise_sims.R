@@ -32,6 +32,8 @@ incid_summary <- map(
   incid_summary, ~ bind_rows(., .id = "sim")
 )
 
+saveRDS(incid_summary, "incid_summary.rds")
+
 
 ## Structure of output: list with one element
 ## for each row of params.
@@ -90,6 +92,8 @@ eps_summary_df <- mutate_at(
 )
 eps_summary_df$true_eps <- round(eps_summary_df$true_eps, 3)
 
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
 
 ## Summarise by parameters that vary
 
@@ -99,7 +103,10 @@ by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
     function(x) summarise_sims(na.omit(x)), .id = "true_eps"
   )
 
-## 2. by rt_ref and rt_post_step
+saveRDS(by_eps, "eps_summary_by_eps.rds")
+
+## 2. by rt_ref in loc 1 (for all eps values we have the same combinations of rt values in the two locations)
+## therefore only need to summarise by one, but the labels may need editing in plots
 by_eps_with_rt_change <- split(
   eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref_l1),
   sep = "_"
@@ -118,73 +125,30 @@ eps_vals <- unique(by_eps_with_rt_change$true_eps)
 by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
                                          levels = eps_vals, ordered = TRUE)
 
-# Plot summarising over all tmax values
-
-p <-
-  ggplot(by_eps_with_rt_change) +
-  geom_point(aes(true_eps, pt_est, colour = rt_ref),
-             position = position_dodge(width = 0.5)) +
-  geom_linerange(aes(true_eps, ymin = lower, ymax = upper, colour = rt_ref),
-                 position = position_dodge(width = 0.5)) +
-  geom_hline(yintercept = 0.95, linetype = "dashed") +
-  ylab("Proportion in 95% CrI") +
-  xlab("True transmission advantage") +
-  ylim(0, 1) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(
-    legend.position = "top"
-  )
-
-ggsave(glue("figures/two_loc_step_diff_prop_in_95.png"), p)
+saveRDS(by_eps_with_rt_change, "eps_summary_by_eps_with_rt_change.rds")
 
 
-# Plot summarising only at tmax = 50
-
-eps_summary_t50 <- eps_summary_df[eps_summary_df$tmax == "50", ]
-
-by_eps_with_rt_change_t50 <- split(
-  eps_summary_t50,
-  list(eps_summary_t50$true_eps, eps_summary_t50$rt_ref_l1),
-  sep = "_"
-) %>%
+## 3. by all variables (rt_ref_l1, rt_post_step_l1, step_time_l1,
+## rt_ref_l2, rt_post_step_l2, step_time_l2, true_eps)
+by_all_vars <-  split(eps_summary_df,
+                      list(eps_summary_df$rt_ref_l1, eps_summary_df$rt_post_step_l1, eps_summary_df$step_time_l1,
+                           eps_summary_df$rt_ref_l2, eps_summary_df$rt_post_step_l2, eps_summary_df$step_time_l2,
+                           eps_summary_df$true_eps, eps_summary_df$tmax),
+                      sep = "_"
+) %>% 
   map_dfr(
     function(x) summarise_sims(na.omit(x)), .id = "var"
   )
+by_all_vars <- tidyr::separate(by_all_vars, col = "var",
+                               into = c("rt_ref_l1", "rt_post_step_l1", "step_time_l1",
+                                        "rt_ref_l2", "rt_post_step_l2", "step_time_l2",
+                                        "true_eps", "tmax"), sep = "_")
 
-by_eps_with_rt_change_t50 <- tidyr::separate(by_eps_with_rt_change_t50, col = "var",
-                                         into = c("true_eps", "rt_ref"), sep = "_")
-
-by_eps_with_rt_change_t50$rt_ref <- as.factor(by_eps_with_rt_change_t50$rt_ref)
-
-eps_vals <- unique(by_eps_with_rt_change_t50$true_eps)
-
-by_eps_with_rt_change_t50$true_eps <- factor(by_eps_with_rt_change_t50$true_eps,
-                                         levels = eps_vals, ordered = TRUE)
-
-
-p1 <-
-  ggplot(by_eps_with_rt_change_t50) +
-  geom_point(aes(true_eps, pt_est, colour = rt_ref),
-             position = position_dodge(width = 0.5)) +
-  geom_linerange(aes(true_eps, ymin = lower, ymax = upper, colour = rt_ref),
-                 position = position_dodge(width = 0.5)) +
-  geom_hline(yintercept = 0.95, linetype = "dashed") +
-  ylab("Proportion in 95% CrI") +
-  xlab("True transmission advantage") +
-  ylim(0, 1) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(
-    legend.position = "top"
-  )
-
-ggsave(glue("figures/two_loc_step_diff_prop_in_95_tmax50.png"), p1)
+saveRDS(by_all_vars, "eps_summary_by_all_vars.rds")
 
 
 
-
-# Absolute errors
+# Error summary
 
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),
@@ -210,6 +174,8 @@ eps_err_summary <- map2(
   }
 )
 
+saveRDS(eps_err_summary, "eps_err_summary.rds")
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_err_summary))
 
@@ -229,78 +195,16 @@ eps_err_summary_df <- pmap_dfr(
   }
 )
 
-# Errors across all tmax
 eps_err_summary_df <- na.omit(eps_err_summary_df)
+
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
+
+
 x <- group_by(eps_err_summary_df, rt_ref_l1, true_eps) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
-  )
+  ) %>% ungroup()
 
-x$rt_ref_l1 <- as.factor(x$rt_ref_l1)
-eps_vals <- unique(x$true_eps)
-x$true_eps <- factor(x$true_eps,
-                     levels = eps_vals, ordered = TRUE)
-
-p <-
-  ggplot(x) +
-  geom_point(
-    aes(true_eps, med, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  ylab("Estimated - True transmission advantage") +
-  xlab("True transmission advantage") +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(legend.position = "top")
-
-ggsave(glue("figures/eps_error.png"), p)
-
-
-# Summarise absolute error at tmax = 50
-
-# Errors across all tmax
-eps_err_summary_df_t50 <- eps_err_summary_df[eps_summary_df$tmax == "50", ]
-
-x <- group_by(eps_err_summary_df_t50, rt_ref_l1, true_eps) %>%
-  summarise(
-    low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
-    high = quantile(`50%`, 0.975)
-  )
-
-x$rt_ref_l1 <- as.factor(x$rt_ref_l1)
-eps_vals <- unique(x$true_eps)
-x$true_eps <- factor(x$true_eps,
-                     levels = eps_vals, ordered = TRUE)
-
-p2 <-
-  ggplot(x) +
-  geom_point(
-    aes(true_eps, med, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  ylab("Estimated - True transmission advantage") +
-  xlab("True transmission advantage") +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(legend.position = "top")
-
-ggsave(glue("figures/eps_error_tmax50.png"), p)
-
-
-
-
-saveRDS(eps_err_summary, "eps_err_summary.rds")
-saveRDS(eps_summary_df, "eps_summary_df.rds")
-saveRDS(incid_summary, "incid_summary.rds")
-
+saveRDS(x, "err_summary_by_eps_with_rt_change.rds")
