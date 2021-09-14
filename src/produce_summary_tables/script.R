@@ -38,7 +38,7 @@ round_to <- 2 ## Number of digits to round to
 #################################################
 #################################################
 ## SIs of interest
-ms_si <- c("X 0.5", "X 1.2", "X 1.5")
+ms_si <- c("X 0.5", "X 1.5", "X 2")
 vary_si_eps <- readRDS("vary_si_eps_summary_by_all_vars.rds")
 eps_vals <- unique(vary_si_eps$true_eps)
 vary_si_eps$label <- multiplier_label(
@@ -232,7 +232,7 @@ pwalk(
 #################################################
 #################################################
 #################################################
-ms_cv <- c("X 0.5", "X 1.2", "X 1.5")
+ms_cv <- c("X 0.5", "X 1.5", "X 2")
 vary_cv_eps <- readRDS("vary_cv_eps_summary_by_all_vars.rds")
 vary_cv_eps <- ungroup(vary_cv_eps)
 vary_cv_eps <- select(vary_cv_eps, rt_ref, si_cv_variant, tmax, true_eps, pt_est:upper)

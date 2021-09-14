@@ -34,7 +34,7 @@ round_to <- 3 ## Number of digits to round to
 #################################################
 #################################################
 ## SIs of interest
-ms_si <- c("X 0.5", "X 1.2", "X 1.5")
+ms_si <- c("X 0.5", "X 1.5", "X 2")
 vary_si_err <- readRDS("vary_si_err_summary_by_all_vars.rds")
 eps_vals <- unique(vary_si_err$true_eps)
 vary_si_err$true_eps <- factor(
@@ -259,7 +259,7 @@ save_multiple(p, "figures/vary_offs_classification")
 ######################################################################
 ################## VARY CV ############################################
 ######################################################################
-ms_cv <- c("X 0.5", "X 1.2", "X 1.5")
+ms_cv <- c("X 0.5", "X 1.5", "X 2")
 vary_cv_err <- readRDS("vary_cv_err_summary_by_all_vars.rds")
 vary_cv_err$true_eps <- factor(
   vary_cv_err$true_eps, levels = eps_vals, ordered = TRUE
