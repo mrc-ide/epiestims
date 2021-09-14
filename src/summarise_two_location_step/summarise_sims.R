@@ -36,6 +36,8 @@ incid_summary <- map(
   incid_summary, ~ bind_rows(., .id = "sim")
 )
 
+saveRDS(incid_summary, "incid_summary.rds")
+
 
 ## Structure of output: list with one element
 ## for each row of params.
@@ -107,42 +109,31 @@ by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
   map_dfr(
     function(x) summarise_sims(na.omit(x)), .id = "true_eps"
   )
-# ## 3. by si_mu
-# by_mu_var <- split(eps_summary_df, eps_summary_df$si_mu_variant) %>%
-#   map_dfr(
-#     function(x) summarise_sims(na.omit(x)), .id = "si_mu_variant"
-#   )
-# ## 4. by rt_ref
-# by_rt_ref <- split(eps_summary_df, eps_summary_df$rt_ref) %>%
-#   map_dfr(
-#     function(x) summarise_sims(na.omit(x)), .id = "rt_ref"
-#   )
-# ## 5. by rt_ref and si_mu
-# by_rt_and_mu <- split(
-#   eps_summary_df, list(eps_summary_df$rt_ref, eps_summary_df$si_mu_variant),
-#   sep = "_"
-# ) %>%
-#   map_dfr(
-#     function(x) summarise_sims(na.omit(x)), .id = "var"
-#   )
-# # ## 6. by rt_ref and rt_post_step
-# by_eps_with_rt_change <- split(
-#   eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref_l1),
-#   sep = "_"
-# ) %>%
-#   map_dfr(
-#     function(x) summarise_sims(na.omit(x)), .id = "var"
-#   )
-# 
-# by_eps_with_rt_change <- tidyr::separate(by_eps_with_rt_change, col = "var",
-#                                into = c("true_eps", "rt_ref"), sep = "_")
-# 
-# by_eps_with_rt_change$rt_ref <- as.factor(by_eps_with_rt_change$rt_ref)
-# 
-# eps_vals <- unique(by_eps_with_rt_change$true_eps)
-# 
-# by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
-#                                          levels = eps_vals, ordered = TRUE)
+
+saveRDS(by_eps, "eps_summary_by_eps.rds")
+
+
+## 6. by rt_ref (both loc have same rt_ref so only need to summarise by one)
+## (difference between locations is timing of step change)
+by_eps_with_rt_change <- split(
+  eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref_l1),
+  sep = "_"
+) %>%
+  map_dfr(
+    function(x) summarise_sims(na.omit(x)), .id = "var"
+  )
+
+by_eps_with_rt_change <- tidyr::separate(by_eps_with_rt_change, col = "var",
+                               into = c("true_eps", "rt_ref"), sep = "_")
+
+by_eps_with_rt_change$rt_ref <- as.factor(by_eps_with_rt_change$rt_ref)
+
+eps_vals <- unique(by_eps_with_rt_change$true_eps)
+
+by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
+                                         levels = eps_vals, ordered = TRUE)
+
+saveRDS(by_eps_with_rt_change, "eps_summary_by_eps_with_rt_change.rds")
 
 
 ## 7. by all variables (rt_ref_l1, rt_post_step_l1, step_time_l1,
@@ -189,6 +180,9 @@ eps_err_summary <- map2(
   }
 )
 
+saveRDS(eps_err_summary, "eps_err_summary.rds")
+
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_err_summary))
 
@@ -208,43 +202,15 @@ eps_err_summary_df <- pmap_dfr(
   }
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
+
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
+
+
 x <- group_by(eps_err_summary_df, rt_ref_l1, true_eps) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
-  )
+  ) %>% ungroup()
 
-# x$si_label <- glue(
-  # "X {round(x$si_mu_variant / si_mu_ref, 1)}"
-# )
-x$rt_ref_l1 <- as.factor(x$rt_ref_l1)
-# x$rt_post_step <- as.factor(x$rt_post_step)
-
-eps_vals <- unique(x$true_eps)
-
-x$true_eps <- factor(x$true_eps,
-                     levels = eps_vals, ordered = TRUE)
-
-p <-
-  ggplot(x) +
-  geom_point(
-    aes(true_eps, med, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, colour = rt_ref_l1),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  ylab("Estimated - True transmission advantage") +
-  xlab("True transmission advantage") +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(legend.position = "top")
-
-ggsave(glue("figures/eps_error.png"), p)
-
-saveRDS(eps_err_summary, "eps_err_summary.rds")
-saveRDS(eps_summary_df, "eps_summary_df.rds")
-saveRDS(incid_summary, "incid_summary.rds")
-
+saveRDS(x, "err_summary_by_eps_with_rt_change.rds")
