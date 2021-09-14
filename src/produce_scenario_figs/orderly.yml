@@ -1,0 +1,17 @@
+script: produce_scenario_figs.R
+packages:
+- dplyr
+- ggplot2
+- glue
+
+artefacts:
+  staticgraph:
+    description: Figures showing rt in different scenarios
+    filenames:
+      - figures/rt_two_location_step.pdf
+      - figures/rt_two_location_step.png
+      - figures/rt_two_location_step_diff.pdf
+      - figures/rt_two_location_step_diff.png
+
+global_resources:
+  R/sim_utils.R: sim_utils.R
