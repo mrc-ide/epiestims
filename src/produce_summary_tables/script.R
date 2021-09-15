@@ -40,6 +40,9 @@ round_to <- 2 ## Number of digits to round to
 ## SIs of interest
 ms_si <- c("X 0.5", "X 1.5", "X 2")
 vary_si_eps <- readRDS("vary_si_eps_summary_by_all_vars.rds")
+vary_si_eps <- ungroup(vary_si_eps)
+##low <- which(vary_si_eps$confidence == "Low")
+
 eps_vals <- unique(vary_si_eps$true_eps)
 vary_si_eps$label <- multiplier_label(
   vary_si_eps$si_mu_variant, si_mu_ref
@@ -47,7 +50,7 @@ vary_si_eps$label <- multiplier_label(
 
 
 vary_si_eps <- vary_si_eps[vary_si_eps$label %in% ms_si, ]
-vary_si_eps <- ungroup(vary_si_eps)
+
 vary_si_eps <- select(vary_si_eps, rt_ref, label, tmax, true_eps, pt_est:upper)
 vary_si_eps <- mutate_if(vary_si_eps, is.numeric, round, round_to)
 
