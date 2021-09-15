@@ -130,6 +130,7 @@ save_multiple(psi, "figures/vary_si_error_by_tmax")
 
 ## Classification
 vary_si_classified <- readRDS("vary_si_classified.rds")
+##vary_si_classified <- vary_si_classified[vary_si_classified$confidence != "Low", ]
 p <- classification_fig(vary_si_classified)
 save_multiple(p, "figures/vary_si_classification")
 

@@ -90,8 +90,7 @@ summarise_sims <- function(df) {
 estimate_uncertain <- function(df) {
   df$cv <- df$sd / df$mu
   df$confidence <- case_when(
-    df$cv < 0.25 ~ "High",
-    df$cv >= 0.25 & df$cv < 0.5 ~ "Moderate",
+    df$cv < 0.5 ~ "High",
     TRUE ~ "Low"
   )
   df

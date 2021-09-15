@@ -52,6 +52,7 @@ round_to <- 3
 #################################################
 #################################################
 vary_si_eps_summary <- readRDS("vary_si_eps_summary_df.rds")
+vary_si_eps_summary <- vary_si_eps_summary[vary_si_eps_summary$confidence != "Low", ]
 vary_si_eps_summary <- mutate_at(
   vary_si_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -91,6 +92,7 @@ cat(
 #################################################
 #################################################
 wrong_si_eps_summary <- readRDS("wrong_si_eps_summary_df.rds")
+wrong_si_eps_summary <- wrong_si_eps_summary[wrong_si_eps_summary$confidence != "Low", ]
 wrong_si_eps_summary <- mutate_at(
   wrong_si_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -129,6 +131,7 @@ cat(
 #################################################
 #################################################
 vary_cv_eps_summary <- readRDS("vary_cv_eps_summary_df.rds")
+vary_cv_eps_summary <- vary_cv_eps_summary[vary_cv_eps_summary$confidence != "Low", ]
 vary_cv_eps_summary <- mutate_at(
   vary_cv_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -167,6 +170,7 @@ cat(
 #################################################
 #################################################
 wrong_cv_eps_summary <- readRDS("wrong_cv_eps_summary_df.rds")
+wrong_cv_eps_summary <- wrong_cv_eps_summary[wrong_cv_eps_summary$confidence != "Low", ]
 wrong_cv_eps_summary <- mutate_at(
   wrong_cv_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -201,6 +205,7 @@ cat(
 ########### vary offspring
 #############################################
 vary_offs_eps_summary <- readRDS("vary_offs_eps_summary_df.rds")
+vary_offs_eps_summary <- vary_offs_eps_summary[vary_offs_eps_summary$confidence != "Low", ]
 vary_offs_eps_summary <- mutate_at(
   vary_offs_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -235,6 +240,7 @@ cat(
 ########### Under-reporting
 #############################################
 underrep_eps_summary <- readRDS("underrep_eps_summary_df.rds")
+underrep_eps_summary <- underrep_eps_summary[underrep_eps_summary$confidence != "Low", ]
 underrep_eps_summary <- mutate_at(
   underrep_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
