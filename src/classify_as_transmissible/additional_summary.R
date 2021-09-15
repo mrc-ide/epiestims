@@ -23,11 +23,18 @@ true_class <- function(df) {
 ## Summarise classification performance as a
 ## function of tmax and true advantage.
 summary_tmax_eps <- function(x) {
-  x <- tabyl(x, true_eps, est_class, tmax) %>%
-  adorn_percentages("row") %>%
-    bind_rows(.id = "tmax")
+  x <- split(x, x$confidence) %>%
+    map_dfr(
+      function(y) {
+        tabyl(y, true_eps, est_class, tmax) %>%
+          adorn_percentages("row") %>%
+          bind_rows(.id = "tmax")
+      },.id = "confidence"
+    )
 
-  gather(x, classification, val, -tmax, -true_eps)
+  gather(
+    x, classification, val, `Unclear`:`Variant more transmissible`
+  )
 }
 
 ## More coarse summary
@@ -129,7 +136,6 @@ vary_cv_eps_summary <- mutate_at(
 vary_cv_eps_summary$true_eps <- round(
   vary_cv_eps_summary$true_eps, round_to
 )
-
 vary_cv_eps_summary$true_label <- true_class(vary_cv_eps_summary)
 classified <- classify_epsilon(vary_cv_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -168,7 +174,6 @@ wrong_cv_eps_summary <- mutate_at(
 wrong_cv_eps_summary$true_eps <- round(
   wrong_cv_eps_summary$true_eps, round_to
 )
-
 wrong_cv_eps_summary$true_label <- true_class(wrong_cv_eps_summary)
 classified <- classify_epsilon(wrong_cv_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -203,7 +208,6 @@ vary_offs_eps_summary <- mutate_at(
 vary_offs_eps_summary$true_eps <- round(
   vary_offs_eps_summary$true_eps, round_to
 )
-
 vary_offs_eps_summary$true_label <- true_class(vary_offs_eps_summary)
 classified <- classify_epsilon(vary_offs_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -238,7 +242,6 @@ underrep_eps_summary <- mutate_at(
 underrep_eps_summary$true_eps <- round(
   underrep_eps_summary$true_eps, round_to
 )
-
 underrep_eps_summary$true_label <- true_class(underrep_eps_summary)
 classified <- classify_epsilon(underrep_eps_summary)
 tall <- summary_tmax_eps(classified)
