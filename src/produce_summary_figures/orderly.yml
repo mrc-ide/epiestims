@@ -3,11 +3,15 @@ script: script.R
 packages:
 - dplyr
 - ggplot2
+- ggpubr
 - glue
 - stargazer
 - tidyr
 
 sources: R/utils.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
 
 artefacts:
   staticgraph:

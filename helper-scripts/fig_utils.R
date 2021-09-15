@@ -6,7 +6,8 @@ theme_manuscript <- function(base_size = 14) {
   theme_minimal() %+replace%
     theme(
       text = element_text(size = base_size),
-      legend.position = "top"
+      legend.position = "top",
+      axis.text.x = element_text(angle = 45)
     )
 }
 ## give filename without the extension
