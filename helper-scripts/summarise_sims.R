@@ -63,6 +63,7 @@ eps_summary <- map(
     )
   }
 )
+eps_summary <- estimate_uncertain(eps_summary)
 
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),

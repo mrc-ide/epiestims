@@ -86,3 +86,13 @@ summarise_sims <- function(df) {
     upper = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 3]
   )
 }
+
+estimate_uncertain <- function(df) {
+  df$cv <- df$sd / df$mu
+  df$confidence <- case_when(
+    df$cv < 0.25 ~ "High",
+    df$cv >= 0.25 & df$cv < 0.5 ~ "Moderate",
+    TRUE ~ "Low"
+  )
+  df
+}
