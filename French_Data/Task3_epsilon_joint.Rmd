@@ -236,3 +236,58 @@ saveRDS(object = Jestim_UK2, file = 'Rdata/Jestim_UK2.rds')
 
 
 ```
+## Join naive estimates from out new method
+
+## Tables for the supplementary
+
+```{r}
+## Throwaway function to make pretty data.frame
+pretty_table <- function(x) {
+  x <- mutate_if(x, is.numeric, round, 2)
+  x <- na.omit(x)
+  x$formatted <- glue::glue("{x$med} ({x$low} - {x$up})")
+  x <- x[, c("name", "formatted")]
+  colnames(x) <- c("Region/Time-period", "Median (95\\% CrI)")
+  x
+}
+
+combine_estimates <- function(naive, joint) {
+  naive <- pretty_table(naive)
+  joint <- pretty_table(joint)
+  naive$method <- "Naive"
+  joint$method <- "Joint-EpiEstim"
+  both <- rbind(joint, naive)
+  tidyr::spread(both, method, `Median (95\\% CrI)`)
+}
+
+```
+
+
+```{r}
+## Task 2 outputs
+naive <- naive_epsilon_UK1$sum_epsilon$wild_alpha
+joint <- Jestim_UK1[["epsilon"]][["wild_alpha"]]
+x <- combine_estimates(naive, joint)
+stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
+
+
+naive <- naive_epsilon_UK2$sum_epsilon$alpha_delta
+joint <- Jestim_UK2[["epsilon"]][["alpha_delta"]]
+x <- combine_estimates(naive, joint)
+stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
+
+
+naive <- naive_epsilon_fr$sum_epsilon$wild_alpha
+joint <- Jestim_fr[["epsilon"]][["wild_alpha"]]
+x <- combine_estimates(naive, joint)
+stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
+
+
+naive <- naive_epsilon_fr$sum_epsilon[["wild_beta/gamma"]]
+joint <- Jestim_fr[["epsilon"]][["wild_beta/gamma"]]
+x <- combine_estimates(naive, joint)
+stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
+
+
+
+```
