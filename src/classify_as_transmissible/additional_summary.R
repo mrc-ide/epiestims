@@ -23,11 +23,18 @@ true_class <- function(df) {
 ## Summarise classification performance as a
 ## function of tmax and true advantage.
 summary_tmax_eps <- function(x) {
-  x <- tabyl(x, true_eps, est_class, tmax) %>%
-  adorn_percentages("row") %>%
-    bind_rows(.id = "tmax")
+  x <- split(x, x$confidence) %>%
+    map_dfr(
+      function(y) {
+        tabyl(y, true_eps, est_class, tmax) %>%
+          adorn_percentages("row") %>%
+          bind_rows(.id = "tmax")
+      },.id = "confidence"
+    )
 
-  gather(x, classification, val, -tmax, -true_eps)
+  gather(
+    x, classification, val, `Unclear`:`Variant more transmissible`
+  )
 }
 
 ## More coarse summary
@@ -39,7 +46,13 @@ summary_other <- function(x) {
 }
 
 round_to <- 3
+#################################################
+#################################################
+####### VARY SI #######
+#################################################
+#################################################
 vary_si_eps_summary <- readRDS("vary_si_eps_summary_df.rds")
+vary_si_eps_summary <- vary_si_eps_summary[vary_si_eps_summary$confidence != "Low", ]
 vary_si_eps_summary <- mutate_at(
   vary_si_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -72,12 +85,53 @@ cat(
   file = "vary_si_by_tmax_classification.tex"
 )
 
+
+#################################################
+#################################################
+####### VARY SI #######
+#################################################
+#################################################
+wrong_si_eps_summary <- readRDS("wrong_si_eps_summary_df.rds")
+wrong_si_eps_summary <- wrong_si_eps_summary[wrong_si_eps_summary$confidence != "Low", ]
+wrong_si_eps_summary <- mutate_at(
+  wrong_si_eps_summary, vars(`2.5%`:`97.5%`),
+  round, round_to
+)
+wrong_si_eps_summary$true_eps <- round(
+  wrong_si_eps_summary$true_eps, round_to
+)
+## What should be the correct classification,
+## based on true advantage.
+wrong_si_eps_summary$true_label <- true_class(wrong_si_eps_summary)
+classified <- classify_epsilon(wrong_si_eps_summary)
+tall <- summary_tmax_eps(classified)
+saveRDS(tall, "wrong_si_classified.rds")
+
+## Summary across SI Mean
+y <- split(classified, classified$si_mu_variant) %>%
+  map_dfr(summary_other, .id = "Variant SI Mean")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_si_by_simu_classification.tex"
+)
+
+## Summary across tmax
+y <- split(classified, classified$tmax) %>%
+  map_dfr(summary_other, .id = "tmax")
+
+cat(
+  stargazer(y, summary = FALSE),
+  file = "wrong_si_by_tmax_classification.tex"
+)
+
 #################################################
 #################################################
 ####### VARY CV #######
 #################################################
 #################################################
 vary_cv_eps_summary <- readRDS("vary_cv_eps_summary_df.rds")
+vary_cv_eps_summary <- vary_cv_eps_summary[vary_cv_eps_summary$confidence != "Low", ]
 vary_cv_eps_summary <- mutate_at(
   vary_cv_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -85,7 +139,6 @@ vary_cv_eps_summary <- mutate_at(
 vary_cv_eps_summary$true_eps <- round(
   vary_cv_eps_summary$true_eps, round_to
 )
-
 vary_cv_eps_summary$true_label <- true_class(vary_cv_eps_summary)
 classified <- classify_epsilon(vary_cv_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -117,6 +170,7 @@ cat(
 #################################################
 #################################################
 wrong_cv_eps_summary <- readRDS("wrong_cv_eps_summary_df.rds")
+wrong_cv_eps_summary <- wrong_cv_eps_summary[wrong_cv_eps_summary$confidence != "Low", ]
 wrong_cv_eps_summary <- mutate_at(
   wrong_cv_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -124,7 +178,6 @@ wrong_cv_eps_summary <- mutate_at(
 wrong_cv_eps_summary$true_eps <- round(
   wrong_cv_eps_summary$true_eps, round_to
 )
-
 wrong_cv_eps_summary$true_label <- true_class(wrong_cv_eps_summary)
 classified <- classify_epsilon(wrong_cv_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -152,6 +205,7 @@ cat(
 ########### vary offspring
 #############################################
 vary_offs_eps_summary <- readRDS("vary_offs_eps_summary_df.rds")
+vary_offs_eps_summary <- vary_offs_eps_summary[vary_offs_eps_summary$confidence != "Low", ]
 vary_offs_eps_summary <- mutate_at(
   vary_offs_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -159,7 +213,6 @@ vary_offs_eps_summary <- mutate_at(
 vary_offs_eps_summary$true_eps <- round(
   vary_offs_eps_summary$true_eps, round_to
 )
-
 vary_offs_eps_summary$true_label <- true_class(vary_offs_eps_summary)
 classified <- classify_epsilon(vary_offs_eps_summary)
 tall <- summary_tmax_eps(classified)
@@ -187,6 +240,7 @@ cat(
 ########### Under-reporting
 #############################################
 underrep_eps_summary <- readRDS("underrep_eps_summary_df.rds")
+underrep_eps_summary <- underrep_eps_summary[underrep_eps_summary$confidence != "Low", ]
 underrep_eps_summary <- mutate_at(
   underrep_eps_summary, vars(`2.5%`:`97.5%`),
   round, round_to
@@ -194,7 +248,6 @@ underrep_eps_summary <- mutate_at(
 underrep_eps_summary$true_eps <- round(
   underrep_eps_summary$true_eps, round_to
 )
-
 underrep_eps_summary$true_label <- true_class(underrep_eps_summary)
 classified <- classify_epsilon(underrep_eps_summary)
 tall <- summary_tmax_eps(classified)
