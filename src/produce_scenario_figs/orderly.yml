@@ -4,6 +4,9 @@ packages:
 - ggplot2
 - glue
 
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
 artefacts:
   staticgraph:
     description: Figures showing rt in different scenarios

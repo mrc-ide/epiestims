@@ -1,16 +1,5 @@
 dir.create("figures")
-
-## Function for saving
-save_multiple <- function(plot, filename) {
-  ggsave(
-    filename = glue("{filename}.pdf"),
-    plot
-  )
-  ggsave(
-    filename = glue("{filename}.png"),
-    plot)
-}
-
+source("R/fig_utils.R")
 ## two_location_step scenario
 ## generate dtaframe of Rt over time
 
@@ -24,7 +13,7 @@ two_loc_step <- data.frame("time" = rep(seq(1,60,1), 4),
                                               rep("B", 60)),
                                             2),
                            "scenario" = c(rep(1, 120), rep(2, 120))
-                            
+
 )
 
 two_loc_step$location <- as.factor(two_loc_step$location)
@@ -37,11 +26,7 @@ p1 <-
   geom_line(aes(colour = location, linetype = scenario), size = 1) +
   labs(x = "Time (days)", y = "Rt", colour = "Location", linetype = "Scenario") +
   ylim(c(0, 2)) +
-  theme_minimal() +
-  theme(
-    text = element_text(size = base_size),
-    legend.position = "top"
-  )
+  theme_manuscript()
 
 save_multiple(p1, "figures/rt_two_location_step")
 
@@ -55,7 +40,7 @@ two_loc_step_diff <- data.frame("time" = rep(seq(1,60,1), 2),
                            ),
                            "location" = c(rep("A", 60),
                                               rep("B", 60))
-                           
+
 )
 
 two_loc_step_diff$location <- as.factor(two_loc_step_diff$location)
@@ -67,11 +52,7 @@ ggplot(two_loc_step_diff, aes(x = time, y = rt)) +
   geom_line(aes(colour = location), size = 1) +
   labs(x = "Time (days)", y = "Rt", colour = "Location") +
   ylim(c(0, 2)) +
-  theme_minimal() +
-  theme(
-    text = element_text(size = base_size),
-    legend.position = "top"
-  )
+  theme_manuscript()
 
 save_multiple(p2, "figures/rt_two_location_step_diff")
 
