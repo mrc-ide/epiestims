@@ -1,5 +1,14 @@
 .Rproj.user
 .Rhistory
+*/.Rhistory
 .RData
 .Ruserdata
 .rds
+archive/
+draft/
+orderly.sqlite
+*.rds
+*.zip
+*.png
+*.pdf
+*.tex
