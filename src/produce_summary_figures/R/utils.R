@@ -1,26 +1,3 @@
-multiplier_label <- function(val, ref) {
-  paste("X", round(val/ref, 1))
-}
-
-theme_manuscript <- function(base_size = 14) {
-  theme_minimal() %+replace%
-    theme(
-      text = element_text(size = base_size),
-      legend.position = "top"
-    )
-}
-## give filename without the extension
-save_multiple <- function(plot, filename) {
-  ggsave(
-    filename = glue("{filename}.pdf"),
-    plot
-  )
-  ggsave(
-    filename = glue("{filename}.png"),
-    plot)
-}
-
-
 true_epsilon_vs_95CrI <- function(x) {
   p <- ggplot(x) +
     geom_point(
@@ -40,15 +17,6 @@ true_epsilon_vs_95CrI <- function(x) {
     theme(legend.position = "top")
   p
 }
-
-rt_labeller <- function(val) {
-  paste("Reference Rt:", val)
-}
-
-tmax_labeller <- function(val) {
-  paste(val, "days")
-}
-
 
 
 true_epsilon_vs_error <- function(x, color_by) {

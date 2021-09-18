@@ -38,8 +38,11 @@ round_to <- 2 ## Number of digits to round to
 #################################################
 #################################################
 ## SIs of interest
-ms_si <- c("X 0.5", "X 1.2", "X 1.5")
+ms_si <- c("X 0.5", "X 1.5", "X 2")
 vary_si_eps <- readRDS("vary_si_eps_summary_by_all_vars.rds")
+vary_si_eps <- ungroup(vary_si_eps)
+##low <- which(vary_si_eps$confidence == "Low")
+
 eps_vals <- unique(vary_si_eps$true_eps)
 vary_si_eps$label <- multiplier_label(
   vary_si_eps$si_mu_variant, si_mu_ref
@@ -47,7 +50,7 @@ vary_si_eps$label <- multiplier_label(
 
 
 vary_si_eps <- vary_si_eps[vary_si_eps$label %in% ms_si, ]
-vary_si_eps <- ungroup(vary_si_eps)
+
 vary_si_eps <- select(vary_si_eps, rt_ref, label, tmax, true_eps, pt_est:upper)
 vary_si_eps <- mutate_if(vary_si_eps, is.numeric, round, round_to)
 
@@ -107,6 +110,67 @@ pwalk(
     ggexport(
       tab,
       filename = glue("figures/vary_si_prop_in_95_{i}.png"),
+      width = 520
+    )
+  }
+)
+
+######################################################################
+######################################################################
+######################################################################
+########### WRONG SI
+######################################################################
+wrong_si_eps <- readRDS("wrong_si_eps_summary_by_all_vars.rds")
+eps_vals <- unique(wrong_si_eps$true_eps)
+wrong_si_eps$label <- multiplier_label(
+  wrong_si_eps$si_mu_variant, si_mu_ref
+)
+
+
+wrong_si_eps <- wrong_si_eps[wrong_si_eps$label %in% ms_si, ]
+wrong_si_eps <- ungroup(wrong_si_eps)
+wrong_si_eps <- select(wrong_si_eps, rt_ref, label, tmax, true_eps, pt_est:upper)
+wrong_si_eps <- mutate_if(wrong_si_eps, is.numeric, round, round_to)
+
+## First spread, then pick color for each cell.
+wrong_si_pt <- select(wrong_si_eps, rt_ref, label, true_eps, tmax, pt_est)
+wrong_si_pt <- spread(wrong_si_pt, tmax, pt_est)
+
+wrong_si_fill <- mutate_at(wrong_si_pt, vars(`10`:`50`), f)
+
+wrong_si_eps$formatted <- pretty_ci(
+  wrong_si_eps$pt_est, wrong_si_eps$lower, wrong_si_eps$upper
+)
+
+x <- select(wrong_si_eps, rt_ref, label, true_eps, tmax, formatted)
+x <- pivot_wider(
+  x, id_cols = c("rt_ref", "label", "true_eps"),
+  names_from = "tmax", values_from = "formatted"
+)
+## Nice column names
+colnames(x) <- c("Reference Rt", "Variant SI Mean", "True advantage",
+                 "10", "20", "30", "40", "50")
+
+x <- split(x, list(x[["Reference Rt"]], x[["Variant SI Mean"]]))
+y <- split(
+  wrong_si_fill, list(wrong_si_fill$rt_ref, wrong_si_fill$label)
+)
+pwalk(
+  list(df = x, fillinfo = y, i = seq_along(x)),
+  function(df, fillinfo, i) {
+    tab <- prop_in_ci_table(df, fillinfo)
+    if (i == 1) {
+      ggarrange(
+        legend, tab, ncol = 1, nrow = 2, heights = c(0.1, 1)
+      ) %>%
+        ggexport(
+          filename = "figures/wrong_si_prop_in_95_1_legend.png",
+          width = 520
+        )
+    }
+    ggexport(
+      tab,
+      filename = glue("figures/wrong_si_prop_in_95_{i}.png"),
       width = 520
     )
   }
@@ -171,12 +235,14 @@ pwalk(
 #################################################
 #################################################
 #################################################
+ms_cv <- c("X 0.5", "X 1.5", "X 2")
 vary_cv_eps <- readRDS("vary_cv_eps_summary_by_all_vars.rds")
 vary_cv_eps <- ungroup(vary_cv_eps)
 vary_cv_eps <- select(vary_cv_eps, rt_ref, si_cv_variant, tmax, true_eps, pt_est:upper)
 vary_cv_eps$si_cv_variant <- multiplier_label(
   vary_cv_eps$si_cv_variant, si_std_ref / si_mu_ref
 )
+vary_cv_eps <- vary_cv_eps[vary_cv_eps$si_cv_variant %in% ms_cv, ]
 vary_cv_eps <- mutate_if(vary_cv_eps, is.numeric, round, round_to)
 
 ## First spread, then pick color for each cell.
@@ -323,13 +389,13 @@ pwalk(
       ) %>%
         ggexport(
           filename = "figures/underrep_prop_in_95_1_legend.png",
-          width = 520
+          width = 540
         )
     }
     ggexport(
       tab,
       filename = glue("figures/underrep_prop_in_95_{i}.png"),
-      width = 520
+      width = 540
     )
   }
 )
