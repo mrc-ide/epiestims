@@ -32,6 +32,8 @@ incid_summary <- map(
   incid_summary, ~ bind_rows(., .id = "sim")
 )
 
+saveRDS(incid_summary, "incid_summary.rds")
+
 
 ## Structure of output: list with one element
 ## for each row of params.
@@ -65,9 +67,6 @@ eps_summary <- map(
   }
 )
 
-## One of the problematic ones
-##bad <- output[[105]][[5]][[98]]
-##bad <- output[[1]][[5]][[68]]
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_summary))
 
@@ -83,75 +82,55 @@ eps_summary_df <- pmap_dfr(
   }
 )
 
-## idx <- which(
-##   sim_params$rt_ref == sim_params$rt_ref[1] &
-##   sim_params$si_mu_variant == sim_params$si_mu_variant[130]
-## )
-## x <- as.list(sim_params[idx, ])
-## x <- append(x, list(summary = eps_summary[idx]))
-
-## bad_summary_df <- pmap_dfr(
-##   x, function(rt_ref, epsilon, si_mu_variant, si_std_variant, summary) {
-##     summary$rt_ref <- rt_ref
-##     summary$true_eps <- epsilon
-##     summary$si_mu_variant <- si_mu_variant
-##     summary
-##   }
-## )
-
-
 
 eps_summary_df <- mutate_at(
   eps_summary_df, vars(`2.5%`:`sd`), round, 3
 )
 eps_summary_df$true_eps <- round(eps_summary_df$true_eps, 3)
 
-## bad_summary_df <- mutate_at(
-##   bad_summary_df, vars(`2.5%`:`sd`), round, 3
-## )
-##bad_summary_df$true_eps <- round(bad_summary_df$true_eps, 3)
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
 
 ## Summarise by parameters that vary
-## 1. by tmax
-by_tmax <- split(eps_summary_df, eps_summary_df$tmax) %>%
-  map_dfr(
-    function(x) summarise_sims(na.omit(x)), .id = "tmax"
-  )
+# ## 1. by tmax
+# by_tmax <- split(eps_summary_df, eps_summary_df$tmax) %>%
+#   map_dfr(
+#     function(x) summarise_sims(na.omit(x)), .id = "tmax"
+#   )
 ## 2. by epsilon
 by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
   map_dfr(
     function(x) summarise_sims(na.omit(x)), .id = "true_eps"
   )
-## 3. by si_mu
-by_mu_var <- split(eps_summary_df, eps_summary_df$si_mu_variant) %>%
-  map_dfr(
-    function(x) summarise_sims(na.omit(x)), .id = "si_mu_variant"
-  )
-## 4. by rt_ref
-by_rt_ref <- split(eps_summary_df, eps_summary_df$rt_ref) %>%
-  map_dfr(
-    function(x) summarise_sims(na.omit(x)), .id = "rt_ref"
-  )
-## 5. by rt_ref and si_mu
-by_rt_and_mu <- split(
-  eps_summary_df, list(eps_summary_df$rt_ref, eps_summary_df$si_mu_variant),
+
+saveRDS(by_eps, "eps_summary_by_eps.rds")
+
+## 6. by rt_ref and epsilon
+by_eps_with_rt_change <- split(
+  eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref),
   sep = "_"
 ) %>%
   map_dfr(
     function(x) summarise_sims(na.omit(x)), .id = "var"
   )
-## 6. by rt_ref and rt_post_step
-by_rt_change <- split(
-  eps_summary_df, list(eps_summary_df$rt_ref, eps_summary_df$rt_post_step),
-  sep = "_"
-) %>%
-  map_dfr(
-    function(x) summarise_sims(na.omit(x)), .id = "var"
-  )
+
+by_eps_with_rt_change <- tidyr::separate(by_eps_with_rt_change, col = "var",
+                                         into = c("true_eps", "rt_ref"), sep = "_")
+
+by_eps_with_rt_change$rt_ref <- as.factor(by_eps_with_rt_change$rt_ref)
+
+eps_vals <- unique(by_eps_with_rt_change$true_eps)
+
+by_eps_with_rt_change$true_eps <- factor(by_eps_with_rt_change$true_eps,
+                                         levels = eps_vals, ordered = TRUE)
+
+saveRDS(by_eps_with_rt_change, "eps_summary_by_eps_with_rt_change.rds")
+
 ## 7. by all variables (rt_ref, rt_post_step, tmax)
 by_all_vars <-  split(
   eps_summary_df,
-  list(eps_summary_df$rt_ref, eps_summary_df$rt_post_step, eps_summary_df$tmax),
+  list(eps_summary_df$rt_ref, eps_summary_df$rt_post_step, eps_summary_df$tmax,
+       eps_summary_df$true_eps),
   sep = "_"
 ) %>%
   map_dfr(
@@ -159,29 +138,13 @@ by_all_vars <-  split(
   )
 
 by_all_vars <- tidyr::separate(by_all_vars, col = "var",
-                               into = c("rt_ref", "rt_post_step", "tmax"), sep = "_")
-# by_all_vars$si_mu_variant <- as.numeric(by_all_vars$si_mu_variant)
-# by_all_vars$si_label <- glue(
-#   "X {round(by_all_vars$si_mu_variant / si_mu_ref, 1)}"
-# )
-by_all_vars$rt_ref <- as.factor(by_all_vars$rt_ref)
-by_all_vars$rt_post_step <- as.factor(by_all_vars$rt_post_step)
+                               into = c("rt_ref", "rt_post_step", "tmax", "true_eps"),
+                               sep = "_")
 
-p <- ggplot(by_all_vars) +
-  geom_point(aes(tmax, pt_est)) +
-  geom_linerange(aes(tmax, ymin = lower, ymax = upper)) +
-  geom_hline(yintercept = 0.95, linetype = "dashed") +
-  ylab("Proportion in 95% CrI") +
-  xlab("tmax") +
-  ylim(0, 1) +
-  facet_grid(rt_post_step ~ rt_ref, labeller = label_both) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(
-    legend.position = "top"
-  )
+saveRDS(by_all_vars, "eps_summary_by_all_vars.rds")
 
-ggsave(glue("figures/one_loc_step_prop_in_95.png"), p)
+
+# Error summary
 
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),
@@ -207,8 +170,12 @@ eps_err_summary <- map2(
   }
 )
 
+saveRDS(eps_err_summary, "eps_err_summary.rds")
+
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_err_summary))
+
 
 eps_err_summary_df <- pmap_dfr(
   x, function(rt_ref, rt_post_step, step_time, epsilon,
@@ -222,35 +189,15 @@ eps_err_summary_df <- pmap_dfr(
   }
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
-x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, si_mu_variant, tmax) %>%
+
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
+
+
+x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
   )
 
-x$si_label <- glue(
-  "X {round(x$si_mu_variant / si_mu_ref, 1)}"
-)
-x$rt_ref <- as.factor(x$rt_ref)
-x$rt_post_step <- as.factor(x$rt_post_step)
-
-p <- ggplot(x) +
-  geom_point(
-    aes(tmax, med),
-    position = position_dodge(width = 0.5)
-  ) +
-  geom_linerange(
-    aes(tmax, ymin = low, ymax = high),
-    position = position_dodge(width = 0.5)
-  ) +
-  facet_grid(rt_post_step ~ rt_ref, labeller = label_both) +
-  theme_minimal() +
-  labs(color = "Reference Rt") +
-  theme(legend.position = "top")
-
-ggsave(glue("figures/eps_error.png"), p)
-
-saveRDS(eps_err_summary, "eps_err_summary.rds")
-saveRDS(eps_summary_df, "eps_summary_df.rds")
-saveRDS(incid_summary, "incid_summary.rds")
-
+saveRDS(x, "err_summary_by_eps_with_rt_change.rds")

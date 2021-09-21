@@ -16,6 +16,10 @@ artefacts:
       - eps_err_summary.rds
       - eps_summary_df.rds
       - incid_summary.rds
+      - eps_summary_by_all_vars.rds
+      - eps_summary_by_eps.rds
+      - eps_summary_by_eps_with_rt_change.rds
+      - err_summary_by_eps_with_rt_change.rds
       
 global_resources:
   R/utils.R: summary_utils.R
