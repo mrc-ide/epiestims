@@ -17,6 +17,9 @@ artefacts:
       - vary_cv_classified.rds
       - vary_offs_classified.rds
       - underrep_classified.rds
+      
+global_resources:
+  R/utils.R: classify_utils.R
 
 depends:
   sims_one_location_vary_si:
@@ -30,7 +33,7 @@ depends:
   summarise_one_location_wrong_si:
     id: latest
     use:
-      wrong_si_eps_summary_df.rds: eps_summary_df.rds      
+      wrong_si_eps_summary_df.rds: eps_summary_df.rds
   summarise_one_location_vary_cv:
     id: latest
     use:
@@ -38,7 +41,7 @@ depends:
   summarise_one_location_wrong_cv:
     id: latest
     use:
-      wrong_cv_eps_summary_df.rds: eps_summary_df.rds      
+      wrong_cv_eps_summary_df.rds: eps_summary_df.rds
   summarise_one_location_vary_offspring:
     id: latest
     use:
