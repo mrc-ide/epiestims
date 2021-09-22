@@ -194,10 +194,10 @@ saveRDS(eps_summary_df, "eps_summary_df.rds")
 
 
 
-x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, tmax) %>%
+x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
   summarise(
     low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
     high = quantile(`50%`, 0.975)
   )
 
-saveRDS(x, "err_summary_by_eps_with_rt_change.rds")
+saveRDS(x, "err_summary_by_all_vars.rds")

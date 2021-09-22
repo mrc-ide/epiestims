@@ -25,6 +25,10 @@ rt_labeller <- function(val) {
   paste("Reference Rt:", val)
 }
 
+rt_change_labeller <- function(val) {
+  paste("Rt change:", val)
+}
+
 tmax_labeller <- function(val) {
   paste(val, "days")
 }
