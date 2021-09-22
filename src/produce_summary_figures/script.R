@@ -193,7 +193,7 @@ p1a <- true_epsilon_vs_error(vary_offs_ms, "Over-dispersion") +
       facet_wrap(
       ~rt_ref, ncol = 1,
       labeller = labeller(rt_ref = rt_labeller)
-    )
+    ) + theme(axis.title.y = element_blank())
 save_multiple(p1a, "figures/vary_si_offs")
 
 ## Error over tmax
@@ -296,7 +296,7 @@ p <- true_epsilon_vs_error(vary_cv_ms, "Variant SI CV") +
       facet_grid(
       category~rt_ref, scales = "free_y",
       labeller = labeller(rt_ref = rt_labeller)
-      )
+      ) + theme(axis.title.y = element_blank())
 save_multiple(plot = p, filename = "figures/correct_and_wrong_cv")
 
 wrong_cv_classified <- readRDS("wrong_cv_classified.rds")
