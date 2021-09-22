@@ -118,13 +118,24 @@ main_text_df$true_eps <- factor(
 )
 
 scenario_names <- c(
-  "same_si" = "Same SI",
-  "vary_offs" = "Overdispersed offspring distr",
-  "vary_si" = "Variable SI",
-  "vary_cv" = "Variable CV",
+  "same_si" = "Baseline",
+  "vary_offs" = "With superspreading",
+  "vary_si" = "Variable SI Mean",
+  "vary_cv" = "Variable SI CV",
   "wrong_si" = "Misspecified SI Mean",
   "wrong_cv" = "Misspecified SI CV"
 )
+
+## Find the range for each scenario
+err_range <- group_by(main_text_df, scenario) %>%
+  summarise(low = min(low), high = max(high)) %>%
+  ungroup()
+## Set the range to be same for all except
+## wrong SI
+lowest <- min(err_range$low[err_range$scenario != "wrong_si"])
+highest <- max(err_range$high[err_range$scenario != "wrong_si"])
+err_range$low[err_range$scenario != "wrong_si"] <- floor(lowest)
+err_range$high[err_range$scenario != "wrong_si"] <- ceiling(highest)
 
 p <- ggplot(main_text_df) +
   geom_point(
@@ -135,9 +146,15 @@ p <- ggplot(main_text_df) +
   geom_linerange(
     aes(true_eps, ymin = low, ymax = high, col = label),
       position = position_dodge(width = dodge_width),
-      size = 1.2
+      size = 1.1
   ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_blank(
+    data = err_range, aes(y = low)
+  ) +
+  geom_blank(
+    data = err_range, aes(y = high)
+  ) +
   facet_wrap(
     ~scenario, scales = "free_y", ncol = 2,
     labeller = labeller(scenario = scenario_names)
