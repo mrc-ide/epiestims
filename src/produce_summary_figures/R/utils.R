@@ -35,7 +35,8 @@ true_epsilon_vs_error <- function(x, color_by) {
     ylab("Estimated - True transmission advantage") +
     xlab("True transmission advantage") +
     labs(color = color_by) +
-    theme_manuscript()
+    ##theme_manuscript() +
+    theme(legend.position = c(0.7, 0.2))
   p
 }
 
