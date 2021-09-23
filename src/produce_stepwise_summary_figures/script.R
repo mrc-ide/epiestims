@@ -121,11 +121,6 @@ loc2_change <- paste(two_loc_step_diff_err$rt_ref_l2,
 two_loc_step_diff_err$rt_change <- paste("Location 1: ", loc1_change,
                               ", Location 2: ", loc2_change)
 
-two_loc_step_diff_err$rt_change <- factor(paste(two_loc_step_diff_err$rt_ref_l1,
-                                                two_loc_step_diff_err$rt_post_step_l1,
-                                                sep = " -> ")
-)
-
 two_loc_step_diff_err$label <- multiplier_label(
   two_loc_step_diff_err$si_mu_variant, si_mu_ref
 )
