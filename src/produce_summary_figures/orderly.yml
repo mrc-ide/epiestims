@@ -5,6 +5,7 @@ packages:
 - ggplot2
 - ggpubr
 - glue
+- purrr
 - stargazer
 - tidyr
 

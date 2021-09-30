@@ -120,8 +120,8 @@ main_text_df$true_eps <- factor(
 scenario_names <- c(
   "same_si" = "Baseline",
   "vary_offs" = "With superspreading",
-  "vary_si" = "Variable SI Mean",
-  "vary_cv" = "Variable SI CV",
+  "vary_si" = "Different SI Mean",
+  "vary_cv" = "Different SI CV",
   "wrong_si" = "Misspecified SI Mean",
   "wrong_cv" = "Misspecified SI CV"
 )
@@ -165,7 +165,8 @@ p <- ggplot(main_text_df) +
   ) + labs(color = "SI Mean/CV Multiplier") +
   xlab("True Transmssion Advantage") +
   ylab("Estimated - True Transmssion Advantage") +
-  theme_manuscript()
+  theme_manuscript() +
+  theme(legend.position = "bottom")
 
 save_multiple(p, "figures/main_text_fig")
 
