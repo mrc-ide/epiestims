@@ -251,40 +251,49 @@ for(i in 1:length(I_UK1)){
 t_min <- 14L
 t_max <- seq(from = 14, to = nrow(I_UK1[[1]]), by = 7)
 priors <- default_priors()
-
+nregions <- 7
+## Do this by region 
 estimates <- map(
   t_max, function(tmax) {
-    estimate_joint(
-      incid = incid,
-      si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
-      mcmc_control = Epi_param$mcmc_control,
-      priors = priors,
-      t_min = t_min,
-      t_max = as.integer(tmax)
-    )
-
+    out <- map(1:nregions, function(region) {
+      estimate_joint(
+        incid = incid[, region, , drop = FALSE],
+        si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
+        mcmc_control = Epi_param$mcmc_control,
+        priors = priors,
+        t_min = t_min,
+        t_max = as.integer(tmax)
+      )
+    })
+    names(out) <- names(I_UK1[[1]])[-1]
+    out
   }
 )
+
 names(estimates) <- I_UK1[[1]][["date"]][t_max]
 
 eps_estimates <- map_dfr(
   estimates, function(x) {
-    out <- apply(
-      x[["epsilon"]], 1, quantile,
-      prob = c(0.025, 0.5, 0.975)
+    map_dfr(
+      x, function(y) {
+        out <- apply(
+          y[["epsilon"]], 1, quantile,
+          prob = c(0.025, 0.5, 0.975)
+        )
+        out <- data.frame(out)
+        names(out) <- "Alpha"
+        out <- tibble::rownames_to_column(out, "qntl")
+        out <- tidyr::gather(out, variant, epsilon, -qntl)
+        tidyr::spread(out, qntl, epsilon)        
+      }, .id = "NHS Region"
     )
-    out <- data.frame(out)
-    names(out) <- "Alpha"
-    out <- tibble::rownames_to_column(out, "qntl")
-    out <- tidyr::gather(out, variant, epsilon, -qntl)
-    tidyr::spread(out, qntl, epsilon)
   }, .id = "date"
 )
 
 p <- ggplot(eps_estimates) +
   geom_point(aes(date, `50%`)) +
   geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
-  facet_wrap(~variant, ncol = 1, scales = "free_y") +
+  facet_wrap(~`NHS Region`, scales = "free_y") +
   expand_limits(y = c(0, NA)) +
   geom_hline(
     yintercept = 1, linetype = "dashed"
@@ -292,12 +301,12 @@ p <- ggplot(eps_estimates) +
   ylab("Transmission Advantage") +
   theme_minimal() +
   theme(
-    text = element_text(size = 16),
+    text = element_text(size = 12),
     axis.title.x = element_blank(),
     axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
   )
 
-ggsave("uk_using_all_regions.pdf", p)
+ggsave("uk_using_by_regions.pdf", p)
 
 total_incid <- data.frame(
   date = I_UK1$wild[["date"]],
