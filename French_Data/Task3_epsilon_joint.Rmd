@@ -241,24 +241,24 @@ saveRDS(object = Jestim_UK2, file = 'Rdata/Jestim_UK2.rds')
 
 ```{r}
 
-incid <- array(NA, dim = c(nrow(I_UK1[[1]]), 
-                           ncol(I_UK1[[1]]) - 1,
-                           length(I_UK1)))
-for(i in 1:length(I_UK1)){
-  incid[,,i] <- as.matrix(I_UK1[[i]][,-1])
+incid <- array(NA, dim = c(nrow(I_UK2[[1]]), 
+                           ncol(I_UK2[[1]]) - 1,
+                           length(I_UK2)))
+for(i in 1:length(I_UK2)){
+  incid[,,i] <- as.matrix(I_UK2[[i]][,-1])
 }
 
 ## start estimating at 3 weeks
 t_min <- 14L
-t_max <- seq(from = 21, to = nrow(I_UK1[[1]]), by = 7)
+t_max <- seq(from = 21, to = nrow(I_UK2[[1]]), by = 7)
 priors <- default_priors()
 nregions <- 7
 ## Do this by region 
 estimates <- map(
   t_max, function(tmax) {
       estimate_joint(
-        incid = incid[, c(2, 6), , drop = FALSE],
-        si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
+        incid = incid,
+        si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK2)), 
         mcmc_control = Epi_param$mcmc_control,
         priors = priors,
         t_min = t_min,
@@ -267,7 +267,7 @@ estimates <- map(
   }
 )
 
-names(estimates) <- I_UK1[[1]][["date"]][t_max]
+names(estimates) <- I_UK2[[1]][["date"]][t_max]
 
 
 eps_estimates <- map_dfr(
@@ -277,7 +277,7 @@ eps_estimates <- map_dfr(
       prob = c(0.025, 0.5, 0.975)
     )
     out <- data.frame(out)
-    names(out) <- "Alpha"
+    names(out) <- "Delta/Alpha"
     out <- tibble::rownames_to_column(out, "qntl")
     out <- tidyr::gather(out, variant, epsilon, -qntl)
     tidyr::spread(out, qntl, epsilon)        
@@ -300,7 +300,7 @@ p <- ggplot(eps_estimates) +
     axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
   )
 
-ggsave("uk_using_two_regions.pdf", p)
+ggsave("uk_delta_over_alpha.pdf", p)
 
 total_incid <- data.frame(
   date = I_UK1$wild[["date"]],
