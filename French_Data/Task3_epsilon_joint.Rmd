@@ -14,7 +14,7 @@ opts_chunk$set(fig.path='figs/task3/', fig.keep='high',
 
 library(EpiEstim)
 library(epitrix)
-
+library(purrr)
 cbind_rep <- function(x,n){
   matrix(x,nrow = length(x), ncol = n, byrow = FALSE)
 }
@@ -236,7 +236,63 @@ saveRDS(object = Jestim_UK2, file = 'Rdata/Jestim_UK2.rds')
 
 
 ```
-## Join naive estimates from out new method
+## Estimates by week
+
+```{r}
+
+incid <- array(NA, dim = c(nrow(I_fr[[1]]), 
+                           ncol(I_fr[[1]]) - 1,
+                           length(I_fr)))
+for(i in 1:length(I_fr)){
+  incid[,,i] <- as.matrix(I_fr[[i]][,-1])
+}
+
+## start estimating at 3 weeks
+t_min <- 7L
+t_max <- seq(from = 14, to = 102, by = 7)
+priors <- default_priors()
+
+estimates <- map(
+  t_max, function(tmax) {
+    estimate_joint(
+      incid = incid, 
+      si_distr = cbind_rep(x = Epi_param$SI, n = length(I_fr)), 
+      mcmc_control = Epi_param$mcmc_control,
+      priors = priors,
+      t_min = t_min,
+      t_max = as.integer(tmax)
+    )
+
+  }
+)
+names(estimates) <- I_fr[[1]][["date"]][t_max]
+
+eps_estimates <- map_dfr(
+  estimates, function(x) {
+    out <- apply(
+      x[["epsilon"]], 1, quantile,
+      prob = c(0.025, 0.5, 0.975)
+    )
+    out <- data.frame(out)
+    names(out) <- c("Alpha", "Beta/Gamma")
+    out <- tibble::rownames_to_column(out, "qntl")
+    out <- tidyr::gather(out, variant, epsilon, -qntl)
+    tidyr::spread(out, qntl, epsilon)
+  }, .id = "date"
+)
+
+p <- ggplot(eps_estimates) +
+  geom_point(aes(date, `50%`)) +
+  geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
+  facet_wrap(~variant, ncol = 1, scales = "free_y") +
+  expand_limits(y = c(0, NA)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0))
+
+ggsave("french_using_all_data.pdf", p)
+
+```
+## Joint naive estimates from our new method
 
 ## Tables for the supplementary
 
