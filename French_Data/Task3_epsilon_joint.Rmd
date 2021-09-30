@@ -240,23 +240,23 @@ saveRDS(object = Jestim_UK2, file = 'Rdata/Jestim_UK2.rds')
 
 ```{r}
 
-incid <- array(NA, dim = c(nrow(I_fr[[1]]), 
-                           ncol(I_fr[[1]]) - 1,
-                           length(I_fr)))
-for(i in 1:length(I_fr)){
-  incid[,,i] <- as.matrix(I_fr[[i]][,-1])
+incid <- array(NA, dim = c(nrow(I_UK1[[1]]), 
+                           ncol(I_UK1[[1]]) - 1,
+                           length(I_UK1)))
+for(i in 1:length(I_UK1)){
+  incid[,,i] <- as.matrix(I_UK1[[i]][,-1])
 }
 
 ## start estimating at 3 weeks
-t_min <- 7L
-t_max <- seq(from = 14, to = 102, by = 7)
+t_min <- 14L
+t_max <- seq(from = 14, to = nrow(I_UK1[[1]]), by = 7)
 priors <- default_priors()
 
 estimates <- map(
   t_max, function(tmax) {
     estimate_joint(
-      incid = incid, 
-      si_distr = cbind_rep(x = Epi_param$SI, n = length(I_fr)), 
+      incid = incid,
+      si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
       mcmc_control = Epi_param$mcmc_control,
       priors = priors,
       t_min = t_min,
@@ -265,7 +265,7 @@ estimates <- map(
 
   }
 )
-names(estimates) <- I_fr[[1]][["date"]][t_max]
+names(estimates) <- I_UK1[[1]][["date"]][t_max]
 
 eps_estimates <- map_dfr(
   estimates, function(x) {
@@ -274,7 +274,7 @@ eps_estimates <- map_dfr(
       prob = c(0.025, 0.5, 0.975)
     )
     out <- data.frame(out)
-    names(out) <- c("Alpha", "Beta/Gamma")
+    names(out) <- "Alpha"
     out <- tibble::rownames_to_column(out, "qntl")
     out <- tidyr::gather(out, variant, epsilon, -qntl)
     tidyr::spread(out, qntl, epsilon)
@@ -286,12 +286,123 @@ p <- ggplot(eps_estimates) +
   geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
   facet_wrap(~variant, ncol = 1, scales = "free_y") +
   expand_limits(y = c(0, NA)) +
+  geom_hline(
+    yintercept = 1, linetype = "dashed"
+  ) +
+  ylab("Transmission Advantage") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0))
+  theme(
+    text = element_text(size = 16),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
+  )
+
+ggsave("uk_using_all_regions.pdf", p)
+
+total_incid <- data.frame(
+  date = I_UK1$wild[["date"]],
+  wild = apply(I_UK1$wild[, -1], 1, sum),
+  alpha = apply(I_UK1$alpha[, -1], 1, sum)
+)
+total_incid$cuml_wild <- cumsum(total_incid$wild)
+total_incid$cuml_alpha <- cumsum(total_incid$alpha)
+total_incid$alpha_prop <- total_incid$cuml_alpha / (total_incid$cuml_alpha + total_incid$cuml_wild)
+eps_estimates$date <- as.Date(eps_estimates$date)
+x <- left_join(eps_estimates, total_incid)
+
+p <- ggplot(x) +
+  geom_point(aes(alpha_prop, `50%`)) +
+  geom_linerange(aes(x = alpha_prop, ymin = `2.5%`, ymax = `97.5%`)) +
+  facet_wrap(~variant, ncol = 1, scales = "free_y") +
+  expand_limits(y = c(0, NA)) +
+  geom_hline(
+    yintercept = 1, linetype = "dashed"
+  ) +
+  scale_x_continuous(
+    labels = scales::percent
+  ) + 
+  xlab("Proportion of Alpha") +
+  ylab("Transmission Advantage") +
+  ##theme_minimal() +
+  theme(
+    text = element_text(size = 16)
+  )
+p2 <- p + ggforce::facet_zoom(xlim = c(0, 0.1))
+
+ggsave("uk_using_all_regions_alpha_prop.pdf", p2)
+
+```
+## Leave one out
+
+```{r}
+
+incid <- array(NA, dim = c(nrow(I_fr[[1]]), 
+                           ncol(I_fr[[1]]) - 1,
+                           length(I_fr)))
+for(i in 1:length(I_fr)){
+  incid[,,i] <- as.matrix(I_fr[[i]][,-1])
+}
+
+## start estimating at 3 weeks
+t_min <- 7L
+t_max <- seq(from = 14, to = 102, by = 7)
+priors <- default_priors()
+leave_out <- 1:18
+names(leave_out) <-  paste(
+  "Leave out", names(I_fr[[1]])[-1]
+)
+
+estimates <- map(
+  t_max, function(tmax) {
+    map(
+      leave_out, function(leave) {
+        x <- incid[, -leave, , drop = FALSE]
+        estimate_joint(
+          incid = x, 
+          si_distr = cbind_rep(x = Epi_param$SI, n = length(I_fr)), 
+          mcmc_control = Epi_param$mcmc_control,
+          priors = priors,
+          t_min = t_min,
+          t_max = as.integer(tmax)
+        )
+      }
+    )
+  }
+)
+
+names(estimates) <- I_fr[[1]][["date"]][t_max]
+
+eps_estimates <- map_dfr(
+  estimates, function(x) {
+    map_dfr(x, function(y) {
+      out <- apply(
+        y[["epsilon"]], 1, quantile,
+        prob = c(0.025, 0.5, 0.975)
+      )
+      out <- data.frame(out)
+      names(out) <- c("Alpha", "Beta/Gamma")
+      out <- tibble::rownames_to_column(out, "qntl")
+      out <- tidyr::gather(out, variant, epsilon, -qntl)
+      tidyr::spread(out, qntl, epsilon)
+    }, .id = "Leave out"
+    )
+  }, .id = "date"
+)
+x <- eps_estimates[eps_estimates$date == "2021-03-03", ]
+p <- ggplot(x) +
+  geom_point(aes(date, `50%`)) +
+  geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
+  ggforce::facet_grid_paginate(~variant, scales = "free_y", nrow = 3, ncol = 1, page = ) +
+  expand_limits(y = c(0, NA)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
+  )
 
 ggsave("french_using_all_data.pdf", p)
 
 ```
+
 ## Joint naive estimates from our new method
 
 ## Tables for the supplementary
