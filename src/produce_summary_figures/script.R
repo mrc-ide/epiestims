@@ -90,15 +90,8 @@ names(scenarios) <- scenarios
 split_df <- map(scenarios, function(sc) {
   split_err_df(error_summary[[sc]], ms_vars[[sc]])
 })
-main_text_scenarios <- c("same_si", "vary_offs", "vary_si", "vary_cv",
-                         "wrong_si", "wrong_cv")
-
-main_text_df <- map_dfr(
-  split_df[main_text_scenarios],
-  ~ .[["main"]], .id = "scenario"
-)
-
-main_text_df <- main_text_df[main_text_df$rt_ref < 1.5,]
+main_text_scenarios <- c("same_si", "vary_offs", "vary_si",
+                         "wrong_si", "vary_cv", "wrong_cv")
 values <- c(
   "X 1" = "#222222", ## Same SI
   "0.1" = "#222222", ## Offspring
@@ -107,6 +100,20 @@ values <- c(
   "X 1.5" = "#56B4E9",
   "X 2" = "#009E73"
 )
+scenario_names <- c(
+  "same_si" = "(A) Baseline",
+  "vary_offs" = "(B) With superspreading",
+  "vary_si" = "(C) Different SI Mean",
+  "wrong_si" = "(D) Misspecified SI Mean",
+  "vary_cv" = "(E) Different SI CV",
+  "wrong_cv" = "(F) Misspecified SI CV"
+)
+
+main_text_df <- map_dfr(
+  split_df[main_text_scenarios],
+  ~ .[["main"]], .id = "scenario"
+)
+
 main_text_df$scenario <- factor(
   main_text_df$scenario,
   levels = main_text_scenarios,
@@ -117,36 +124,31 @@ main_text_df$true_eps <- factor(
   levels = unique(main_text_df$true_eps)
 )
 
-scenario_names <- c(
-  "same_si" = "Baseline",
-  "vary_offs" = "With superspreading",
-  "vary_si" = "Different SI Mean",
-  "vary_cv" = "Different SI CV",
-  "wrong_si" = "Misspecified SI Mean",
-  "wrong_cv" = "Misspecified SI CV"
-)
 
-## Find the range for each scenario
-err_range <- group_by(main_text_df, scenario) %>%
-  summarise(low = min(low), high = max(high)) %>%
-  ungroup()
-## Set the range to be same for all except
-## wrong SI
-lowest <- min(err_range$low[err_range$scenario != "wrong_si"])
-highest <- max(err_range$high[err_range$scenario != "wrong_si"])
-err_range$low[err_range$scenario != "wrong_si"] <- floor(lowest)
-err_range$high[err_range$scenario != "wrong_si"] <- ceiling(highest)
+main_text_df <- split(main_text_df, main_text_df$rt_ref)
 
-p <- ggplot(main_text_df) +
+iwalk(main_text_df, function(x, index) {
+  ## Find the range for each scenario
+  err_range <- group_by(x, scenario) %>%
+    summarise(low = min(low), high = max(high)) %>%
+    ungroup()
+  ## Set the range to be same for all except
+  ## wrong SI
+  lowest <- min(err_range$low[err_range$scenario != "wrong_si"])
+  highest <- max(err_range$high[err_range$scenario != "wrong_si"])
+  err_range$low[err_range$scenario != "wrong_si"] <- floor(lowest)
+  err_range$high[err_range$scenario != "wrong_si"] <- ceiling(highest)
+
+  p <- ggplot(x) +
   geom_point(
     aes(true_eps, med, col = label),
       position = position_dodge(width = dodge_width),
-      size = 1.2
+      size = 1.4
   ) +
   geom_linerange(
     aes(true_eps, ymin = low, ymax = high, col = label),
       position = position_dodge(width = dodge_width),
-      size = 1.1
+      size = 1
   ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_blank(
@@ -162,13 +164,16 @@ p <- ggplot(main_text_df) +
   scale_color_manual(
     values = values,
     breaks = c("X 0.5", "X 1.5", "X 2")
-  ) + labs(color = "SI Mean/CV Multiplier") +
+  ) + labs(color = "SI Mean or CV Multiplier") +
   xlab("True Transmssion Advantage") +
-  ylab("Estimated - True Transmssion Advantage") +
+  ylab("Error in estimating transmssion advantage") +
   theme_manuscript() +
   theme(legend.position = "bottom")
 
-save_multiple(p, "figures/main_text_fig")
+  save_multiple(p, glue("figures/main_text_fig_{index}"))
+})
+
+
 
 ## Classification
 vary_si_classified <- readRDS("vary_si_classified.rds")
