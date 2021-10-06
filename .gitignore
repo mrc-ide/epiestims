@@ -13,3 +13,4 @@ orderly.sqlite
 *.pdf
 *.tex
 
+*.R#
