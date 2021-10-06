@@ -3,36 +3,6 @@
 ## df is a grouped dataframe with column med which is the
 ## median error
 source("R/fig_utils.R")
-summarise_median_err <- function(df, round_to = 3) {
-  x <- summarise(
-    df, median_low = quantile(med, 0.025),
-    median_med = quantile(med, 0.5),
-    median_high = quantile(med, 0.975)
-  ) %>% ungroup()
-  x <- mutate_if(x, is.numeric, round, round_to)
-  x
-}
-## df is the output of summarise_median_err
-format_median_err <- function(df) {
-  df$formatted <-
-  glue("{df$median_med}",
-       " ({df$median_low}, {df$median_high})")
-  df <- select(df, true_eps, tmax, formatted) %>%
-    spread(key = tmax, value = formatted)
-  df
-}
-## ms_vars is the set of variables we want to
-## present in the main text. ms_tmax is the tmax
-## value to use for results in main text
-split_err_df <- function(x, ms_vars, ms_tmax = "50") {
-  main <- x[x$label %in% ms_vars, ]
-  main <- main[main$tmax == ms_tmax, ]
-
-  suppl <- x[! x$label %in% ms_vars, ]
-  suppl <- suppl[suppl$tmax != ms_tmax, ]
-  list(main = main, suppl = suppl)
-}
-
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
@@ -49,7 +19,8 @@ infiles <- list(
   vary_offs = "vary_offs_err_summary_by_all_vars.rds",
   underrep = "underrep_err_summary_by_all_vars.rds"
 )
-
+## We have run more scenarios than we want to show in the
+## manuscript. We have to filter out each separately
 ms_vars <- list(
   vary_si = c("X 0.5", "X 1.5", "X 2"),
   wrong_si = c("X 0.5", "X 1.5", "X 2"),
@@ -61,6 +32,7 @@ ms_vars <- list(
 )
 
 error_summary <- map(infiles, readRDS)
+
 
 error_summary[[1]]$label <- multiplier_label(
   error_summary[[1]]$si_mu_variant, si_mu_ref
@@ -77,29 +49,93 @@ error_summary[[4]]$label <- multiplier_label(
 error_summary[[5]]$label <- factor(error_summary[[5]]$kappa)
 error_summary[[6]]$label <- factor(error_summary[[6]]$p_report)
 
+## Split into main and supplementart dfs
+split_df <- list(
+  same_si = list(
+    main = filter(
+      error_summary[["vary_si"]], label %in% ms_vars[["same_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["vary_si"]], label %in% ms_vars[["same_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  vary_offs = list(
+    main = filter(
+      error_summary[["vary_offs"]], label %in% ms_vars[["vary_offs"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["vary_offs"]], label %in% ms_vars[["vary_offs"]],
+      tmax != ms_tmax
+    )
+  ),
+  vary_si = list(
+    main = filter(
+      error_summary[["vary_si"]], label %in% ms_vars[["vary_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["vary_si"]], label %in% ms_vars[["vary_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  wrong_si = list(
+    main = filter(
+      error_summary[["wrong_si"]], label %in% ms_vars[["wrong_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["wrong_si"]], label %in% ms_vars[["wrong_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  vary_cv = list(
+    main = filter(
+      error_summary[["vary_cv"]], label %in% ms_vars[["vary_cv"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["vary_cv"]], label %in% ms_vars[["vary_cv"]],
+      tmax != ms_tmax
+    )
+  ),
+  wrong_cv = list(
+    main = filter(
+      error_summary[["wrong_cv"]], label %in% ms_vars[["wrong_cv"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      error_summary[["wrong_cv"]], label %in% ms_vars[["wrong_cv"]],
+      tmax != ms_tmax
+    )
+  ),
+  underrep = list(
+    main = NA, ## All of this goes in the supplementary
+    suppl = filter(
+      error_summary[["underrep"]], label %in% ms_vars[["underrep"]]
+    )
+  )
+)
 ## Split vary SI outputs into same SI and different SI
-x <- error_summary[["vary_si"]]
-same_si <- x[x$label == "X 1", ]
-diff_si <- x[x$label != "X 1", ]
-## Replace variable SI outputs in the list above
-error_summary[["vary_si"]] <- diff_si
-error_summary[["same_si"]] <- same_si
-
-scenarios <- names(ms_vars)
-names(scenarios) <- scenarios
-split_df <- map(scenarios, function(sc) {
-  split_err_df(error_summary[[sc]], ms_vars[[sc]])
-})
 main_text_scenarios <- c("same_si", "vary_offs", "vary_si",
                          "wrong_si", "vary_cv", "wrong_cv")
 values <- c(
   "X 1" = "#222222", ## Same SI
   "0.1" = "#222222", ## Offspring
+  "0.5" = "#D55E00",
+  "1.0" = "#CC79A7",
   ## Variable SI and CV.
   "X 0.5" = "#E69F00",
   "X 1.5" = "#56B4E9",
-  "X 2" = "#009E73"
+  "X 2" = "#009E73",
+  ## underreporting
+  "0.2" = "#0072B2",
+  "0.5" = "#D55E00",
+  "0.8" = "#CC79A7"
 )
+
 scenario_names <- c(
   "same_si" = "(A) Baseline",
   "vary_offs" = "(B) With superspreading",
@@ -173,6 +209,49 @@ iwalk(main_text_df, function(x, index) {
   save_multiple(p, glue("figures/main_text_fig_{index}"))
 })
 
+## Supplementary figures; error by tmax
+iwalk(split_df, function(x, index) {
+  y <- x$suppl
+  limits <- intersect(y$label, names(values))
+  y$true_eps <- factor(
+    y$true_eps,
+    levels = unique(y$true_eps)
+  )
+  p <- ggplot(y) +
+  geom_point(
+    aes(true_eps, med, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1.4
+  ) +
+  geom_linerange(
+    aes(true_eps, ymin = low, ymax = high, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  facet_grid(
+    tmax~rt_ref,
+    labeller = labeller(tmax = tmax_labeller,
+                        rt_ref = rt_labeller)
+  ) +
+  scale_color_manual(values = values, breaks = limits) +
+  xlab("True Transmssion Advantage") +
+  ylab("Error in estimating transmssion advantage") +
+  theme_manuscript() +
+    theme(legend.position = "bottom")
+  if (index == "same_si") {
+    p <- p + theme(legend.position = "none")
+  } else if (index %in% c("vary_si", "vary_cv",
+                          "wrong_si", "wrong_cv")) {
+    p <- p + labs(color = "SI Mean or CV Multiplier")
+  } else if (index == "vary_offs") {
+    p <- p + labs(color = "Overdispersion")
+  } else {
+    ## That leaves under-reporting
+    p <- p + labs(color = "Reporting probability")
+  }
+  save_multiple(p, glue("figures/suppl_fig_{index}"))
+})
 
 
 ## Classification
