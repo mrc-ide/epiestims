@@ -17,8 +17,8 @@ orderly_commit(a)
 a <- orderly_run("summarise_one_location_underreporting")
 orderly_commit(a)
 
-## a <- orderly_run("classify_as_transmissible")
-## orderly_commit(a)
+a <- orderly_run("classify_as_transmissible")
+orderly_commit(a)
 
 
 ## a <- orderly_run("produce_summary_figures")
