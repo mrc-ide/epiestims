@@ -47,8 +47,11 @@ mean_prior_Rt <- 1
 std_prior_Rt <- 1
 
 # serial interval
-mean_SI <- 5.4 # mean 5.4 days and standard deviation of 1.5 days (Rai, Shukla, and Dwivedi 2021). see spi-M neil's report
-std_SI <- 1.5
+## mean_SI <- 5.4 # mean 5.4 days and standard deviation of 1.5 days (Rai, Shukla, and Dwivedi 2021). see spi-M neil's report
+## std_SI <- 1.5
+## 6.10.2021 SB sensitivity. use estimates from Bi et al
+mean_SI <- 6.4
+std_SI <- 0.66 * 6.4
 SI <- EpiEstim::discr_si(seq(0, 20), mean_SI, std_SI)
 
 #EpiEstim
