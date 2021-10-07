@@ -35,13 +35,17 @@ errb <- function(d1,d2,title){
     geom_point() +
     geom_errorbarh(aes(xmin=low, xmax=up),height = .1) +
     scale_color_manual(values = c('blue3','DarkOrange3')) +
-    labs(x="epsilon", y = "") +
+    labs(x="Effective Transmission Advantage", y = "") +
     scale_y_continuous(breaks=1:nrow(d1),labels = rev(d1$name)) +
     scale_x_continuous(limits = c(0,3)) +
     ggtitle(title) +
     geom_vline(xintercept=c(1), linetype="dashed",color='grey50') +
     geom_hline(yintercept = c(4.5,nrow(d1)-4+3.5), linetype="dashed", color='grey50') +
-    theme(legend.position="bottom") 
+    theme_minimal() +
+    theme(
+      text = element_text(size = 12),
+      legend.position="bottom"
+    ) 
   return(p)
 }
 
