@@ -66,7 +66,7 @@ volzetal <- data.frame(date = "2020-12-31", ymin = 1.4, ymax = 1.8)
 p <- ggplot() +
   geom_point(data = alpha_estimates, aes(date, `50%`)) +
   geom_linerange(
-    data = alpha_estimates, aes(x = date, ymin = `2.5%`, ymax = `97.5%`),
+    data = alpha_estimates, aes(x = (date), ymin = `2.5%`, ymax = `97.5%`),
     size = 1.1
   ) +
   aes(col = region) +

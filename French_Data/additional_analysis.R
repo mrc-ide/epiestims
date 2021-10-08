@@ -9,8 +9,11 @@ cbind_rep <- function(x, n) {
   matrix(x, nrow = length(x), ncol = n, byrow = FALSE)
 }
 
-t_min <- 14L
-priors <- default_priors()
+t_min <- 59L
+##priors <- default_priors()
+priors <- list(
+  epsilon = list(shape = 100, scale = 0.015),
+  R = list(shape = 0.04, scale = 25))
 mcmc_controls <- list(
   n_iter = 20000L, burnin = 5000L, thin = 10L
 )
@@ -18,8 +21,8 @@ epi_params <- readRDS('Rdata/Epi_param.rds')
 
 infiles <- list(
   french = 'Rdata/I_fr.rds',
-  uk_alpha_wild = 'Rdata/I_UK1.rds',
-  uk_delta_alpha = 'Rdata/I_UK2.rds'
+  uk_alpha_wild = 'Rdata/I_UK1.rds'
+  ##uk_delta_alpha = 'Rdata/I_UK2.rds'
 )
 
 incidence <- map(infiles, readRDS)
@@ -66,8 +69,8 @@ eps_estimates <- map2(
   estimates,
   list(
     french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
-    uk_alpha_wild = c("alpha_vs_wild"),
-    uk_delta_alpha = c("delta_vs_alpha")
+    uk_alpha_wild = c("alpha_vs_wild")
+    ##uk_delta_alpha = c("delta_vs_alpha")
   ),
   function(region, variants) {
     map_dfr(region, function(x) {
@@ -109,8 +112,8 @@ uk2_total_incid <- data.frame(
 cuml_incid <- map(
   list(
     french = fr_total_incid,
-    uk_alpha_wild = uk1_total_incid,
-    uk_delta_alpha = uk2_total_incid
+    uk_alpha_wild = uk1_total_incid
+    ##uk_delta_alpha = uk2_total_incid
   ), function(x) {
     out <- apply(x[, -1], 2, cumsum)
     prop_variant <- out / apply(out, 1, sum)
