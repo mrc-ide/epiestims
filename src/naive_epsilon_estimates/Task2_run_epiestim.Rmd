@@ -5,13 +5,11 @@ author: "Imperial College"
 ---
 
 
-```{r echo = FALSE}
-library(knitr)
+```{r Task2-run-epiestim-1, echo = FALSE}
 opts_chunk$set(fig.path='figs/task2/', fig.keep='high',
                dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
                tidy=FALSE, warning=FALSE, fig.show="asis"
  	       )
-library(EpiEstim)
 
 
 ###########################################################################
@@ -92,15 +90,15 @@ get_epiestim_rt_multi_Locations <- function(I , Epi_param){
 
 # load data
 
-```{r}
+```{r Task2-run-epiestim-2}
 
-Epi_param <- readRDS('Rdata/Epi_param.rds')
+Epi_param <- readRDS('Epi_param.rds')
 
-I_fr <- readRDS(file = 'Rdata/I_fr.rds')
-I_UK1 <- readRDS(file = 'Rdata/I_UK1.rds')
-I_UK2 <- readRDS(file = 'Rdata/I_UK2.rds')
+I_fr <- readRDS(file = 'I_fr.rds')
+I_UK1 <- readRDS(file = 'I_UK1.rds')
+I_UK2 <- readRDS(file = 'I_UK2.rds')
 
-periods <- readRDS('Rdata/periods.rds')
+periods <- readRDS('periods.rds')
 
 ```
 
@@ -108,7 +106,7 @@ periods <- readRDS('Rdata/periods.rds')
 
 ## run epiestim on french data
 
-```{r}
+```{r Task2-run-epiestim-3}
 
 Rt_epi_fr <- get_epiestim_rt_multi_Locations(I = I_fr , Epi_param = Epi_param)
 
@@ -119,7 +117,7 @@ Rt_epi_fr$alpha$Rt_incl[,10]
 
 ## run epiestim on UK data
 
-```{r}
+```{r Task2-run-epiestim-4}
 
 Rt_epi_UK1 <- get_epiestim_rt_multi_Locations(I = I_UK1 , Epi_param = Epi_param)
 Rt_epi_UK2 <- get_epiestim_rt_multi_Locations(I = I_UK2 , Epi_param = Epi_param)
@@ -133,7 +131,7 @@ Rt_epi_UK1$alpha$Rt_incl[,2]
 
 ## function
 
-```{r}
+```{r Task2-run-epiestim-5}
 
 
 naive_epsilon <- function(I, Rt_epi, periods){
@@ -197,7 +195,7 @@ naive_epsilon <- function(I, Rt_epi, periods){
 
 ## france
 
-```{r}
+```{r Task2-run-epiestim-6}
 
 naive_epsilon_fr <- naive_epsilon(I = I_fr, 
                                   Rt_epi = Rt_epi_fr,
@@ -208,7 +206,7 @@ naive_epsilon_fr$sum_epsilon$wild_alpha
 
 ## UK1
 
-```{r}
+```{r Task2-run-epiestim-7}
 
 naive_epsilon_UK1 <- naive_epsilon(I = I_UK1,
                                    Rt_epi = Rt_epi_UK1,
@@ -221,7 +219,7 @@ I_fr[[1]]$date[periods$periods_fr$intervals]
 ## UK2
 
 
-```{r}
+```{r Task2-run-epiestim-8}
 
 naive_epsilon_UK2 <- naive_epsilon(I = I_UK2,
                                    Rt_epi = Rt_epi_UK2,
@@ -236,14 +234,14 @@ naive_epsilon_UK2$sum_epsilon$alpha_delta
 
 # save
 
-```{r}
+```{r Task2-run-epiestim-9}
 
-saveRDS(object = Rt_epi_fr, file = 'Rdata/Rt_epi_fr.rds')
-saveRDS(object = Rt_epi_UK1, file = 'Rdata/Rt_epi_UK1.rds')
-saveRDS(object = Rt_epi_UK2, file = 'Rdata/Rt_epi_UK2.rds')
+saveRDS(object = Rt_epi_fr, file = 'Rt_epi_fr.rds')
+saveRDS(object = Rt_epi_UK1, file = 'Rt_epi_UK1.rds')
+saveRDS(object = Rt_epi_UK2, file = 'Rt_epi_UK2.rds')
 
-saveRDS(object = naive_epsilon_fr, file = 'Rdata/naive_epsilon_fr.rds')
-saveRDS(object = naive_epsilon_UK1, file = 'Rdata/naive_epsilon_UK1.rds')
-saveRDS(object = naive_epsilon_UK2, file = 'Rdata/naive_epsilon_UK2.rds')
+saveRDS(object = naive_epsilon_fr, file = 'naive_epsilon_fr.rds')
+saveRDS(object = naive_epsilon_UK1, file = 'naive_epsilon_UK1.rds')
+saveRDS(object = naive_epsilon_UK2, file = 'naive_epsilon_UK2.rds')
 
 ```
