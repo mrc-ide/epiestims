@@ -1,0 +1,24 @@
+script: script.R
+
+packages:
+- dplyr
+- knitr
+- rmarkdown
+
+
+resources:
+- Rdata/sp-variant-7j-reg-2021-06-02-21h05.csv
+- Rdata/regions-france.csv
+- Rdata/s_by_region_over25_pillar2_pcr.rds
+- Task1_data_clean.Rmd
+
+artefacts:
+  data:
+    description: Cleaned French and England data
+    filenames:
+      - Epi_param.rds
+      - I_fr.rds
+      - I_UK1.rds
+      - I_UK2.rds
+      - periods.rds
+    
