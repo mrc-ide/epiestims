@@ -6,16 +6,12 @@ author: "Imperial College"
 
 
 ```{r echo = FALSE}
-library(knitr)
 opts_chunk$set(fig.path='figs/task3/', fig.keep='high',
                dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
                tidy=FALSE, warning=FALSE, fig.show="asis"
  	       )
 
-library(EpiEstim)
-library(epitrix)
-library(ggplot2)
-library(purrr)
+
 cbind_rep <- function(x,n){
   matrix(x,nrow = length(x), ncol = n, byrow = FALSE)
 }
@@ -174,13 +170,13 @@ wrapper_joint_Rt <- function(I, periods,Epi_param,
 
 ```{r}
 
-Epi_param <- readRDS('Rdata/Epi_param.rds')
+Epi_param <- readRDS('Epi_param.rds')
 
-I_fr <- readRDS(file = 'Rdata/I_fr.rds')
-I_UK1 <- readRDS(file = 'Rdata/I_UK1.rds')
-I_UK2 <- readRDS(file = 'Rdata/I_UK2.rds')
+I_fr <- readRDS(file = 'I_fr.rds')
+I_UK1 <- readRDS(file = 'I_UK1.rds')
+I_UK2 <- readRDS(file = 'I_UK2.rds')
 
-periods <- readRDS(file = 'Rdata/periods.rds')
+periods <- readRDS(file = 'periods.rds')
 
 ```
 
@@ -231,234 +227,7 @@ Jestim_UK2 <- wrapper_joint_Rt(I = I_UK2,
 
 ```{r}
 
-saveRDS(object = Jestim_fr, file = 'Rdata/Jestim_fr.rds')
-saveRDS(object = Jestim_UK1, file = 'Rdata/Jestim_UK1.rds')
-saveRDS(object = Jestim_UK2, file = 'Rdata/Jestim_UK2.rds')
-
-
-```
-## Estimates by week
-
-```{r}
-
-incid <- array(NA, dim = c(nrow(I_UK1[[1]]), 
-                           ncol(I_UK1[[1]]) - 1,
-                           length(I_UK1)))
-for(i in 1:length(I_UK1)){
-  incid[,,i] <- as.matrix(I_UK1[[i]][,-1])
-}
-
-## start estimating at 3 weeks
-t_min <- 14L
-t_max <- seq(from = 21, to = nrow(I_UK1[[1]]), by = 7)
-priors <- default_priors()
-nregions <- 7
-## Do this by region 
-estimates <- map(
-  t_max, function(tmax) {
-      estimate_joint(
-        incid = incid,
-        si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
-        mcmc_control = Epi_param$mcmc_control,
-        priors = priors,
-        t_min = t_min,
-        t_max = as.integer(tmax)
-      )
-  }
-)
-
-names(estimates) <- I_UK1[[1]][["date"]][t_max]
-
-
-eps_estimates <- map_dfr(
-  estimates, function(x) {
-    out <- apply(
-      x[["epsilon"]], 1, quantile,
-      prob = c(0.025, 0.5, 0.975)
-    )
-    out <- data.frame(out)
-    names(out) <- "Delta/Alpha"
-    out <- tibble::rownames_to_column(out, "qntl")
-    out <- tidyr::gather(out, variant, epsilon, -qntl)
-    tidyr::spread(out, qntl, epsilon)        
-  }, .id = "date"
-)
-
-p <- ggplot(eps_estimates) +
-  geom_point(aes(date, `50%`)) +
-  geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
-  ##facet_wrap(~`NHS Region`, scales = "free_y") +
-  expand_limits(y = c(0, NA)) +
-  geom_hline(
-    yintercept = 1, linetype = "dashed"
-  ) +
-  ylab("Transmission Advantage") +
-  theme_minimal() +
-  theme(
-    text = element_text(size = 12),
-    axis.title.x = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
-  )
-
-ggsave("uk_delta_over_alpha.pdf", p)
-
-total_incid <- data.frame(
-  date = I_UK1$wild[["date"]],
-  wild = apply(I_UK1$wild[, -1], 1, sum),
-  alpha = apply(I_UK1$alpha[, -1], 1, sum)
-)
-total_incid$cuml_wild <- cumsum(total_incid$wild)
-total_incid$cuml_alpha <- cumsum(total_incid$alpha)
-total_incid$alpha_prop <- total_incid$cuml_alpha / (total_incid$cuml_alpha + total_incid$cuml_wild)
-eps_estimates$date <- as.Date(eps_estimates$date)
-x <- left_join(eps_estimates, total_incid)
-
-p <- ggplot(x) +
-  geom_point(aes(alpha_prop, `50%`)) +
-  geom_linerange(aes(x = alpha_prop, ymin = `2.5%`, ymax = `97.5%`)) +
-  facet_wrap(~variant, ncol = 1, scales = "free_y") +
-  expand_limits(y = c(0, NA)) +
-  geom_hline(
-    yintercept = 1, linetype = "dashed"
-  ) +
-  scale_x_continuous(
-    labels = scales::percent
-  ) + 
-  xlab("Proportion of Alpha") +
-  ylab("Transmission Advantage") +
-  ##theme_minimal() +
-  theme(
-    text = element_text(size = 16)
-  )
-p2 <- p + ggforce::facet_zoom(xlim = c(0, 0.1))
-
-ggsave("uk_using_all_regions_alpha_prop.pdf", p2)
-
-```
-## Leave one out
-
-```{r}
-
-incid <- array(NA, dim = c(nrow(I_UK1[[1]]), 
-                           ncol(I_UK1[[1]]) - 1,
-                           length(I_UK1)))
-for(i in 1:length(I_UK1)){
-  incid[,,i] <- as.matrix(I_UK1[[i]][,-1])
-}
-
-leave_out <- 1:7
-names(leave_out) <-  paste(
-  "Leave out", names(I_UK1[[1]])[-1]
-)
-
-estimates <- map(
-  t_max, function(tmax) {
-    map(
-      leave_out, function(leave) {
-        x <- incid[, -leave, , drop = FALSE]
-        estimate_joint(
-          incid = x, 
-          si_distr = cbind_rep(x = Epi_param$SI, n = length(I_UK1)), 
-          mcmc_control = Epi_param$mcmc_control,
-          priors = priors,
-          t_min = t_min,
-          t_max = as.integer(tmax)
-        )
-      }
-    )
-  }
-)
-
-names(estimates) <- I_UK1[[1]][["date"]][t_max]
-
-eps_estimates <- map_dfr(
-  estimates, function(x) {
-    map_dfr(x, function(y) {
-      out <- apply(
-        y[["epsilon"]], 1, quantile,
-        prob = c(0.025, 0.5, 0.975)
-      )
-      out <- data.frame(out)
-      names(out) <- "Alpha"
-      out <- tibble::rownames_to_column(out, "qntl")
-      out <- tidyr::gather(out, variant, epsilon, -qntl)
-      tidyr::spread(out, qntl, epsilon)
-    }, .id = "Leave out"
-    )
-  }, .id = "date"
-)
-##x <- eps_estimates[eps_estimates$date == "2021-03-03", ]
-p <- ggplot(eps_estimates) +
-  geom_point(aes(date, `50%`)) +
-  geom_linerange(aes(x = date, ymin = `2.5%`, ymax = `97.5%`)) +
-  facet_wrap(~`Leave out`, scales = "free_y") +
-  geom_hline(
-    yintercept = 1, linetype = "dashed"
-  ) +
-  ylab("Transmission Advantage") +
-
-  expand_limits(y = c(0, NA)) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 0, vjust = 0)
-  )
-
-ggsave("UK_leave_one_region_out.pdf", p)
-
-```
-
-## Joint naive estimates from our new method
-
-## Tables for the supplementary
-
-```{r}
-## Throwaway function to make pretty data.frame
-pretty_table <- function(x) {
-  x <- mutate_if(x, is.numeric, round, 2)
-  x <- na.omit(x)
-  x$formatted <- glue::glue("{x$med} ({x$low} - {x$up})")
-  x <- x[, c("name", "formatted")]
-  colnames(x) <- c("Region/Time-period", "Median (95\\% CrI)")
-  x
-}
-
-combine_estimates <- function(naive, joint) {
-  naive <- pretty_table(naive)
-  joint <- pretty_table(joint)
-  naive$method <- "Naive"
-  joint$method <- "Joint-EpiEstim"
-  both <- rbind(joint, naive)
-  tidyr::spread(both, method, `Median (95\\% CrI)`)
-}
-
-```
-
-
-```{r}
-## Task 2 outputs
-naive <- naive_epsilon_UK1$sum_epsilon$wild_alpha
-joint <- Jestim_UK1[["epsilon"]][["wild_alpha"]]
-x <- combine_estimates(naive, joint)
-stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
-
-
-naive <- naive_epsilon_UK2$sum_epsilon$alpha_delta
-joint <- Jestim_UK2[["epsilon"]][["alpha_delta"]]
-x <- combine_estimates(naive, joint)
-stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
-
-
-naive <- naive_epsilon_fr$sum_epsilon$wild_alpha
-joint <- Jestim_fr[["epsilon"]][["wild_alpha"]]
-x <- combine_estimates(naive, joint)
-stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
-
-
-naive <- naive_epsilon_fr$sum_epsilon[["wild_beta/gamma"]]
-joint <- Jestim_fr[["epsilon"]][["wild_beta/gamma"]]
-x <- combine_estimates(naive, joint)
-stargazer::stargazer(x[, c(1, 3, 2)], summary = FALSE)
-
-
-
+saveRDS(object = Jestim_fr, file = 'Jestim_fr.rds')
+saveRDS(object = Jestim_UK1, file = 'Jestim_UK1.rds')
+saveRDS(object = Jestim_UK2, file = 'Jestim_UK2.rds')
 ```
