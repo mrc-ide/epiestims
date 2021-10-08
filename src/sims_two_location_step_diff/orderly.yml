@@ -1,0 +1,21 @@
+script: sims_two_locations_step_diff.R
+packages:
+- dplyr
+- EpiEstim
+- furrr
+- incidence
+- projections
+- purrr
+
+parameters: short_run
+
+artefacts:
+  data:
+    description: SI for estimation and simulated incidence
+    filenames:
+      - incid.rds
+      - si_for_est.rds
+      - param_grid.rds
+
+global_resources:
+  R/sim_utils.R: sim_utils.R

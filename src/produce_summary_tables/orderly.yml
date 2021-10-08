@@ -1,0 +1,58 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- purrr
+- stargazer
+- tidyr
+
+sources: R/utils.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/vary_si_prop_in_95_1.png
+      - figures/vary_si_prop_in_95_2.png
+      - figures/vary_si_prop_in_95_3.png      
+      - figures/vary_si_prop_in_95_4.png
+      - figures/vary_si_prop_in_95_5.png
+      - figures/vary_si_prop_in_95_6.png      
+      
+
+depends:
+  summarise_one_location_vary_si:
+    id: latest
+    use:
+      vary_si_eps_summary_df.rds: eps_summary_df.rds
+      vary_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_wrong_si:
+    id: latest
+    use:
+      wrong_si_eps_summary_df.rds: eps_summary_df.rds
+      wrong_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds      
+  summarise_one_location_vary_offspring:
+    id: latest
+    use:
+      Vary_offs_eps_summary_df.rds: eps_summary_df.rds
+      vary_offs_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_vary_cv:
+    id: latest
+    use:
+      vary_cv_eps_summary_df.rds: eps_summary_df.rds
+      vary_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_wrong_cv:
+    id: latest
+    use:
+      wrong_cv_eps_summary_df.rds: eps_summary_df.rds
+      wrong_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds            
+  summarise_one_location_underreporting:
+    id: latest
+    use:
+      underrep_eps_summary_df.rds: eps_summary_df.rds
+      underrep_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
