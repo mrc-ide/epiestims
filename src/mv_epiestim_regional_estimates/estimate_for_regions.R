@@ -1,18 +1,14 @@
-library(EpiEstim)
-library(glue)
-library(purrr)
-
-t_min <- 14L
+t_min <- 10L
 priors <- default_priors()
 mcmc_controls <- list(
   n_iter = 20000L, burnin = 5000L, thin = 10L
 )
-epi_params <- readRDS('Rdata/Epi_param.rds')
+epi_params <- readRDS('Epi_param.rds')
 
 infiles <- list(
-  french = 'Rdata/I_fr.rds',
-  uk_alpha_wild = 'Rdata/I_UK1.rds',
-  uk_delta_alpha = 'Rdata/I_UK2.rds'
+  french = 'I_fr.rds',
+  uk_alpha_wild = 'I_UK1.rds',
+  uk_delta_alpha = 'I_UK2.rds'
 )
 
 incidence <- map(infiles, readRDS)

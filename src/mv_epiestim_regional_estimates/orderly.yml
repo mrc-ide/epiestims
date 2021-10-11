@@ -1,0 +1,28 @@
+script: estimate_for_regions.R
+
+packages:
+- dplyr
+- EpiEstim
+- epitrix
+- glue
+- purrr
+- tidyr
+
+artefacts:
+  data:
+    description: Naive epsilon estimates
+    filenames:
+      - incidence_array.rds
+      - epsilon_estimates_over_time.rds
+      - epsilon_qntls_over_time.rds      
+      - cuml_incid_all_variants.rds
+      - epsilon_estimates_with_variant_proportion.rds      
+      
+depends:
+  - clean_french_england_data:
+      id: latest
+      use:
+         Epi_param.rds: Epi_param.rds
+         I_fr.rds: I_fr.rds
+         I_UK1.rds: I_UK1.rds
+         I_UK2.rds: I_UK2.rds
