@@ -356,24 +356,25 @@ eps_with_prop <- map2(
       "Proportion of Beta/Gamma"
       ), function(x, xlabel) {
         message(xlabel)
-        xmax <- min(c(max(x$proportion)/3, 0.1))
-        x$proportion <- log(x$proportion)
-    p <- ggplot(x) +
-      geom_point(
-        aes(proportion, `50%`, col = prior), size = 2
+        xmax <- min(c(max(x$proportion)/2, 0.1))
+        ##x$proportion <- log(x$proportion)
+        p <- ggplot(x) +
+      geom_ribbon(
+        aes(proportion, ymin = `2.5%`, ymax = `97.5%`, fill = prior),
+        alpha = 0.2
       ) +
-      geom_linerange(
-        aes(proportion, ymin = `2.5%`, ymax = `97.5%`, col = prior),
-        size = 1.1
+      geom_line(
+        aes(proportion, `50%`, col = prior), size = 1.1
       ) +
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
       expand_limits(y = 1) +
-      ##scale_x_continuous(labels = mypercent, limits = c(NA, xmax)) +
+      scale_x_continuous(labels = mypercent, limits = c(NA, xmax)) +
       scale_color_manual(
         values = c(
           `Default prior` = "#0f0e0e",
           `Informative prior` = "#CC79A7"
-        )
+        ),
+        aesthetics = c("col", "fill")
       ) +
       ylab("Effective Transmission Advantage") +
       xlab(xlabel) +
