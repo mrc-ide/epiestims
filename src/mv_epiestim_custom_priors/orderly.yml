@@ -5,6 +5,7 @@ packages:
 - EpiEstim
 - epitrix
 - purrr
+- tidyr
 
 global_resources:
   mv_epiestim_params.R: mv_epiestim_params.R

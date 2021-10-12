@@ -90,7 +90,6 @@ names(select_variant) <- names(epiestim_rt)
 ## pooled estimates from region-weeks included
 pooled_estimate <- map2(
   epiestim_rt, select_variant, function(x, variants) {
-
     reference <- x[[variants[[1]]]]
     variant <- x[[variants[[2]]]]
     ## Rt_incl is an indicator variable
@@ -116,7 +115,7 @@ pooled_estimate <- map2(
   }
 )
 
-rf <- colorRampPalette(rev(brewer.pal(8,'Spectral')))
+rf <- colorRampPalette(rev(brewer.pal(8, "Spectral")))
 r <- rf(32)
 
 twodbin <- map2(
@@ -133,15 +132,17 @@ twodbin <- map2(
       stat_bin2d(bins = 25) +
       scale_fill_gradientn(colours = r) +
       geom_abline(
-        intercept = 0, slope = 1, col = 'grey50',
+        intercept = 0, slope = 1, col = "grey50",
         linetype = "dashed", size = 1.2
       ) +
-      xlim(0, maxrt) + ylim(0, maxrt) +
-      xlab(xname) + ylab(yname) +
+      xlim(0, maxrt) +
+      ylim(0, maxrt) +
+      xlab(xname) +
+      ylab(yname) +
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0),
-        legend.key.width=unit(1.5,"cm")
+        legend.key.width = unit(1.5, "cm")
       )
   }
 )
@@ -189,13 +190,15 @@ regional_plots <- map2(
     x <- arrange(x, `50%`)
     x <- rbind(x, y)
     x$region <- factor(
-      x$region, levels = x$region,
+      x$region,
+      levels = x$region,
       ordered = TRUE
     )
 
     ggplot(x) +
       geom_point(
-        aes(region, `50%`, color = color), size = 4
+        aes(region, `50%`, color = color),
+        size = 4
       ) +
       geom_linerange(
         aes(region, ymin = `2.5%`, ymax = `97.5%`, color = color),
@@ -268,9 +271,126 @@ iwalk(
 ##################################################
 ###### Panel E. Estimates with proportion of variant
 ##################################################
+mypercent <- function(x) scales::percent(x, accuracy = 0.1)
 eps_over_time_with_prop <- readRDS("epsilon_estimates_with_variant_proportion.rds")
 eps_over_time_with_prop[["french_betagamma"]] <-
   eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant != "alpha_vs_wild", ]
 eps_over_time_with_prop[["french"]] <-
   eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant == "alpha_vs_wild", ]
 
+custom_eps_over_time <- readRDS(
+  "custom_epsilon_estimates_with_variant_proportion.rds"
+)
+
+custom_priors <- readRDS("custom_epsilon_priors.rds")
+
+both_together <- pmap(
+  list(default = eps_over_time_with_prop,
+       custom = custom_eps_over_time,
+       column = c(
+         "proportion_alpha", "proportion_alpha", "proportion_delta",
+         "proportion_betagamma")
+       ), function(default, custom, column) {
+    default$prior <- "Default prior"
+    custom$prior <- "Informative prior"
+    x <- rbind(default[, colnames(custom)], custom)
+    x$proportion <- x[[column]]
+    x
+  }
+)
+
+eps_with_prop <- map2(
+    both_together,
+    c("Proportion of Alpha",
+      "Proportion of Alpha",
+      "Proportion of Delta",
+      "Proportion of Beta/Gamma"
+      ), function(x, xlabel) {
+        message(xlabel)
+        x <- x[x$prior == "Default priors", ]
+    p <- ggplot(x) +
+      geom_point(
+        aes(proportion, `50%`), size = 2
+      ) +
+      geom_linerange(
+        aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1
+      ) +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      ## annotate(
+      ##   "rect",
+      ##   xmin = min(x$proportion),
+      ##   xmax = max(x$proportion), ymin = prior_low, ymax = prior_high,
+      ##   fill = "gray", alpha = 0.2
+      ## ) +
+      expand_limits(y = 1) +
+      scale_x_continuous(labels = mypercent) +
+      ylab("Effective Transmission Advantage") +
+      xlab(xlabel) +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 0),
+        legend.title = element_blank()
+      )
+
+    p
+  }
+)
+
+iwalk(
+  eps_with_prop, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_over_proportion")
+    )
+  }
+)
+
+## Somewhat tricky to see the different prior is
+## making
+
+eps_with_prop <- map2(
+    both_together,
+    c("Proportion of Alpha",
+      "Proportion of Alpha",
+      "Proportion of Delta",
+      "Proportion of Beta/Gamma"
+      ), function(x, xlabel) {
+        message(xlabel)
+        xmax <- min(c(max(x$proportion)/3, 0.1))
+        x$proportion <- log(x$proportion)
+    p <- ggplot(x) +
+      geom_point(
+        aes(proportion, `50%`, col = prior), size = 2
+      ) +
+      geom_linerange(
+        aes(proportion, ymin = `2.5%`, ymax = `97.5%`, col = prior),
+        size = 1.1
+      ) +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      expand_limits(y = 1) +
+      ##scale_x_continuous(labels = mypercent, limits = c(NA, xmax)) +
+      scale_color_manual(
+        values = c(
+          `Default prior` = "#0f0e0e",
+          `Informative prior` = "#CC79A7"
+        )
+      ) +
+      ylab("Effective Transmission Advantage") +
+      xlab(xlabel) +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 0),
+        legend.title = element_blank()
+      )
+
+    p
+  }
+)
+
+iwalk(
+  eps_with_prop, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_over_proportion_SI")
+    )
+  }
+)
