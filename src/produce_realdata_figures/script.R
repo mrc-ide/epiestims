@@ -368,7 +368,7 @@ eps_with_prop <- map2(
       ) +
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
       expand_limits(y = 1) +
-      scale_x_continuous(labels = mypercent, limits = c(NA, xmax)) +
+      scale_x_continuous(labels = mypercent) +
       scale_color_manual(
         values = c(
           `Default prior` = "#0f0e0e",
