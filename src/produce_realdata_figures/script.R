@@ -155,9 +155,9 @@ iwalk(
 )
 
 
-#####################################
+#################################################
 ###### Panel C. Regional estimates
-#####################################
+#################################################
 regional <- readRDS("epsilon_qntls_per_region.rds")
 regional[["french_betagamma"]] <-
   regional[["french"]][regional[["french"]]$variant != "alpha_vs_wild", ]
@@ -222,3 +222,56 @@ iwalk(
     )
   }
 )
+
+################################################
+###### Panel D. Estimates over time
+################################################
+eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
+eps_over_time[["french_betagamma"]] <-
+  eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
+eps_over_time[["french"]] <-
+  eps_over_time[["french"]][eps_over_time[["french"]]$variant == "alpha_vs_wild", ]
+
+plots_over_time <- map(
+  eps_over_time, function(x) {
+    x$date <- as.Date(x$date)
+    ggplot(x) +
+      geom_point(aes(date, `50%`), size = 2) +
+      geom_linerange(
+        aes(date, ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1
+      ) +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      expand_limits(y = 1) +
+      scale_x_date(
+        date_breaks = "2 weeks",
+        date_labels = "%d-%b-%Y"
+      ) +
+      ylab("Effective transmission advantage") +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.title.x = element_blank(),
+        legend.title = element_blank()
+      )
+  }
+)
+
+iwalk(
+  plots_over_time, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_over_time")
+    )
+  }
+)
+
+
+
+
+
+eps_over_time_with_prop <- readRDS("epsilon_estimates_with_variant_proportion.rds")
+eps_over_time_with_prop[["french_betagamma"]] <-
+  eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant != "alpha_vs_wild", ]
+eps_over_time_with_prop[["french"]] <-
+  eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant == "alpha_vs_wild", ]
+
