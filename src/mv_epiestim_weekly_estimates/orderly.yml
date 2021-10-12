@@ -1,5 +1,8 @@
 script: weekly_estimates.R
 
+global_resources:
+  mv_epiestim_params.R: mv_epiestim_params.R
+  
 packages:
 - dplyr
 - EpiEstim

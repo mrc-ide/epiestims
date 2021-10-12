@@ -1,8 +1,4 @@
-t_min <- 10L
-priors <- default_priors()
-mcmc_controls <- list(
-  n_iter = 20000L, burnin = 5000L, thin = 10L
-)
+source("mv_epiestim_params.R")
 epi_params <- readRDS('Epi_param.rds')
 
 infiles <- list(

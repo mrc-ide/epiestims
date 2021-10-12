@@ -1,0 +1,31 @@
+script: script.R
+
+packages:
+- ggplot2
+- glue
+- tidyr
+
+artefacts:
+  staticgraph:
+    description: Figures from real data
+    filenames:
+      - figures/french_incidence.pdf
+      - figures/french_incidence.png
+      - figures/uk_alpha_wild_incidence.pdf
+      - figures/uk_alpha_wild_incidence.png
+      - figures/uk_delta_alpha_incidence.pdf
+      - figures/uk_delta_alpha_incidence.png
+      - figures/french_betagamma_incidence.pdf
+      - figures/french_betagamma_incidence.png
+      
+      
+      
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+depends:
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
+        epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
