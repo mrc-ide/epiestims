@@ -1,6 +1,7 @@
 script: script.R
 
 packages:
+- dplyr
 - ggplot2
 - glue
 - purrr
@@ -27,6 +28,11 @@ global_resources:
   R/fig_utils.R: fig_utils.R
 
 depends:
+  - mv_epiestim_regional_estimates:
+      id: latest
+      use:
+        epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
+        epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
   - naive_epsilon_estimates:
       id: latest
       use:

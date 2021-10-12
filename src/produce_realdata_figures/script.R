@@ -5,8 +5,11 @@ palette <- c(
   wildtype = "#0f0e0e",
   alpha = "#E69F00",
   betagamma = "#56B4E9",
-  delta = "#009E73"
+  delta = "#009E73",
+  England = "#cc0000",
+  France = "#0000ff"
 )
+
 
 variant_nicenames <- c(
   wildtype = "Wildtype", alpha = "Alpha",
@@ -147,6 +150,75 @@ iwalk(
   twodbin, function(p, name) {
     save_multiple(
       p, glue("figures/{name}_2dbin")
+    )
+  }
+)
+
+
+#####################################
+###### Panel C. Regional estimates
+#####################################
+regional <- readRDS("epsilon_qntls_per_region.rds")
+regional[["french_betagamma"]] <-
+  regional[["french"]][regional[["french"]]$variant != "alpha_vs_wild", ]
+regional[["french"]] <-
+  regional[["french"]][regional[["french"]]$variant == "alpha_vs_wild", ]
+
+national <- readRDS("epsilon_qntls_whole_country.rds")
+national[["french_betagamma"]] <-
+  national[["french"]][national[["french"]]$variant != "alpha_vs_wild", ]
+national[["french"]] <-
+  national[["french"]][national[["french"]]$variant == "alpha_vs_wild", ]
+
+national <- map2(
+  national, list("France", "England", "England", "France"),
+  function(x, y) {
+    x$region <- y
+    x
+  }
+)
+
+regional_plots <- map2(
+  regional, national, function(x, y) {
+    ## Easier than creating a palette
+    x$color <- "#0f0e0e" ## muted black
+    y$color <- palette[[y$region[1]]]
+    ## Arrange columns in the same order
+    ## for rbind
+    y <- y[, colnames(x)]
+    x <- arrange(x, `50%`)
+    x <- rbind(x, y)
+    x$region <- factor(
+      x$region, levels = x$region,
+      ordered = TRUE
+    )
+
+    ggplot(x) +
+      geom_point(
+        aes(region, `50%`, color = color), size = 4
+      ) +
+      geom_linerange(
+        aes(region, ymin = `2.5%`, ymax = `97.5%`, color = color),
+        size = 1.1
+      ) +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      expand_limits(y = 1) +
+      scale_color_identity(
+        breaks = c("#0f0e0e", palette[[y$region[1]]])
+      ) +
+      ylab("Effective transmission advantage") +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.title.x = element_blank()
+      )
+  }
+)
+
+iwalk(
+  regional_plots, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_regional")
     )
   }
 )

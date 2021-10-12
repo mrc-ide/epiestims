@@ -17,6 +17,8 @@ artefacts:
     filenames:
       - epsilon_estimates_per_region.rds
       - epsilon_qntls_per_region.rds
+      - epsilon_estimates_whole_country.rds
+      - epsilon_qntls_whole_country.rds
       
 depends:
   - mv_epiestim_weekly_estimates:
