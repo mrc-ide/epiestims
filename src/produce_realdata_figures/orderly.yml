@@ -3,6 +3,9 @@ script: script.R
 packages:
 - ggplot2
 - glue
+- purrr
+- RColorBrewer
+- snakecase
 - tidyr
 
 artefacts:
@@ -24,8 +27,15 @@ global_resources:
   R/fig_utils.R: fig_utils.R
 
 depends:
+  - naive_epsilon_estimates:
+      id: latest
+      use:
+        Rt_epi_fr.rds: Rt_epi_fr.rds
+        Rt_epi_UK1.rds: Rt_epi_UK1.rds
+        Rt_epi_UK2.rds: Rt_epi_UK2.rds
   - mv_epiestim_weekly_estimates:
       id: latest
       use:
         cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
         epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
+        
