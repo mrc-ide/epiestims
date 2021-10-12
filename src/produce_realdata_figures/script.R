@@ -265,10 +265,9 @@ iwalk(
   }
 )
 
-
-
-
-
+##################################################
+###### Panel E. Estimates with proportion of variant
+##################################################
 eps_over_time_with_prop <- readRDS("epsilon_estimates_with_variant_proportion.rds")
 eps_over_time_with_prop[["french_betagamma"]] <-
   eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant != "alpha_vs_wild", ]
