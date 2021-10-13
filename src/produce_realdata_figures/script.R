@@ -10,6 +10,9 @@ palette <- c(
   France = "#0000ff"
 )
 
+date_breaks <- "4 weeks"
+date_labels <- "%d-%b-%Y"
+
 
 variant_nicenames <- c(
   wildtype = "Wildtype", alpha = "Alpha",
@@ -51,13 +54,13 @@ incid_plots <- map(
         values = values, labels = variant_nicenames
       ) +
       scale_x_date(
-        date_breaks = "2 weeks",
-        date_labels = "%d-%b-%Y"
+        date_breaks = date_breaks,
+        date_labels = date_labels
       ) +
       ylab("Daily incidence") +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text.x = element_text(hjust = 0.5, vjust = 0.5),
         axis.title.x = element_blank(),
         legend.title = element_blank()
       )
@@ -210,9 +213,10 @@ regional_plots <- map2(
         breaks = c("#0f0e0e", palette[[y$region[1]]])
       ) +
       ylab("Effective transmission advantage") +
+      coord_flip() +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.text.x = element_text(hjust = 1, vjust = 0.5),
         axis.title.x = element_blank()
       )
   }
@@ -247,13 +251,13 @@ plots_over_time <- map(
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
       expand_limits(y = 1) +
       scale_x_date(
-        date_breaks = "2 weeks",
-        date_labels = "%d-%b-%Y"
+        date_breaks = date_breaks,
+        date_labels = date_labels
       ) +
       ylab("Effective transmission advantage") +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5),
+        axis.text.x = element_text(hjust = 0.5, vjust = 0.5),
         axis.title.x = element_blank(),
         legend.title = element_blank()
       )
@@ -347,7 +351,6 @@ iwalk(
 
 ## Somewhat tricky to see the different prior is
 ## making
-
 eps_with_prop <- map2(
     both_together,
     c("Proportion of Alpha",
@@ -395,3 +398,12 @@ iwalk(
     )
   }
 )
+### Putting everthing together
+## p1 <- incid_plots[[1]]
+## p2 <- twodbin[[1]]
+## p3 <- regional_plots[[1]]
+## p4 <- plots_over_time[[1]]
+## p5 <- eps_with_prop[[1]]
+
+## p <- (p1 | p2 | p3) / (p4 | p5)
+## save_multiple(p, "test.pdf")
