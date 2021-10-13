@@ -17,6 +17,7 @@ artefacts:
       - incid_summary.rds 
       - eps_summary_by_all_vars.rds
       - err_summary_by_all_vars.rds
+      - err_sd_summary_by_all_vars.rds
       
 global_resources:
   R/utils.R: summary_utils.R

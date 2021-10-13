@@ -6,10 +6,12 @@ packages:
 - ggpubr
 - glue
 - purrr
-- stargazer
+- rmarkdown
+- scales
 - tidyr
 
-sources: R/utils.R
+
+resources: summary.Rmd
 
 global_resources:
   R/fig_utils.R: fig_utils.R
@@ -34,30 +36,30 @@ depends:
     id: latest
     use:
       vary_si_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      vary_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_si_err_summary_by_all_vars.rds: eps_err_summary_df.rds
   summarise_one_location_wrong_si:
     id: latest
     use:
       wrong_si_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      wrong_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds      
+      wrong_si_err_summary_by_all_vars.rds: eps_err_summary_df.rds      
   summarise_one_location_vary_offspring:
     id: latest
     use:
       vary_offs_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      vary_offs_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_offs_err_summary_by_all_vars.rds: eps_err_summary_df.rds
   summarise_one_location_vary_cv:
     id: latest
     use:
       vary_cv_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      vary_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_cv_err_summary_by_all_vars.rds: eps_err_summary_df.rds
   summarise_one_location_wrong_cv:
     id: latest
     use:
       wrong_cv_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      wrong_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      wrong_cv_err_summary_by_all_vars.rds: eps_err_summary_df.rds
   summarise_one_location_underreporting:
     id: latest
     use:
       underrep_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
-      underrep_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      underrep_err_summary_by_all_vars.rds: eps_err_summary_df.rds
       

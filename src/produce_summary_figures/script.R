@@ -1,331 +1,181 @@
 ## orderly::orderly_develop_start()
 ## Aesthetics
-## df is a grouped dataframe with column med which is the
-## median error
 source("R/fig_utils.R")
-summarise_median_err <- function(df, round_to = 3) {
-  x <- summarise(
-    df, median_low = quantile(med, 0.025),
-    median_med = quantile(med, 0.5),
-    median_high = quantile(med, 0.975)
-  ) %>% ungroup()
-  x <- mutate_if(x, is.numeric, round, round_to)
-  x
-}
-## df is the output of summarise_median_err
-format_median_err <- function(df) {
-  df$formatted <-
-  glue("{df$median_med}",
-       " ({df$median_low}, {df$median_high})")
-  df <- select(df, true_eps, tmax, formatted) %>%
-    spread(key = tmax, value = formatted)
-  df
-}
-
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
 ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
-round_to <- 3 ## Number of digits to round to
-#################################################
-#################################################
-######### SI MEAN SENSITIVITY ###################
-#################################################
-#################################################
-## SIs of interest
-ms_si <- c("X 0.5", "X 1.5", "X 2")
-vary_si_err <- readRDS("vary_si_err_summary_by_all_vars.rds")
-eps_vals <- unique(vary_si_err$true_eps)
-vary_si_err$true_eps <- factor(
-  vary_si_err$true_eps,
-  levels = eps_vals, ordered = TRUE
+values <- c(
+  "X 1" = "#222222", ## Same SI
+  "0.1" = "#222222", ## Offspring
+  "0.5" = "#D55E00",
+  "1.0" = "#CC79A7",
+  ## Variable SI and CV.
+  "X 0.5" = "#E69F00",
+  "X 1.5" = "#56B4E9",
+  "X 2" = "#009E73",
+  ## underreporting
+  "0.2" = "#0072B2",
+  "0.5" = "#D55E00",
+  "0.8" = "#CC79A7"
 )
-vary_si_err$rt_ref <- factor(
-  vary_si_err$rt_ref
+## We have run more scenarios than we want to show in the
+## manuscript. We have to filter out each separately
+ms_vars <- list(
+  vary_si = c("X 0.5", "X 1.5", "X 2"),
+  wrong_si = c("X 0.5", "X 1.5", "X 2"),
+  vary_cv = c("X 0.5", "X 1.5", "X 2"),
+  wrong_cv = c("X 0.5", "X 1.5", "X 2"),
+  vary_offs = c("0.1"),
+  underrep = c("0.2", "0.5", "0.8"),
+  same_si = "X 1"
 )
 
-vary_si_err$label <- multiplier_label(
-  vary_si_err$si_mu_variant, si_mu_ref
+scenario_names <- c(
+  "same_si" = "(A) Baseline",
+  "vary_offs" = "(B) With superspreading",
+  "vary_si" = "(C) Different SI Mean",
+  "wrong_si" = "(D) Misspecified SI Mean",
+  "vary_cv" = "(E) Different SI CV",
+  "wrong_cv" = "(F) Misspecified SI CV"
 )
 
-## Separate the case when si_mu_variant = si_ref_variant
-same_si_mu <- vary_si_err[vary_si_err$label == "X 1", ]
-same_si_mu1 <- same_si_mu[same_si_mu$tmax == ms_tmax, ]
-same_si_mu2 <- same_si_mu[same_si_mu$tmax != ms_tmax, ]
-p1a <- true_epsilon_vs_error(same_si_mu1, "Variant SI Mean") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-    )
-save_multiple(p1a, "figures/same_si_error")
+infiles <- list(
+  vary_si = "vary_si_err_summary_by_all_vars.rds",
+  wrong_si = "wrong_si_err_summary_by_all_vars.rds",
+  vary_cv = "vary_cv_err_summary_by_all_vars.rds",
+  wrong_cv = "wrong_cv_err_summary_by_all_vars.rds",
+  vary_offs = "vary_offs_err_summary_by_all_vars.rds",
+  underrep = "underrep_err_summary_by_all_vars.rds"
+)
 
-psi <- true_epsilon_vs_error(same_si_mu2, "Variant SI Mean") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(psi, "figures/same_si_error_by_tmax")
+error_summary <- map(infiles, readRDS)
+error_summary <- affix_label(error_summary)
+split_df <- main_and_suppl(error_summary, ms_vars, ms_tmax)
+## Split vary SI outputs into same SI and different SI
+main_text_scenarios <- c("same_si", "vary_offs", "vary_si",
+                         "wrong_si", "vary_cv", "wrong_cv")
 
-## At tmax = 50, across all epsilon values
-## summarise_median_err(same_si_mu1)
-## # A tibble: 1 × 3
-##   median_low median_med median_high
-##        <dbl>      <dbl>       <dbl>
-## 1     -0.054     -0.003       0.006
-## These are the only ones we want to show, in Main and
-## supplementary text
-vary_si_err <- vary_si_err[vary_si_err$label %in% ms_si, ]
-## Main text figures
-vary_si_err1 <- vary_si_err[vary_si_err$tmax == ms_tmax, ]
+main_text_df <- map_dfr(
+  split_df[main_text_scenarios],
+  ~ .[["main"]], .id = "scenario"
+)
 
-## Variant SI mean = X wildtype SI mean
-p1b <- true_epsilon_vs_error(vary_si_err1, "Variant SI Mean") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-    )
+main_text_df$scenario <- factor(
+  main_text_df$scenario,
+  levels = main_text_scenarios,
+  ordered = TRUE
+)
+main_text_df$true_eps <- factor(
+  main_text_df$true_eps,
+  levels = unique(main_text_df$true_eps)
+)
 
-save_multiple(p1b, "figures/vary_si_error")
+main_text_df <- split(main_text_df, main_text_df$rt_ref)
+iwalk(main_text_df, function(x, index) {
+  ## Find the range for each scenario
+  err_range <- group_by(x, scenario) %>%
+    summarise(low = min(low), high = max(high)) %>%
+    ungroup()
+  ## Set the range to be same for all except
+  ## wrong SI
+  lowest <- min(err_range$low[err_range$scenario != "wrong_si"])
+  highest <- max(err_range$high[err_range$scenario != "wrong_si"])
+  err_range$low[err_range$scenario != "wrong_si"] <- floor(lowest)
+  err_range$high[err_range$scenario != "wrong_si"] <- ceiling(highest)
 
-## Supplementary figures
-## Show error reducing by tmax
-psi <- true_epsilon_vs_error(vary_si_err, "Variant SI Mean") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(psi, "figures/vary_si_error_by_tmax")
+  p <- ggplot(x) +
+  geom_point(
+    aes(true_eps, med, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1.4
+  ) +
+  geom_linerange(
+    aes(true_eps, ymin = low, ymax = high, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_blank(
+    data = err_range, aes(y = low)
+  ) +
+  geom_blank(
+    data = err_range, aes(y = high)
+  ) +
+  facet_wrap(
+    ~scenario, scales = "free_y", ncol = 2,
+    labeller = labeller(scenario = scenario_names)
+  ) +
+  scale_color_manual(
+    values = values,
+    breaks = c("X 0.5", "X 1.5", "X 2")
+  ) + labs(color = "SI Mean or CV Multiplier") +
+  xlab("True Transmssion Advantage") +
+  ylab("Error in estimating transmssion advantage") +
+  theme_manuscript() +
+  theme(legend.position = "bottom")
 
+  save_multiple(p, glue("figures/main_text_fig_{index}"))
+})
+
+## Supplementary figures; error by tmax
+iwalk(split_df, function(x, index) {
+  p <- suppl_figure(x$suppl, index) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    ylab("Error in estimating transmssion advantage")
+  save_multiple(p, glue("figures/suppl_fig_{index}"))
+})
+## Same figures for SD
+infiles <- list(
+  vary_si = "vary_si_err_sd_summary_by_all_vars.rds",
+  wrong_si = "wrong_si_err_sd_summary_by_all_vars.rds",
+  vary_cv = "vary_cv_err_sd_summary_by_all_vars.rds",
+  wrong_cv = "wrong_cv_err_sd_summary_by_all_vars.rds",
+  vary_offs = "vary_offs_err_sd_summary_by_all_vars.rds",
+  underrep = "underrep_err_sd_summary_by_all_vars.rds"
+)
+
+sd_summary <- map(infiles, readRDS)
+sd_summary <- affix_label(sd_summary)
+## give a fake ms_tmax so that everything goes to suppl
+split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
+iwalk(split_df, function(x, index) {
+  p <- suppl_figure(x$suppl, index) +
+    ylab("SD in estimating transmssion advantage")
+  save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
+})
 ## Classification
 vary_si_classified <- readRDS("vary_si_classified.rds")
 ##vary_si_classified <- vary_si_classified[vary_si_classified$confidence != "Low", ]
 p <- classification_fig(vary_si_classified)
 save_multiple(p, "figures/vary_si_classification")
 
-######################################################################
-######################################################################
-################## WRONG SI ####################################
-######################################################################
-wrong_si_err <- readRDS("wrong_si_err_summary_by_all_vars.rds")
-wrong_si_err$true_eps <- factor(
-  wrong_si_err$true_eps, levels = eps_vals, ordered = TRUE
-)
-wrong_si_err$rt_ref <- factor(wrong_si_err$rt_ref)
-
-wrong_si_err$label <- multiplier_label(
-  wrong_si_err$si_mu_variant, si_mu_ref
-)
-wrong_si_err <- wrong_si_err[wrong_si_err$label %in% ms_si, ]
-## Main text figures
-wrong_si_err1 <- wrong_si_err[wrong_si_err$tmax == ms_tmax, ]
-## Middle panel, variant SI mean = X wildtype SI mean
-wrong_p1b <- true_epsilon_vs_error(wrong_si_err1, "Variant SI Mean") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-      )
-save_multiple(wrong_p1b, "figures/wrong_si_error")
-
-## Common legend
-wrong_p1b <- wrong_p1b +
-  theme(axis.title.y = element_blank())
-p <- ggarrange(p1b, wrong_p1b, ncol = 2, common.legend = TRUE)
-save_multiple(plot = p, filename = "figures/correct_and_wrong_si_1")
-
-## Faceted
-wrong_si_err1$category <- "SI misspecified"
-vary_si_err1$category <- "SI correctly specified"
-vary_si_ms <- rbind(wrong_si_err1, vary_si_err1)
-p <- true_epsilon_vs_error(vary_si_ms, "Variant SI Mean") +
-      facet_grid(
-      category~rt_ref, scales = "free_y",
-      labeller = labeller(rt_ref = rt_labeller)
-      )
-
-save_multiple(plot = p, filename = "figures/correct_and_wrong_si")
-## Supplementary figures
-## Show error reducing by tmax
-psi <- true_epsilon_vs_error(wrong_si_err, "Variant SI Mean") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(psi, "figures/wrong_si_error_by_tmax")
-
-## Classification
 wrong_si_classified <- readRDS("wrong_si_classified.rds")
 p <- classification_fig(wrong_si_classified)
 save_multiple(p, "figures/wrong_si_classification")
-######################################################################
-######################################################################
-################## VARY OFFSPRING ####################################
-######################################################################
-vary_offs_err <- readRDS("vary_offs_err_summary_by_all_vars.rds")
-vary_offs_err$true_eps <- factor(
-  vary_offs_err$true_eps, levels = eps_vals, ordered = TRUE
-)
-vary_offs_err$rt_ref <- factor(vary_offs_err$rt_ref)
-vary_offs_err$label <- round(vary_offs_err$kappa, 1)
-vary_offs_err$label <- factor(vary_offs_err$label)
-
-vary_offs_ms <- vary_offs_err[vary_offs_err$tmax == ms_tmax, ]
-## summarise_median_err(vary_offs_ms)
-# A tibble: 1 × 3
-##   median_low median_med median_high
-##        <dbl>      <dbl>       <dbl>
-## 1     -0.323     -0.007       0.001
-
-## group_by(vary_offs_ms, kappa) %>% summarise_median_err
-## # A tibble: 3 × 4
-##   kappa median_low median_med median_high
-##   <dbl>      <dbl>      <dbl>       <dbl>
-## 1   0.1     -0.376     -0.018       0.001
-## 2   0.5     -0.176     -0.004       0.001
-## 3   1       -0.163     -0.004       0.001
-
-vary_offs_si <- vary_offs_err[vary_offs_err$tmax != ms_tmax, ]
-p1a <- true_epsilon_vs_error(vary_offs_ms, "Over-dispersion") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-    ) + theme(axis.title.y = element_blank())
-save_multiple(p1a, "figures/vary_si_offs")
-
-## Error over tmax
-p1b <- true_epsilon_vs_error(vary_offs_si, "Over-dispersion") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(p1b, "figures/vary_si_offs_by_tmax")
 
 vary_offs_classified <- readRDS("vary_offs_classified.rds")
 p <- classification_fig(vary_offs_classified)
 save_multiple(p, "figures/vary_offs_classification")
-######################################################################
-######################################################################
-################## VARY CV ############################################
-######################################################################
-ms_cv <- c("X 0.5", "X 1.5", "X 2")
-vary_cv_err <- readRDS("vary_cv_err_summary_by_all_vars.rds")
-vary_cv_err$true_eps <- factor(
-  vary_cv_err$true_eps, levels = eps_vals, ordered = TRUE
-)
-vary_cv_err$rt_ref <- factor(vary_cv_err$rt_ref)
-vary_cv_err$label <- multiplier_label(
-  vary_cv_err$si_cv_variant, si_std_ref / si_mu_ref
-)
-vary_cv_err <- vary_cv_err[vary_cv_err$label %in% ms_cv, ]
-vary_cv_err$label <- factor(vary_cv_err$label)
-vary_cv_ms <- vary_cv_err[vary_cv_err$tmax == ms_tmax, ]
-## summarise_median_err(vary_cv_ms)
-## # A tibble: 1 × 3
-##   median_low median_med median_high
-##        <dbl>      <dbl>       <dbl>
-##      -0.101     -0.003       0.013
-
-vary_cv_si <- vary_cv_err[vary_cv_err$tmax != ms_tmax, ]
-p1a <- true_epsilon_vs_error(vary_cv_ms, "SI CV") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-    )
-save_multiple(p1a, "figures/vary_si_cv")
-
-## Error over tmax
-p1b <- true_epsilon_vs_error(vary_cv_si, "SI CV") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(p1b, "figures/vary_si_cv_by_tmax")
 
 vary_cv_classified <- readRDS("vary_cv_classified.rds")
 vary_cv_classified$true_eps <- as.numeric(vary_cv_classified$true_eps)
 p <- classification_fig(vary_cv_classified)
 save_multiple(p, "figures/vary_cv_classification")
-#################################################
 
-wrong_cv_err <- readRDS("wrong_cv_err_summary_by_all_vars.rds")
-wrong_cv_err$true_eps <- factor(
-  wrong_cv_err$true_eps, levels = eps_vals, ordered = TRUE
-)
-wrong_cv_err$rt_ref <- factor(wrong_cv_err$rt_ref)
-wrong_cv_err$label <- multiplier_label(
-  wrong_cv_err$si_cv_variant, si_std_ref / si_mu_ref
-)
-wrong_cv_err <- wrong_cv_err[wrong_cv_err$label %in% ms_cv, ]
-wrong_cv_err$label <- factor(wrong_cv_err$label)
-
-wrong_cv_ms <- wrong_cv_err[wrong_cv_err$tmax == ms_tmax, ]
-## summarise_median_err(wrong_cv_ms)
-## # A tibble: 1 × 3
-##   median_low median_med median_high
-##        <dbl>      <dbl>       <dbl>
-##      -0.101     -0.003       0.013
-
-wrong_cv_si <- wrong_cv_err[wrong_cv_err$tmax != ms_tmax, ]
-p1a <- true_epsilon_vs_error(wrong_cv_ms, "Variant SI CV") +
-      facet_wrap(
-      ~rt_ref, ncol = 1,
-      labeller = labeller(rt_ref = rt_labeller)
-    )
-save_multiple(p1a, "figures/wrong_cv")
-
-## Error over tmax
-p1b <- true_epsilon_vs_error(wrong_cv_si, "Variant SI CV") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(p1b, "figures/wrong_cv_by_tmax")
-
-
-wrong_cv_ms$category <- "SI CV misspecified"
-vary_cv_ms$category <- "SI CV correctly specified"
-vary_cv_ms <- rbind(wrong_cv_ms, vary_cv_ms)
-p <- true_epsilon_vs_error(vary_cv_ms, "Variant SI CV") +
-      facet_grid(
-      category~rt_ref, scales = "free_y",
-      labeller = labeller(rt_ref = rt_labeller)
-      ) + theme(axis.title.y = element_blank())
-save_multiple(plot = p, filename = "figures/correct_and_wrong_cv")
 
 wrong_cv_classified <- readRDS("wrong_cv_classified.rds")
 wrong_cv_classified$true_eps <- as.numeric(wrong_cv_classified$true_eps)
 p <- classification_fig(wrong_cv_classified)
 save_multiple(p, "figures/wrong_cv_classification")
-######################################################################
-######################################################################
-################## UNDERREPORTING ####################################
-######################################################################
-underrep_err <- readRDS("underrep_err_summary_by_all_vars.rds")
-underrep_err$true_eps <- factor(
-  underrep_err$true_eps, levels = eps_vals, ordered = TRUE
-)
-underrep_err$rt_ref <- factor(underrep_err$rt_ref)
-underrep_err$label <- round(underrep_err$p_report, 1)
-underrep_err$label <- factor(underrep_err$label)
-
-## Error over tmax
-p1b <- true_epsilon_vs_error(underrep_err, "Reporting probability") +
-      facet_grid(
-      tmax~rt_ref,
-      labeller = labeller(rt_ref = rt_labeller,
-                          tmax = tmax_labeller)
-    )
-save_multiple(p1b, "figures/underrep_by_tmax")
 
 underrep_classified <- readRDS("underrep_classified.rds")
 p <- classification_fig(underrep_classified)
 save_multiple(p, "figures/underrep_classification")
 
+
+
 if (! is.null(dev.list())) dev.off()
+

@@ -35,7 +35,8 @@ true_epsilon_vs_error <- function(x, color_by) {
     ylab("Estimated - True transmission advantage") +
     xlab("True transmission advantage") +
     labs(color = color_by) +
-    theme_manuscript()
+    ##theme_manuscript() +
+    theme(legend.position = c(0.7, 0.2))
   p
 }
 
@@ -54,4 +55,134 @@ classification_fig <- function(df) {
   theme_manuscript() +
   theme(legend.title = element_blank())
   p
+}
+
+## x is a list of data.frames -
+## either mean error or SD
+affix_label <- function(x) {
+ x[["vary_si"]]$label <- multiplier_label(
+   x[["vary_si"]]$si_mu_variant, si_mu_ref
+ )
+ x[["wrong_si"]]$label <- multiplier_label(
+   x[["wrong_si"]]$si_mu_variant, si_mu_ref
+ )
+ x[["vary_cv"]]$label <- multiplier_label(
+   x[["vary_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
+ )
+ x[["wrong_cv"]]$label <- multiplier_label(
+   x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
+ )
+ x[["vary_offs"]]$label <- factor(x[[5]]$kappa)
+ x[["underrep"]]$label <- factor(x[[6]]$p_report)
+ x
+}
+## x is the output of affix_label
+main_and_suppl <- function(x, ms_vars, ms_tmax) {
+ list(
+  same_si = list(
+    main = filter(
+      x[["vary_si"]], label %in% ms_vars[["same_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["vary_si"]], label %in% ms_vars[["same_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  vary_offs = list(
+    main = filter(
+      x[["vary_offs"]], label %in% ms_vars[["vary_offs"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["vary_offs"]], tmax != ms_tmax
+    )
+  ),
+  vary_si = list(
+    main = filter(
+      x[["vary_si"]], label %in% ms_vars[["vary_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["vary_si"]], label %in% ms_vars[["vary_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  wrong_si = list(
+    main = filter(
+      x[["wrong_si"]], label %in% ms_vars[["wrong_si"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["wrong_si"]], label %in% ms_vars[["wrong_si"]],
+      tmax != ms_tmax
+    )
+  ),
+  vary_cv = list(
+    main = filter(
+      x[["vary_cv"]], label %in% ms_vars[["vary_cv"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["vary_cv"]], label %in% ms_vars[["vary_cv"]],
+      tmax != ms_tmax
+    )
+  ),
+  wrong_cv = list(
+    main = filter(
+      x[["wrong_cv"]], label %in% ms_vars[["wrong_cv"]],
+      tmax == ms_tmax
+    ),
+    suppl = filter(
+      x[["wrong_cv"]], label %in% ms_vars[["wrong_cv"]],
+      tmax != ms_tmax
+    )
+  ),
+  underrep = list(
+    main = NA, ## All of this goes in the supplementary
+    suppl = filter(
+      x[["underrep"]], label %in% ms_vars[["underrep"]]
+    )
+  )
+ )
+}
+## faceting by rt_ref and tmax
+suppl_figure <- function(y, index) {
+  limits <- intersect(y$label, names(values))
+  y$true_eps <- factor(
+    y$true_eps,
+    levels = unique(y$true_eps)
+  )
+  p <- ggplot(y) +
+  geom_point(
+    aes(true_eps, med, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1.4
+  ) +
+  geom_linerange(
+    aes(true_eps, ymin = low, ymax = high, col = label),
+      position = position_dodge(width = dodge_width),
+      size = 1
+  ) +
+  facet_grid(
+    tmax~rt_ref,
+    labeller = labeller(tmax = tmax_labeller,
+                        rt_ref = rt_labeller)
+  ) +
+  scale_color_manual(values = values, breaks = limits) +
+  xlab("True Transmssion Advantage") +
+  theme_manuscript() +
+    theme(legend.position = "bottom")
+  if (index == "same_si") {
+    p <- p + theme(legend.position = "none")
+  } else if (index %in% c("vary_si", "vary_cv",
+                          "wrong_si", "wrong_cv")) {
+    p <- p + labs(color = "SI Mean or CV Multiplier")
+  } else if (index == "vary_offs") {
+    p <- p + labs(color = "Overdispersion")
+  } else {
+    ## That leaves under-reporting
+    p <- p + labs(color = "Reporting probability")
+  }
+    p
 }

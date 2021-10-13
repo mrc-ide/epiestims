@@ -26,7 +26,7 @@ summary_tmax_eps <- function(x) {
   x <- split(x, x$confidence) %>%
     map_dfr(
       function(y) {
-        tabyl(y, true_eps, est_class, tmax) %>%
+        tabyl(y, true_label, est_class, tmax) %>%
           adorn_percentages("row") %>%
           bind_rows(.id = "tmax")
       },.id = "confidence"

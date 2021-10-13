@@ -1,0 +1,134 @@
+---
+output: 
+pdf_document:
+citation_package: natbib
+keep_tex: false
+fig_caption: true
+latex_engine: pdflatex
+title: 
+author:
+- name: Sangeeta Bhatia
+affiliation: Imperial College London
+abstract: 
+keywords: 
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+spacing: double
+bibliography: 
+biblio-style: apsr
+endnote: no
+---
+
+## Same SI
+
+```{r summary-1}
+source("R/fig_utils.R")
+si_mu_ref <- 5.4
+si_std_ref <- 1.5
+pretty_ci <- function(val, low, high, round_to = 2) {
+  f <- function(x) {
+    format(round(x, round_to), nsmall = 2)
+  }
+  glue("{f(val)} ({f(low)}, {f(high)})")
+}
+
+x <- readRDS("vary_si_err_summary_by_all_vars.rds")
+x$label <- multiplier_label(x$si_mu_variant, 5.4)
+x <- x[x$label %in% c("X 0.5", "X 1", "X 1.5", "X 2"), ]
+same_si <- x[x$label == "X 1", ]
+mu_qntls <- quantile(same_si$mu, c(0.025, 0.5, 0.975))
+```
+When the SI of both is same and is correctly specified, the mean error
+across all values of transmission advantage, reference Rt and SI mean
+is `r pretty_ci(mu_qntls[2], mu_qntls[1], mu_qntls[3])`.
+
+## Different SI, correctly specified
+
+```{r summary-2}
+diff_si <- x[x$label != "X 1", ]
+mu_qntls <- quantile(diff_si$mu, c(0.025, 0.5, 0.975))
+```
+When the SI of both is different and is correctly specified, the mean error
+across all values of transmission advantage, reference Rt and SI mean
+is `r pretty_ci(mu_qntls[2], mu_qntls[1], mu_qntls[3])`.
+
+## Different CV, correctly specified
+
+```{r summary-3}
+x <- readRDS("vary_cv_err_summary_by_all_vars.rds")
+x$label <- multiplier_label(x$si_cv_variant, si_std_ref / si_mu_ref)
+x <- x[x$label %in% c("X 0.5", "X 1.5", "X 2"), ]
+mu_qntls <- quantile(x$mu, c(0.025, 0.5, 0.975))
+```
+When the CV of the SI distribution of both is same and is correctly specified, the mean error
+across all values of transmission advantage, reference Rt and SI mean
+is `r pretty_ci(mu_qntls[2], mu_qntls[1], mu_qntls[3])`.
+
+
+## Superspreading
+
+```{r summary-4}
+x <- readRDS("vary_offs_err_summary_by_all_vars.rds")
+mu_qntls <- group_by(x, kappa) %>%
+  summarise(
+    low = quantile(mu, 0.025),
+    med = quantile(mu, 0.5),
+    high = quantile(mu, 0.975)
+  ) %>% ungroup()
+            
+
+```
+For SARS like spread, the mean error
+across all values of transmission advantage and reference Rts
+is `r pretty_ci(mu_qntls[[2]][1], mu_qntls[[3]][1], mu_qntls[[4]][1])`.
+
+For Ebola like spread, the mean error
+across all values of transmission advantage and reference Rts
+is `r pretty_ci(mu_qntls[[2]][2], mu_qntls[[3]][2], mu_qntls[[4]][2])`.
+
+## Underreporting
+
+```{r summary-5}
+x <- readRDS("underrep_err_summary_by_all_vars.rds")
+mu_qntls <- group_by(x, p_report) %>%
+  summarise(
+    low = quantile(mu, 0.025),
+    med = quantile(mu, 0.5),
+    high = quantile(mu, 0.975)
+  ) %>% ungroup()            
+```
+With 20% reporting probability, the mean error
+across all values of transmission advantage and reference Rts
+is `r pretty_ci(mu_qntls[[2]][1], mu_qntls[[3]][1], mu_qntls[[4]][1])`.
+
+With 50% reporting probability, the mean error
+across all values of transmission advantage and reference Rts
+is `r pretty_ci(mu_qntls[[2]][2], mu_qntls[[3]][2], mu_qntls[[4]][2])`.
+
+## Classification stats
+
+```{r summary-6}
+infiles <- c(Underreporting = "underrep_classified.rds",
+             `Different SI CV` = "vary_cv_classified.rds",
+             Superspreading = "vary_offs_classified.rds", 
+             `Different SI Mean` = "vary_si_classified.rds",
+             `Misspecified CV` = "wrong_cv_classified.rds",
+             `Misspecified Mean` = "wrong_si_classified.rds")
+
+classified <- map(infiles, readRDS)
+
+classified <- map(
+  classified, function(x) {
+    x <- mutate_if(x, is.numeric, percent, 0.1)
+    spread(x, classification, val)
+  })
+x50 <- map_dfr(classified, ~ .[.$tmax == 50, ], .id = "scenario")
+```
+
+```{r summary-7}
+knitr::kable(x50[, c(-2, -3)])
+```
+
+

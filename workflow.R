@@ -21,6 +21,7 @@ a <- orderly_run("classify_as_transmissible")
 orderly_commit(a)
 
 
+
 a <- orderly_run("produce_summary_figures")
 
 ## Real data
@@ -37,3 +38,4 @@ orderly_commit(a)
 
 a <- orderly_run("mv_epiestim_regional_estimates")
 orderly_commit(a)
+
