@@ -11,7 +11,7 @@ palette <- c(
 )
 
 date_breaks <- "4 weeks"
-date_labels <- "%d-%b-%Y"
+date_labels <- "%d-%b"
 
 
 variant_nicenames <- c(
@@ -58,10 +58,11 @@ incid_plots <- map(
         date_labels = date_labels
       ) +
       ylab("Daily incidence") +
+      xlab("") +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(hjust = 0.5, vjust = 0.5),
-        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+        ##axis.title.x = element_blank(),
         legend.title = element_blank()
       )
   }
@@ -216,8 +217,8 @@ regional_plots <- map2(
       coord_flip() +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(hjust = 1, vjust = 0.5),
-        axis.title.x = element_blank()
+        axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5),
+        axis.title.y = element_blank()
       )
   }
 )
@@ -233,6 +234,12 @@ iwalk(
 ################################################
 ###### Panel D. Estimates over time
 ################################################
+## Alpha multiplicative advantage by Volz et al
+volzetal <- data.frame(
+  date = as.Date("2020-12-31"),
+  ymin = 1.4, ymax = 1.8, y = 1.74
+)
+
 eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
 eps_over_time[["french_betagamma"]] <-
   eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
@@ -255,10 +262,11 @@ plots_over_time <- map(
         date_labels = date_labels
       ) +
       ylab("Effective transmission advantage") +
+      xlab("") +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(hjust = 0.5, vjust = 0.5),
-        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+        ##axis.title.x = element_blank(),
         legend.title = element_blank()
       )
   }
@@ -266,6 +274,20 @@ plots_over_time <- map(
 
 iwalk(
   plots_over_time, function(p, name) {
+    if (name == "uk_alpha_wild") {
+      p <- p +
+        geom_point(
+          data = volzetal, aes(date, y),
+          col = "#E69F00", size = 2,
+          position = position_nudge(x = 2)
+        ) +
+        geom_linerange(
+          data = volzetal,
+          aes(date, ymin = ymin, ymax = ymax),
+          col = "#E69F00", size = 1.1,
+          position = position_nudge(x = 2)
+      )
+    }
     save_multiple(
       p, glue("figures/{name}_over_time")
     )
