@@ -1,0 +1,52 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- glue
+- purrr
+- RColorBrewer
+- snakecase
+- tidyr
+
+artefacts:
+  staticgraph:
+    description: Figures from real data
+    filenames:
+      - figures/french_incidence.pdf
+      - figures/french_incidence.png
+      - figures/uk_alpha_wild_incidence.pdf
+      - figures/uk_alpha_wild_incidence.png
+      - figures/uk_delta_alpha_incidence.pdf
+      - figures/uk_delta_alpha_incidence.png
+      - figures/french_betagamma_incidence.pdf
+      - figures/french_betagamma_incidence.png
+      
+      
+      
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+depends:
+  - mv_epiestim_custom_priors:
+      id: latest
+      use:
+        custom_epsilon_priors.rds: custom_epsilon_priors.rds
+        custom_epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
+  - mv_epiestim_regional_estimates:
+      id: latest
+      use:
+        epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
+        epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
+  - naive_epsilon_estimates:
+      id: latest
+      use:
+        Rt_epi_fr.rds: Rt_epi_fr.rds
+        Rt_epi_UK1.rds: Rt_epi_UK1.rds
+        Rt_epi_UK2.rds: Rt_epi_UK2.rds
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
+        epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
+        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds        

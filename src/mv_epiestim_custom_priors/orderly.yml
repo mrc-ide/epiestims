@@ -1,0 +1,38 @@
+script: script.R
+
+packages:
+- dplyr
+- EpiEstim
+- epitrix
+- purrr
+- tidyr
+
+global_resources:
+  mv_epiestim_params.R: mv_epiestim_params.R
+
+artefacts:
+  data:
+    description: Epsilon estimates with custom priors
+    filenames:
+      - custom_epsilon_priors.rds
+      - epsilon_estimates_over_time.rds
+      - epsilon_qntls_over_time.rds
+      - epsilon_estimates_with_variant_proportion.rds
+      
+depends:
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        incidence_array.rds: incidence_array.rds
+        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
+  - mv_epiestim_regional_estimates:
+      id: latest
+      use:
+        epsilon_estimates_whole_country.rds: epsilon_estimates_whole_country.rds
+  - clean_french_england_data:
+      id: latest
+      use:
+         Epi_param.rds: Epi_param.rds
+         I_fr.rds: I_fr.rds
+         I_UK1.rds: I_UK1.rds
+         I_UK2.rds: I_UK2.rds

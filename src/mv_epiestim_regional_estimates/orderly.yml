@@ -1,0 +1,35 @@
+script: estimate_for_regions.R
+
+global_resources:
+  mv_epiestim_params.R: mv_epiestim_params.R
+
+packages:
+- dplyr
+- EpiEstim
+- epitrix
+- glue
+- purrr
+- tidyr
+
+artefacts:
+  data:
+    description: Naive epsilon estimates
+    filenames:
+      - epsilon_estimates_per_region.rds
+      - epsilon_qntls_per_region.rds
+      - epsilon_estimates_whole_country.rds
+      - epsilon_qntls_whole_country.rds
+      
+depends:
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        incidence_array.rds: incidence_array.rds
+  - clean_french_england_data:
+      id: latest
+      use:
+         Epi_param.rds: Epi_param.rds
+         I_fr.rds: I_fr.rds
+         I_UK1.rds: I_UK1.rds
+         I_UK2.rds: I_UK2.rds
+         
