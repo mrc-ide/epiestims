@@ -2,25 +2,17 @@
 ## Aesthetics
 source("R/fig_utils.R")
 dir.create("figures")
-dodge_width <- 0.5
+dodge_width <- 0.7
 ## common stuff
 ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
 values <- c(
-  "X 1" = "#222222", ## Same SI
-  "0.1" = "#222222", ## Offspring
-  "0.5" = "#D55E00",
-  "1.0" = "#CC79A7",
-  ## Variable SI and CV.
-  "X 0.5" = "#E69F00",
-  "X 1.5" = "#56B4E9",
-  "X 2" = "#009E73",
-  ## underreporting
-  "0.2" = "#0072B2",
-  "0.5" = "#D55E00",
-  "0.8" = "#CC79A7"
+  "Central" = "#222222",
+  "Low" = "#56B4E9",
+  "High" = "#009E73"
 )
+
 ## We have run more scenarios than we want to show in the
 ## manuscript. We have to filter out each separately
 ms_vars <- list(
@@ -28,7 +20,7 @@ ms_vars <- list(
   wrong_si = c("X 0.5", "X 1.5", "X 2"),
   vary_cv = c("X 0.5", "X 1.5", "X 2"),
   wrong_cv = c("X 0.5", "X 1.5", "X 2"),
-  vary_offs = c("0.1"),
+  vary_offs = c("0.1", "0.5", "1"),
   underrep = c("0.2", "0.5", "0.8"),
   same_si = "X 1"
 )
@@ -51,8 +43,28 @@ infiles <- list(
   underrep = "underrep_err_summary_by_all_vars.rds"
 )
 
+scenario_type_labeller <- function(x) {
+  x$scenario_type <- case_when(
+    x$label == "X 0.5" ~ "Low",
+    x$label == "X 1.5" ~ "Central",
+    x$label == "X 1" ~ "Central",
+    x$label == "X 2" ~ "High",
+    ## Vary offspring
+    x$label == "0.1" ~ "High",
+    x$label == "0.5" ~ "Medium",
+    x$label == "1" ~ "Low",
+    ## Underreporting
+    x$label == "0.2" ~ "High",
+    x$label == "0.5" ~ "Medium",
+    x$label == "0.8" ~ "Low"
+  )
+  x
+}
 error_summary <- map(infiles, readRDS)
+## Appends multiplier label
 error_summary <- affix_label(error_summary)
+## Label scenarios as low, central, high
+error_summary <- map(error_summary, scenario_type_labeller)
 split_df <- main_and_suppl(error_summary, ms_vars, ms_tmax)
 ## Split vary SI outputs into same SI and different SI
 main_text_scenarios <- c("same_si", "vary_offs", "vary_si",
@@ -88,12 +100,12 @@ iwalk(main_text_df, function(x, index) {
 
   p <- ggplot(x) +
   geom_point(
-    aes(true_eps, med, col = label),
+    aes(true_eps, med, col = scenario_type),
       position = position_dodge(width = dodge_width),
       size = 1.4
   ) +
   geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, col = label),
+    aes(true_eps, ymin = low, ymax = high, col = scenario_type),
       position = position_dodge(width = dodge_width),
       size = 1
   ) +
@@ -109,11 +121,11 @@ iwalk(main_text_df, function(x, index) {
     labeller = labeller(scenario = scenario_names)
   ) +
   scale_color_manual(
-    values = values,
-    breaks = c("X 0.5", "X 1.5", "X 2")
-  ) + labs(color = "SI Mean or CV Multiplier") +
+    values = values
+    ##breaks = c("X 0.5", "X 1.5", "X 2")
+  ) + labs(color = "Scenario Type") +
   xlab("True Transmssion Advantage") +
-  ylab("Error in estimating transmssion advantage") +
+  ylab("Bias") +
   theme_manuscript() +
   theme(legend.position = "bottom")
 
@@ -139,11 +151,12 @@ infiles <- list(
 
 sd_summary <- map(infiles, readRDS)
 sd_summary <- affix_label(sd_summary)
+sd_summary <- map(sd_summary, scenario_type_labeller)
 ## give a fake ms_tmax so that everything goes to suppl
 split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
 iwalk(split_df, function(x, index) {
   p <- suppl_figure(x$suppl, index) +
-    ylab("SD in estimating transmssion advantage")
+    ylab("Uncertainty")
   save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
 })
 ## Classification

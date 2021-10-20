@@ -148,19 +148,19 @@ main_and_suppl <- function(x, ms_vars, ms_tmax) {
 }
 ## faceting by rt_ref and tmax
 suppl_figure <- function(y, index) {
-  limits <- intersect(y$label, names(values))
+  limits <- intersect(y$scenario_type, names(values))
   y$true_eps <- factor(
     y$true_eps,
     levels = unique(y$true_eps)
   )
   p <- ggplot(y) +
   geom_point(
-    aes(true_eps, med, col = label),
+    aes(true_eps, med, col = scenario_type),
       position = position_dodge(width = dodge_width),
       size = 1.4
   ) +
   geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, col = label),
+    aes(true_eps, ymin = low, ymax = high, col = scenario_type),
       position = position_dodge(width = dodge_width),
       size = 1
   ) +
@@ -173,16 +173,5 @@ suppl_figure <- function(y, index) {
   xlab("True Transmssion Advantage") +
   theme_manuscript() +
     theme(legend.position = "bottom")
-  if (index == "same_si") {
-    p <- p + theme(legend.position = "none")
-  } else if (index %in% c("vary_si", "vary_cv",
-                          "wrong_si", "wrong_cv")) {
-    p <- p + labs(color = "SI Mean or CV Multiplier")
-  } else if (index == "vary_offs") {
-    p <- p + labs(color = "Overdispersion")
-  } else {
-    ## That leaves under-reporting
-    p <- p + labs(color = "Reporting probability")
-  }
-    p
+  p
 }
