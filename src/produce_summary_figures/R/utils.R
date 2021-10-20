@@ -169,7 +169,10 @@ suppl_figure <- function(y, index) {
     labeller = labeller(tmax = tmax_labeller,
                         rt_ref = rt_labeller)
   ) +
-  scale_color_manual(values = values, breaks = limits) +
+    scale_color_manual(
+      values = values,
+      breaks = c("Low", "Central", "High")
+    ) +
   xlab("True Transmssion Advantage") +
   theme_manuscript() +
     theme(legend.position = "bottom")

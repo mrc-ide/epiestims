@@ -51,11 +51,11 @@ scenario_type_labeller <- function(x) {
     x$label == "X 2" ~ "High",
     ## Vary offspring
     x$label == "0.1" ~ "High",
-    x$label == "0.5" ~ "Medium",
+    x$label == "0.5" ~ "Central",
     x$label == "1" ~ "Low",
     ## Underreporting
     x$label == "0.2" ~ "High",
-    x$label == "0.5" ~ "Medium",
+    x$label == "0.5" ~ "Central",
     x$label == "0.8" ~ "Low"
   )
   x
@@ -121,8 +121,8 @@ iwalk(main_text_df, function(x, index) {
     labeller = labeller(scenario = scenario_names)
   ) +
   scale_color_manual(
-    values = values
-    ##breaks = c("X 0.5", "X 1.5", "X 2")
+    values = values,
+    breaks = c("Low", "Central", "High")
   ) + labs(color = "Scenario Type") +
   xlab("True Transmssion Advantage") +
   ylab("Bias") +
