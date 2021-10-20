@@ -45,6 +45,7 @@ estimates <- map2(
     out
   }
 )
+
 saveRDS(estimates, "epsilon_estimates_over_time.rds")
 
 eps_estimates <- map2(
@@ -98,12 +99,13 @@ cuml_incid <- map(
     uk_alpha_wild = uk1_total_incid,
     uk_delta_alpha = uk2_total_incid
   ), function(x) {
-    out <- apply(x[, -1], 2, cumsum)
+    out <- x[, -1]
+    ## Divide the daily incidence of variant
+    ## by the daily incidence of wildtype
     prop_variant <- out / apply(out, 1, sum)
-    res <- cbind(x, out, prop_variant)
+    res <- cbind(x, prop_variant)
     names(res) <- c(
-      names(x), glue("cumulative_{names(x[, -1])}"),
-      glue("proportion_{names(x[ ,-1])}")
+      names(x), glue("proportion_{names(x[ ,-1])}")
     )
     res
   }

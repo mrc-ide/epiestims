@@ -28,11 +28,6 @@ global_resources:
   R/fig_utils.R: fig_utils.R
 
 depends:
-  - mv_epiestim_custom_priors:
-      id: latest
-      use:
-        custom_epsilon_priors.rds: custom_epsilon_priors.rds
-        custom_epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
   - mv_epiestim_regional_estimates:
       id: latest
       use:

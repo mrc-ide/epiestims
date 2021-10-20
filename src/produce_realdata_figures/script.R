@@ -1,10 +1,12 @@
 ## orderly::orderly_develop_start()
 source("R/fig_utils.R")
 dir.create("figures")
+
 palette <- c(
   wildtype = "#0f0e0e",
   alpha = "#E69F00",
   betagamma = "#56B4E9",
+  `beta/gamma` = "#56B4E9",
   delta = "#009E73",
   England = "#cc0000",
   France = "#0000ff"
@@ -74,92 +76,6 @@ iwalk(
     )
   }
 )
-
-### Panel B: Rt heatplots
-infiles <- list(
-  "Rt_epi_fr.rds", "Rt_epi_UK1.rds", "Rt_epi_UK2.rds",
-  "Rt_epi_fr.rds"
-)
-names(infiles) <- names(incidence)
-epiestim_rt <- map(infiles, readRDS)
-## Each element of epiestim_rt is a list with
-## elements corresponding to variants.
-## Here we prepare a list to select the appropriate
-## variant outputs
-select_variant <- list(
-  c("wild", "alpha"), c("wild", "alpha"),
-  c("alpha", "delta"), c("alpha", "beta/gamma")
-)
-names(select_variant) <- names(epiestim_rt)
-## pooled estimates from region-weeks included
-pooled_estimate <- map2(
-  epiestim_rt, select_variant, function(x, variants) {
-    reference <- x[[variants[[1]]]]
-    variant <- x[[variants[[2]]]]
-    ## Rt_incl is an indicator variable
-    ## for when Rt estimate from a given day and
-    ## region is  included. exclude if NA
-    ## include if 1.
-    remove <- reference$Rt_incl[, -1] * variant$Rt_incl[, -1]
-    ## Rt samples. Dimensions T X Regions X samples
-    ref_samples <- reference$Rt_s
-    ## Remove the ones you don't want
-    for (i in 1:dim(ref_samples)[3]) {
-      ref_samples[, , i] <- as.matrix(ref_samples[, , i] * remove)
-    }
-    ## Similarly for variant
-    var_samples <- variant$Rt_s
-    ## Remove the ones you don't want
-    for (i in 1:dim(var_samples)[3]) {
-      var_samples[, , i] <- as.matrix(var_samples[, , i] * remove)
-    }
-    data.frame(
-      reference = c(ref_samples), variant = c(var_samples)
-    )
-  }
-)
-
-rf <- colorRampPalette(rev(brewer.pal(8, "Spectral")))
-r <- rf(32)
-
-twodbin <- map2(
-  pooled_estimate, select_variant,
-  function(x, name) {
-    xname <- glue(
-      "Reproduction number for {to_title_case(name[1])}"
-    )
-    yname <- glue(
-      "Reproduction number for {to_title_case(name[2])}"
-    )
-    maxrt <- ceiling(max(x, na.rm = TRUE))
-    ggplot(x, aes(reference, variant)) +
-      stat_bin2d(bins = 25) +
-      scale_fill_gradientn(colours = r) +
-      geom_abline(
-        intercept = 0, slope = 1, col = "grey50",
-        linetype = "dashed", size = 1.2
-      ) +
-      xlim(0, maxrt) +
-      ylim(0, maxrt) +
-      xlab(xname) +
-      ylab(yname) +
-      theme_manuscript() +
-      theme(
-        axis.text.x = element_text(angle = 0),
-        legend.key.width = unit(1.5, "cm")
-      )
-  }
-)
-
-iwalk(
-  twodbin, function(p, name) {
-    save_multiple(
-      p, glue("figures/{name}_2dbin")
-    )
-  }
-)
-
-
 #################################################
 ###### Panel C. Regional estimates
 #################################################
@@ -230,6 +146,129 @@ iwalk(
     )
   }
 )
+#################################################
+### Panel B: Rt heatplots
+#################################################
+infiles <- list(
+  "Rt_epi_fr.rds", "Rt_epi_UK1.rds", "Rt_epi_UK2.rds",
+  "Rt_epi_fr.rds"
+)
+names(infiles) <- names(incidence)
+epiestim_rt <- map(infiles, readRDS)
+## Each element of epiestim_rt is a list with
+## elements corresponding to variants.
+## Here we prepare a list to select the appropriate
+## variant outputs
+select_variant <- list(
+  c("wild", "alpha"), c("wild", "alpha"),
+  c("alpha", "delta"), c("alpha", "beta/gamma")
+)
+names(select_variant) <- names(epiestim_rt)
+## pooled estimates from region-weeks included
+pooled_estimate <- pmap(
+  list(
+    x = epiestim_rt, variants = select_variant
+  ),
+  function(x, variants) {
+    reference <- x[[variants[[1]]]]
+    variant <- x[[variants[[2]]]]
+    ## Rt_incl is an indicator variable
+    ## for when Rt estimate from a given day and
+    ## region is  included. exclude if NA
+    ## include if 1.
+    remove <- reference$Rt_incl[, -1] * variant$Rt_incl[, -1]
+    ## Rt samples. Dimensions T X Regions X samples
+    ref_samples <- reference$Rt_s
+    ## Remove the ones you don't want
+    for (i in 1:dim(ref_samples)[3]) {
+      ref_samples[, , i] <- as.matrix(ref_samples[, , i] * remove)
+    }
+    ## Similarly for variant
+    var_samples <- variant$Rt_s
+    ## Remove the ones you don't want
+    for (i in 1:dim(var_samples)[3]) {
+      var_samples[, , i] <- as.matrix(var_samples[, , i] * remove)
+    }
+    data.frame(
+      reference = c(ref_samples), variant = c(var_samples)
+    )
+  }
+)
+
+rf <- colorRampPalette(rev(brewer.pal(8, "Spectral")))
+r <- rf(32)
+
+## Plotting eptimates from MV-EpiEstim on the
+## 2D bin plot
+## x2 <- seq(0,as.numeric(max(x,na.rm=TRUE)),length.out=10)
+## d2 <- data.frame(x = x2,
+##                  y = as.numeric(epsilon[1])*x2,
+##                  ylower = as.numeric(epsilon[2])*x2,
+##                  yupper = as.numeric(epsilon[3])*x2)
+
+
+twodbin <-pmap(
+  list(
+    x = pooled_estimate, name = select_variant,
+    mv_estimate = national
+  ), function(x, name, mv_estimate) {
+    if (name[1] == "wild") name[1] <- "wildtype"
+    xname <- glue(
+      "Reproduction number for {to_title_case(name[1])}"
+    )
+    yname <- glue(
+      "Reproduction number for {to_title_case(name[2])}"
+    )
+    message(yname)
+    maxrt <- ceiling(max(x, na.rm = TRUE))
+    x2 <- seq(0, maxrt, length.out = 10)
+    mv_estim <- data.frame(
+      x = x2,
+      y = x2 * mv_estimate[["50%"]],
+      ymin = x2 * mv_estimate[["2.5%"]],
+      ymax = x2 * mv_estimate[["97.5%"]]
+    )
+    maxrt <- max(c(maxrt, mv_estim$ymax))
+    ggplot() +
+      geom_bin2d(
+        data = x, aes(reference, variant), bins = 25
+      ) +
+      geom_line(
+        data = mv_estim,
+        aes(x = x, y = y),
+        col = palette[[name[2]]]
+      ) +
+      geom_ribbon(
+        data = mv_estim,
+        aes(x = x, ymin = ymin, ymax = ymax),
+        fill = palette[[name[2]]], alpha = 0.3
+      ) +
+      geom_abline(
+        intercept = 0, slope = 1, col = "grey50",
+        linetype = "dashed", size = 1.2
+      ) +
+      scale_fill_gradientn(colours = r) +
+      xlim(0, maxrt) +
+      ylim(0, maxrt) +
+      xlab(xname) +
+      ylab(yname) +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 0),
+        legend.key.width = unit(1.5, "cm")
+      )
+  }
+)
+
+iwalk(
+  twodbin, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_2dbin")
+    )
+  }
+)
+
+
 
 ################################################
 ###### Panel D. Estimates over time
@@ -304,27 +343,30 @@ eps_over_time_with_prop[["french_betagamma"]] <-
 eps_over_time_with_prop[["french"]] <-
   eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant == "alpha_vs_wild", ]
 
-custom_eps_over_time <- readRDS(
-  "custom_epsilon_estimates_with_variant_proportion.rds"
-)
+## custom_eps_over_time <- readRDS(
+##   "custom_epsilon_estimates_with_variant_proportion.rds"
+## )
 
-custom_priors <- readRDS("custom_epsilon_priors.rds")
+## custom_priors <- readRDS("custom_epsilon_priors.rds")
 
 both_together <- pmap(
-  list(default = eps_over_time_with_prop,
-       custom = custom_eps_over_time,
-       column = c(
-         "proportion_alpha", "proportion_alpha", "proportion_delta",
-         "proportion_betagamma")
-       ), function(default, custom, column) {
-    default$prior <- "Default prior"
-    custom$prior <- "Informative prior"
-    x <- rbind(default[, colnames(custom)], custom)
+  list(
+    default = eps_over_time_with_prop,
+    ##custom = custom_eps_over_time,
+    column = c(
+      "proportion_alpha", "proportion_alpha", "proportion_delta",
+      "proportion_betagamma")
+  ), function(default, custom, column) {
+    ##default$prior <- "Default prior"
+    ##custom$prior <- "Informative prior"
+    ##x <- rbind(default[, colnames(custom)], custom)
+    x <- default
     x$proportion <- x[[column]]
     x
   }
 )
 
+##both_together <- eps_over_time_with_prop
 eps_with_prop <- map2(
     both_together,
     c("Proportion of Alpha",
@@ -333,32 +375,33 @@ eps_with_prop <- map2(
       "Proportion of Beta/Gamma"
       ), function(x, xlabel) {
         message(xlabel)
-        x <- x[x$prior == "Default priors", ]
-    p <- ggplot(x) +
-      geom_point(
-        aes(proportion, `50%`), size = 2
-      ) +
-      geom_linerange(
-        aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
-        size = 1.1
-      ) +
-      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+        ##x <- x[x$prior == "Default priors", ]
+        p <- ggplot(x) +
+          geom_point(
+            aes(proportion, `50%`), size = 2
+          ) +
+          geom_linerange(
+            aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
+            size = 1.1
+          ) +
+          geom_hline(
+            yintercept = 1, linetype = "dashed", color = "red"
+          ) +
       ## annotate(
       ##   "rect",
       ##   xmin = min(x$proportion),
       ##   xmax = max(x$proportion), ymin = prior_low, ymax = prior_high,
       ##   fill = "gray", alpha = 0.2
       ## ) +
-      expand_limits(y = 1) +
-      scale_x_continuous(labels = mypercent) +
-      ylab("Effective Transmission Advantage") +
-      xlab(xlabel) +
-      theme_manuscript() +
-      theme(
-        axis.text.x = element_text(angle = 0),
-        legend.title = element_blank()
-      )
-
+        expand_limits(y = 1) +
+        scale_x_continuous(labels = mypercent) +
+        ylab("Effective Transmission Advantage") +
+        xlab(xlabel) +
+        theme_manuscript() +
+        theme(
+          axis.text.x = element_text(angle = 0),
+          legend.title = element_blank()
+        )
     p
   }
 )
@@ -385,22 +428,22 @@ eps_with_prop <- map2(
         ##x$proportion <- log(x$proportion)
         p <- ggplot(x) +
       geom_ribbon(
-        aes(proportion, ymin = `2.5%`, ymax = `97.5%`, fill = prior),
+        aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
         alpha = 0.2
       ) +
       geom_line(
-        aes(proportion, `50%`, col = prior), size = 1.1
+        aes(proportion, `50%`), size = 1.1
       ) +
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
       expand_limits(y = 1) +
       scale_x_continuous(labels = mypercent) +
-      scale_color_manual(
-        values = c(
-          `Default prior` = "#0f0e0e",
-          `Informative prior` = "#CC79A7"
-        ),
-        aesthetics = c("col", "fill")
-      ) +
+      ## scale_color_manual(
+      ##   values = c(
+      ##     `Default prior` = "#0f0e0e",
+      ##     `Informative prior` = "#CC79A7"
+      ##   ),
+      ##   aesthetics = c("col", "fill")
+      ## ) +
       ylab("Effective Transmission Advantage") +
       xlab(xlabel) +
       theme_manuscript() +
