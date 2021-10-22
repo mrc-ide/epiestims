@@ -72,10 +72,11 @@ affix_label <- function(x) {
  x[["wrong_cv"]]$label <- multiplier_label(
    x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
  )
- x[["vary_offs"]]$label <- factor(x[[5]]$kappa)
- x[["underrep"]]$label <- factor(x[[6]]$p_report)
+ x[["vary_offs"]]$label <- factor( x[["vary_offs"]]$kappa)
+ x[["underrep"]]$label <- factor(x[["underrep"]]$p_report)
  x
 }
+
 ## x is the output of affix_label
 main_and_suppl <- function(x, ms_vars, ms_tmax) {
  list(

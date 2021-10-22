@@ -23,6 +23,15 @@ artefacts:
       - figures/vary_si_classification.pdf
 
 depends:
+  mv_epiestim_regional_estimates:
+    id: latest
+    use:
+      epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
+      epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds      
+  mv_epiestim_weekly_estimates:
+    id: latest
+    use:
+      epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds        
   classify_as_transmissible:
     id: latest
     use:

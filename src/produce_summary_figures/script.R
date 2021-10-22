@@ -2,15 +2,17 @@
 ## Aesthetics
 source("R/fig_utils.R")
 dir.create("figures")
-dodge_width <- 0.7
+dodge_width <- 0.5
 ## common stuff
 ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
+cols <- brewer.pal(8, "Set1")
 values <- c(
-  "Central" = "#222222",
-  "Low" = "#56B4E9",
-  "High" = "#009E73"
+  "Central" = cols[5],
+  "Low" = cols[3],
+  "High" = cols[1],
+  "Baseline" = "#222222"
 )
 
 ## We have run more scenarios than we want to show in the
@@ -47,7 +49,7 @@ scenario_type_labeller <- function(x) {
   x$scenario_type <- case_when(
     x$label == "X 0.5" ~ "Low",
     x$label == "X 1.5" ~ "Central",
-    x$label == "X 1" ~ "Central",
+    x$label == "X 1" ~ "Baseline",
     x$label == "X 2" ~ "High",
     ## Vary offspring
     x$label == "0.1" ~ "High",
@@ -65,6 +67,7 @@ error_summary <- map(infiles, readRDS)
 error_summary <- affix_label(error_summary)
 ## Label scenarios as low, central, high
 error_summary <- map(error_summary, scenario_type_labeller)
+
 split_df <- main_and_suppl(error_summary, ms_vars, ms_tmax)
 ## Split vary SI outputs into same SI and different SI
 main_text_scenarios <- c("same_si", "vary_offs", "vary_si",
@@ -80,12 +83,20 @@ main_text_df$scenario <- factor(
   levels = main_text_scenarios,
   ordered = TRUE
 )
+
 main_text_df$true_eps <- factor(
   main_text_df$true_eps,
   levels = unique(main_text_df$true_eps)
 )
 
+error_summary$scenario_type <- factor(
+  error_summary$scenario_type,
+  levels = c("Baseline", "Low", "Central", "High"),
+  ordered = TRUE
+)
+
 main_text_df <- split(main_text_df, main_text_df$rt_ref)
+
 iwalk(main_text_df, function(x, index) {
   ## Find the range for each scenario
   err_range <- group_by(x, scenario) %>%
@@ -101,13 +112,13 @@ iwalk(main_text_df, function(x, index) {
   p <- ggplot(x) +
   geom_point(
     aes(true_eps, med, col = scenario_type),
-      position = position_dodge(width = dodge_width),
-      size = 1.4
+    position = position_dodge(width = dodge_width),
+    size = 1.4
   ) +
   geom_linerange(
     aes(true_eps, ymin = low, ymax = high, col = scenario_type),
-      position = position_dodge(width = dodge_width),
-      size = 1
+    position = position_dodge(width = dodge_width),
+      size = 1.1
   ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_blank(
@@ -120,9 +131,9 @@ iwalk(main_text_df, function(x, index) {
     ~scenario, scales = "free_y", ncol = 2,
     labeller = labeller(scenario = scenario_names)
   ) +
-  scale_color_manual(
-    values = values,
-    breaks = c("Low", "Central", "High")
+    scale_color_manual(
+      values = values,
+      breaks = c("Low", "Central", "High")
   ) + labs(color = "Scenario Type") +
   xlab("True Transmssion Advantage") +
   ylab("Bias") +
@@ -154,41 +165,21 @@ sd_summary <- affix_label(sd_summary)
 sd_summary <- map(sd_summary, scenario_type_labeller)
 ## give a fake ms_tmax so that everything goes to suppl
 split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
-iwalk(split_df, function(x, index) {
+iwalk(split_df, function(x, index) {yes
   p <- suppl_figure(x$suppl, index) +
     ylab("Uncertainty")
   save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
 })
 ## Classification
-vary_si_classified <- readRDS("vary_si_classified.rds")
-##vary_si_classified <- vary_si_classified[vary_si_classified$confidence != "Low", ]
-p <- classification_fig(vary_si_classified)
-save_multiple(p, "figures/vary_si_classification")
-
-wrong_si_classified <- readRDS("wrong_si_classified.rds")
-p <- classification_fig(wrong_si_classified)
-save_multiple(p, "figures/wrong_si_classification")
-
-vary_offs_classified <- readRDS("vary_offs_classified.rds")
-p <- classification_fig(vary_offs_classified)
-save_multiple(p, "figures/vary_offs_classification")
-
-vary_cv_classified <- readRDS("vary_cv_classified.rds")
-vary_cv_classified$true_eps <- as.numeric(vary_cv_classified$true_eps)
-p <- classification_fig(vary_cv_classified)
-save_multiple(p, "figures/vary_cv_classification")
-
-
-wrong_cv_classified <- readRDS("wrong_cv_classified.rds")
-wrong_cv_classified$true_eps <- as.numeric(wrong_cv_classified$true_eps)
-p <- classification_fig(wrong_cv_classified)
-save_multiple(p, "figures/wrong_cv_classification")
-
-underrep_classified <- readRDS("underrep_classified.rds")
-p <- classification_fig(underrep_classified)
-save_multiple(p, "figures/underrep_classification")
-
+classified <- readRDS("classification_by_scenario.rds")
+classified <- split(classified, classified$scenario)
+classified <- affix_label(classified)
+plots <- iwalk(
+  classified, function(x, scenario) {
+    ggplot(x) +
+      geom_point(aes(true_eps, n))
+  }
+)
 
 
 if (! is.null(dev.list())) dev.off()
-

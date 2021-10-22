@@ -11,18 +11,9 @@ artefacts:
   data:
     description: Classified for cases where 95% CrI does not contain true value
     filenames:
-      - vary_si_classified.rds
-      - wrong_si_classified.rds      
-      - wrong_cv_classified.rds      
-      - vary_cv_classified.rds
-      - vary_offs_classified.rds
-      - underrep_classified.rds
-
+      - classification_by_scenario.rds
+      
 depends:
-  sims_one_location_vary_si:
-    id: latest
-    use:
-      vary_si_param_grid.rds: param_grid.rds
   summarise_one_location_vary_si:
     id: latest
     use:

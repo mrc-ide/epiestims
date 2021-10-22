@@ -12,7 +12,7 @@ palette <- c(
   France = "#0000ff"
 )
 
-date_breaks <- "4 weeks"
+date_breaks <- "6 weeks"
 date_labels <- "%d-%b"
 
 
@@ -25,6 +25,8 @@ variant_nicenames <- c(
 incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
 incidence[["french_betagamma"]] <- incidence[["french"]]
+
+date_min <- map(incidence, ~ min(.$date))
 
 tall_incid <- map2(
   incidence,
@@ -59,6 +61,7 @@ incid_plots <- map(
         date_breaks = date_breaks,
         date_labels = date_labels
       ) +
+      coord_cartesian(clip = "off") +
       ylab("Daily incidence") +
       xlab("") +
       theme_manuscript() +
@@ -98,6 +101,38 @@ national <- map2(
     x
   }
 )
+## Region short names
+region_short_names <- function(region) {
+    lookup <- c(ARA = "Auvergne-Rhône-Alpes",
+                BFC = "Bourgogne-Franche-Comté",
+                BRE = "Bretagne",
+      CVL = "Centre-Val de Loire",
+      `20R` = "Corse",
+      GES = "Grand Est",
+      GP = "Guadeloupe",
+      GF = "Guyane",
+      HDF = "Hauts-de-France",
+      IDF = "Île-de-France",
+      RE  = "La Réunion",
+      MQ = "Martinique",
+      YT = "Mayotte",
+      NOR = "Normandie",
+      NAQ = "Nouvelle-Aquitaine",
+      OCC = "Occitanie",
+      PDL = "Pays de la Loire",
+      PAC = "Provence-Alpes-Côte d'Azur",
+      EE = "East of England",
+      LON = "London",
+      MID = "Midlands",
+      NE = "North East and Yorkshire",
+      NW = "North West",
+      SE = "South East",
+      SW = "South West",
+      ENG = "England",
+      FR = "France"
+      )
+    names(lookup)[lookup %in% region]
+}
 
 regional_plots <- map2(
   regional, national, function(x, y) {
@@ -129,12 +164,15 @@ regional_plots <- map2(
       scale_color_identity(
         breaks = c("#0f0e0e", palette[[y$region[1]]])
       ) +
+      scale_x_discrete(
+        labels = region_short_names
+      ) +
       ylab("Effective transmission advantage") +
-      coord_flip() +
+      ##coord_flip() +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5),
-        axis.title.y = element_blank()
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.title.x = element_blank()
       )
   }
 )
@@ -285,8 +323,8 @@ eps_over_time[["french_betagamma"]] <-
 eps_over_time[["french"]] <-
   eps_over_time[["french"]][eps_over_time[["french"]]$variant == "alpha_vs_wild", ]
 
-plots_over_time <- map(
-  eps_over_time, function(x) {
+plots_over_time <- map2(
+  eps_over_time, date_min, function(x, xmin) {
     x$date <- as.Date(x$date)
     ggplot(x) +
       geom_point(aes(date, `50%`), size = 2) +
@@ -298,10 +336,11 @@ plots_over_time <- map(
       expand_limits(y = 1) +
       scale_x_date(
         date_breaks = date_breaks,
-        date_labels = date_labels
+        date_labels = date_labels,
+        limits = c(as.Date(xmin), NA)
       ) +
       ylab("Effective transmission advantage") +
-      xlab("") +
+      xlab("Estimation using data reported up to") +
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
@@ -366,7 +405,6 @@ both_together <- pmap(
   }
 )
 
-##both_together <- eps_over_time_with_prop
 eps_with_prop <- map2(
     both_together,
     c("Proportion of Alpha",
@@ -387,12 +425,6 @@ eps_with_prop <- map2(
           geom_hline(
             yintercept = 1, linetype = "dashed", color = "red"
           ) +
-      ## annotate(
-      ##   "rect",
-      ##   xmin = min(x$proportion),
-      ##   xmax = max(x$proportion), ymin = prior_low, ymax = prior_high,
-      ##   fill = "gray", alpha = 0.2
-      ## ) +
         expand_limits(y = 1) +
         scale_x_continuous(labels = mypercent) +
         ylab("Effective Transmission Advantage") +
@@ -472,3 +504,78 @@ iwalk(
 
 ## p <- (p1 | p2 | p3) / (p4 | p5)
 ## save_multiple(p, "test.pdf")
+
+######################################################################
+## Plot with 2 y-axis
+plots2axis <- pmap(
+  list(
+    x = eps_over_time,
+    y = both_together,
+    y2label =  c("Proportion of Alpha",
+                 "Proportion of Alpha",
+                 "Proportion of Delta",
+                 "Proportion of Beta/Gamma"),
+    xmin = date_min
+  ),
+  function(x, y, y2label, xmin) {
+    y <- select(y, date, proportion)
+    x$date <- as.Date(x$date)
+    z <- left_join(x, y, by = "date")
+    coeff <-  max(z$`97.5%`) / max(z$proportion)
+    z$proportion_scaled <- z$proportion * coeff
+    message("Max z$`97.5%`", max(z$`97.5%`))
+    message("Range of proportion", range(z$proportion))
+    message("Coeff = ", coeff)
+    ggplot(z, aes(x = date)) +
+      geom_point(
+        aes(y = `50%`), size = 2
+      ) +
+      geom_linerange(
+        aes(ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1
+      ) +
+      geom_hline(
+        yintercept = 1, linetype = "dashed", color = "red"
+      ) +
+      geom_line(aes(y = proportion_scaled), linetype = "dashed") +
+      scale_y_continuous(
+        sec.axis = sec_axis(~./coeff, name = y2label)
+      ) +
+      scale_x_date(
+        date_breaks = date_breaks,
+        date_labels = date_labels,
+        limits = c(as.Date(xmin), NA)
+      ) +
+      coord_cartesian(clip = "off") +
+      ylab("Effective Transmission Advantage") +
+      xlab("") +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+        legend.title = element_blank(),
+        axis.line.y.right = element_line(linetype = "dashed")
+      )
+
+  }
+)
+
+iwalk(
+  plots2axis, function(p, name) {
+    if (name == "uk_alpha_wild") {
+      p <- p +
+        geom_point(
+          data = volzetal, aes(date, y),
+          col = "#E69F00", size = 2,
+          position = position_nudge(x = 2)
+        ) +
+        geom_linerange(
+          data = volzetal,
+          aes(date, ymin = ymin, ymax = ymax),
+          col = "#E69F00", size = 1.1,
+          position = position_nudge(x = 2)
+      )
+    }
+    save_multiple(p, glue("figures/{name}_2axis"))
+  }
+)
+

@@ -24,12 +24,7 @@ depends:
   classify_as_transmissible:
     id: latest
     use:
-      vary_si_classified.rds: vary_si_classified.rds
-      wrong_si_classified.rds: wrong_si_classified.rds      
-      vary_cv_classified.rds: vary_cv_classified.rds
-      wrong_cv_classified.rds: wrong_cv_classified.rds      
-      vary_offs_classified.rds: vary_offs_classified.rds
-      underrep_classified.rds: underrep_classified.rds
+      classification_by_scenario.rds: classification_by_scenario.rds
   summarise_one_location_vary_si:
     id: latest
     use:
