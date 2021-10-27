@@ -140,7 +140,9 @@ iwalk(main_text_df, function(x, index) {
   xlab("True Transmssion Advantage") +
   ylab("Bias") +
   theme_manuscript() +
-  theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          legend.title = element_blank())
+
 
   save_multiple(p, glue("figures/main_text_fig_{index}"))
 

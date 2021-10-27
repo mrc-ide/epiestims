@@ -181,6 +181,7 @@ suppl_figure <- function(y, index) {
     ) +
   xlab("True Transmssion Advantage") +
   theme_manuscript() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          legend.title = element_blank())
   p
 }
