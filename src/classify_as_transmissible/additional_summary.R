@@ -27,8 +27,7 @@ summary_tmax_eps <- function(x) {
     count(est_class) %>% ungroup()
   ci_95 <- binconf(out$n, 100) %>%
     tidy()
-  colnames(ci_95) <- c("pt_est", "low", "high")
-  cbind(out, ci_95)
+  cbind(out, ci_95[['x']])
 }
 
 ## More coarse summary

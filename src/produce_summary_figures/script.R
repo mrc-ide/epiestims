@@ -177,37 +177,54 @@ iwalk(split_df, function(x, index) {
 classified <- readRDS("classification_by_scenario.rds")
 classified <- affix_label(classified)
 classified <- map(classified, scenario_type_labeller)
-plots <- imap(
+iwalk(
   classified, function(x, scenario) {
   x$scenario_type <- factor(
     x$scenario_type,
     levels = c("Baseline", "Low", "Moderate", "High"),
     ordered = TRUE
   )
+  idx1 <- which(x$true_label == "No transmission advantage" &
+               x$est_class == "Unclear")
+  idx2 <- which(x$true_label == x$est_class)
+  x <- x[c(idx1, idx2), ]
 
-    ggplot(x) +
+  x <- split(x, x$rt_ref)
+  iwalk(x,
+        function(y, index) {
+      p <- ggplot(y) +
       geom_point(
-        aes(true_eps, `pt_est.PointEst`, col = scenario_type),
+        aes(true_eps, `PointEst`, col = scenario_type),
         position = position_dodge(width = dodge_width),
         size = 1.4
       ) +
       geom_linerange(
-        aes(true_eps, ymin = `pt_est.Lower`, ymax = `pt_est.Upper`, col = scenario_type),
+        aes(true_eps, ymin = `Lower`, ymax = `Upper`, col = scenario_type),
         position = position_dodge(width = dodge_width),
         size = 1.1
       ) +
-  facet_grid(
-    tmax~rt_ref,
-    labeller = labeller(tmax = tmax_labeller,
-                        rt_ref = rt_labeller)
-  ) +
+        facet_grid(
+          tmax~rt_ref,
+          labeller = labeller(tmax = tmax_labeller,
+                              rt_ref = rt_labeller)
+        ) +
     scale_color_manual(
       values = values,
       breaks = c("Low", "Moderate", "High")
     ) +
     xlab("True Transmssion Advantage") +
+    ylab("Proportion classified correctly") +
     theme_manuscript() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          legend.title = element_blank())
+
+       save_multiple(
+      p, glue("figures/{scenario}_{index}_classification")
+    )
+}
+  )
+
+
   }
 )
 
