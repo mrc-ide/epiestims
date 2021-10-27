@@ -133,7 +133,7 @@ incid_plots <- map(
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
-        ##axis.title.x = element_blank(),
+        ##Axis.title.x = element_blank(),
         legend.title = element_blank()
       )
   }
@@ -145,6 +145,63 @@ iwalk(
     )
   }
 )
+## Regional incidence plots for Supplementary
+regional_incid <- list(
+  french = "I_fr.rds",
+  uk1 = "I_UK1.rds",
+  uk2 = "I_UK2.rds"
+)
+regional_incid <- map(regional_incid, readRDS)
+regional_incid <- map(
+  regional_incid, function(x) bind_rows(x, .id = "variant")
+)
+regional_incid[["england"]] <- rbind(
+  regional_incid[["uk1"]], regional_incid[["uk2"]]
+)
+
+walk(
+  c("french", "england"),
+  function(region) {
+    x <- regional_incid[[region]]
+    x$variant <- case_when(
+      x$variant == "wild" ~ "wildtype",
+      TRUE ~ x$variant
+    )
+    variants <- intersect(names(palette), unique(x$variant))
+    values <- palette[variants]
+
+    xtall <- gather(x, region, incid, -date, -variant)
+    xtall$date <- as.Date(xtall$date)
+    ##xtall$region <- stringr::str_wrap(xtall$region, 25)
+    p <- ggplot(xtall) +
+      geom_line(aes(date, incid, col = variant), size = 1.1) +
+      facet_wrap(
+        ~region, scales = "free_y", ncol = 3,
+        labeller = labeller(region = label_wrap_gen(10))
+      ) +
+      scale_color_manual(
+        values = values, labels = variant_nicenames,
+      ) +
+      scale_x_date(
+        date_breaks = date_breaks,
+        date_labels = date_labels
+      ) +
+      coord_cartesian(clip = "off") +
+      ylab("Daily incidence") +
+      xlab("") +
+      theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = "top"
+      )
+
+    save_multiple(
+      p, glue("figures/{region}_regional_incid")
+    )
+  }
+)
+
 #################################################
 ###### Panel C. Regional estimates
 #################################################
@@ -550,7 +607,7 @@ plots2axis <- pmap(
       ) +
       geom_line(aes(y = proportion_scaled), linetype = "dashed") +
       scale_y_continuous(
-        sec.axis = sec_axis(~./coeff, name = y2label),
+        sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
         limits = c(0, 2),
         breaks = seq(0, 2, by = 0.5)
       ) +

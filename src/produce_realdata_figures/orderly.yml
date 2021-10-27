@@ -28,6 +28,12 @@ global_resources:
   R/fig_utils.R: fig_utils.R
 
 depends:
+  - clean_french_england_data:
+      id: latest
+      use:
+        I_fr.rds: I_fr.rds
+        I_UK1.rds: I_UK1.rds
+        I_UK2.rds: I_UK2.rds
   - mv_epiestim_regional_estimates:
       id: latest
       use:
