@@ -21,13 +21,79 @@ variant_nicenames <- c(
   delta = "Delta", betagamma = "Beta/Gamma"
 )
 
-## Panel A. Plot of incidence of variants
+## Read all data first to get consistent ylimits
 incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
 incidence[["french_betagamma"]] <- incidence[["french"]]
-
 date_min <- map(incidence, ~ min(.$date))
 
+regional <- readRDS("epsilon_qntls_per_region.rds")
+regional[["french_betagamma"]] <-
+  regional[["french"]][regional[["french"]]$variant != "alpha_vs_wild", ]
+regional[["french"]] <-
+  regional[["french"]][regional[["french"]]$variant == "alpha_vs_wild", ]
+
+national <- readRDS("epsilon_qntls_whole_country.rds")
+national[["french_betagamma"]] <-
+  national[["french"]][national[["french"]]$variant != "alpha_vs_wild", ]
+national[["french"]] <-
+  national[["french"]][national[["french"]]$variant == "alpha_vs_wild", ]
+
+national <- map2(
+  national, list("France", "England", "England", "France"),
+  function(x, y) {
+    x$region <- y
+    x
+  }
+)
+
+## Alpha multiplicative advantage by Volz et al
+volzetal <- data.frame(
+  date = as.Date("2020-12-31"),
+  ymin = 1.4, ymax = 1.8, y = 1.74
+)
+
+eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
+eps_over_time[["french_betagamma"]] <-
+  eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
+eps_over_time[["french"]] <-
+  eps_over_time[["french"]][eps_over_time[["french"]]$variant == "alpha_vs_wild", ]
+
+## Region short names
+region_short_names <- function(region) {
+    lookup <- c(ARA = "Auvergne-Rhône-Alpes",
+                BFC = "Bourgogne-Franche-Comté",
+                BRE = "Bretagne",
+      CVL = "Centre-Val de Loire",
+      `20R` = "Corse",
+      GES = "Grand Est",
+      GP = "Guadeloupe",
+      GF = "Guyane",
+      HDF = "Hauts-de-France",
+      IDF = "Île-de-France",
+      RE  = "La Réunion",
+      MQ = "Martinique",
+      YT = "Mayotte",
+      NOR = "Normandie",
+      NAQ = "Nouvelle-Aquitaine",
+      OCC = "Occitanie",
+      PDL = "Pays de la Loire",
+      PAC = "Provence-Alpes-Côte d'Azur",
+      EE = "East of England",
+      LON = "London",
+      MID = "Midlands",
+      NE = "North East and Yorkshire",
+      NW = "North West",
+      SE = "South East",
+      SW = "South West",
+      ENG = "England",
+      FR = "France"
+      )
+    names(lookup)[lookup %in% region]
+}
+
+
+## Panel A. Plot of incidence of variants
 tall_incid <- map2(
   incidence,
   list(
@@ -82,58 +148,6 @@ iwalk(
 #################################################
 ###### Panel C. Regional estimates
 #################################################
-regional <- readRDS("epsilon_qntls_per_region.rds")
-regional[["french_betagamma"]] <-
-  regional[["french"]][regional[["french"]]$variant != "alpha_vs_wild", ]
-regional[["french"]] <-
-  regional[["french"]][regional[["french"]]$variant == "alpha_vs_wild", ]
-
-national <- readRDS("epsilon_qntls_whole_country.rds")
-national[["french_betagamma"]] <-
-  national[["french"]][national[["french"]]$variant != "alpha_vs_wild", ]
-national[["french"]] <-
-  national[["french"]][national[["french"]]$variant == "alpha_vs_wild", ]
-
-national <- map2(
-  national, list("France", "England", "England", "France"),
-  function(x, y) {
-    x$region <- y
-    x
-  }
-)
-## Region short names
-region_short_names <- function(region) {
-    lookup <- c(ARA = "Auvergne-Rhône-Alpes",
-                BFC = "Bourgogne-Franche-Comté",
-                BRE = "Bretagne",
-      CVL = "Centre-Val de Loire",
-      `20R` = "Corse",
-      GES = "Grand Est",
-      GP = "Guadeloupe",
-      GF = "Guyane",
-      HDF = "Hauts-de-France",
-      IDF = "Île-de-France",
-      RE  = "La Réunion",
-      MQ = "Martinique",
-      YT = "Mayotte",
-      NOR = "Normandie",
-      NAQ = "Nouvelle-Aquitaine",
-      OCC = "Occitanie",
-      PDL = "Pays de la Loire",
-      PAC = "Provence-Alpes-Côte d'Azur",
-      EE = "East of England",
-      LON = "London",
-      MID = "Midlands",
-      NE = "North East and Yorkshire",
-      NW = "North West",
-      SE = "South East",
-      SW = "South West",
-      ENG = "England",
-      FR = "France"
-      )
-    names(lookup)[lookup %in% region]
-}
-
 regional_plots <- map2(
   regional, national, function(x, y) {
     ## Easier than creating a palette
@@ -142,7 +156,7 @@ regional_plots <- map2(
     ## Arrange columns in the same order
     ## for rbind
     y <- y[, colnames(x)]
-    x <- arrange(x, `50%`)
+    x <- arrange(x, desc(`50%`))
     x <- rbind(x, y)
     x$region <- factor(
       x$region,
@@ -160,12 +174,17 @@ regional_plots <- map2(
         size = 1.1
       ) +
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-      expand_limits(y = 1) +
+      ##expand_limits(y = 1) +
+      ##ylim(0.5, 2) +
       scale_color_identity(
         breaks = c("#0f0e0e", palette[[y$region[1]]])
       ) +
       scale_x_discrete(
         labels = region_short_names
+      ) +
+      scale_y_continuous(
+        limits = c(0, 2),
+        breaks = seq(0, 2, by = 0.5)
       ) +
       ylab("Effective transmission advantage") +
       ##coord_flip() +
@@ -311,17 +330,6 @@ iwalk(
 ################################################
 ###### Panel D. Estimates over time
 ################################################
-## Alpha multiplicative advantage by Volz et al
-volzetal <- data.frame(
-  date = as.Date("2020-12-31"),
-  ymin = 1.4, ymax = 1.8, y = 1.74
-)
-
-eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
-eps_over_time[["french_betagamma"]] <-
-  eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
-eps_over_time[["french"]] <-
-  eps_over_time[["french"]][eps_over_time[["french"]]$variant == "alpha_vs_wild", ]
 
 plots_over_time <- map2(
   eps_over_time, date_min, function(x, xmin) {
@@ -333,7 +341,10 @@ plots_over_time <- map2(
         size = 1.1
       ) +
       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-      expand_limits(y = 1) +
+      scale_y_continuous(
+        limits = c(0.5, 2),
+        breaks = seq(0.5, 2, by = 0.5)
+      ) +
       scale_x_date(
         date_breaks = date_breaks,
         date_labels = date_labels,
@@ -539,7 +550,9 @@ plots2axis <- pmap(
       ) +
       geom_line(aes(y = proportion_scaled), linetype = "dashed") +
       scale_y_continuous(
-        sec.axis = sec_axis(~./coeff, name = y2label)
+        sec.axis = sec_axis(~./coeff, name = y2label),
+        limits = c(0, 2),
+        breaks = seq(0, 2, by = 0.5)
       ) +
       scale_x_date(
         date_breaks = date_breaks,

@@ -154,6 +154,11 @@ suppl_figure <- function(y, index) {
     y$true_eps,
     levels = unique(y$true_eps)
   )
+   y$scenario_type <- factor(
+    y$scenario_type,
+    levels = c("Baseline", "Low", "Moderate", "High"),
+    ordered = TRUE
+  )
   p <- ggplot(y) +
   geom_point(
     aes(true_eps, med, col = scenario_type),
@@ -172,7 +177,7 @@ suppl_figure <- function(y, index) {
   ) +
     scale_color_manual(
       values = values,
-      breaks = c("Low", "Central", "High")
+      breaks = c("Low", "Moderate", "High")
     ) +
   xlab("True Transmssion Advantage") +
   theme_manuscript() +

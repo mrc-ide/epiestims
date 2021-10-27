@@ -7,11 +7,11 @@ dodge_width <- 0.5
 ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
-cols <- brewer.pal(8, "Set1")
+##cols <- brewer.pal(8, "Set1")
 values <- c(
-  "Central" = cols[5],
-  "Low" = cols[3],
-  "High" = cols[1],
+  "Moderate" = "#ffa500",
+  "Low" = "#005900",
+  "High" = "#b20000",
   "Baseline" = "#222222"
 )
 
@@ -48,16 +48,16 @@ infiles <- list(
 scenario_type_labeller <- function(x) {
   x$scenario_type <- case_when(
     x$label == "X 0.5" ~ "Low",
-    x$label == "X 1.5" ~ "Central",
+    x$label == "X 1.5" ~ "Moderate",
     x$label == "X 1" ~ "Baseline",
     x$label == "X 2" ~ "High",
     ## Vary offspring
     x$label == "0.1" ~ "High",
-    x$label == "0.5" ~ "Central",
+    x$label == "0.5" ~ "Moderate",
     x$label == "1" ~ "Low",
     ## Underreporting
     x$label == "0.2" ~ "High",
-    x$label == "0.5" ~ "Central",
+    x$label == "0.5" ~ "Moderate",
     x$label == "0.8" ~ "Low"
   )
   x
@@ -89,15 +89,16 @@ main_text_df$true_eps <- factor(
   levels = unique(main_text_df$true_eps)
 )
 
-error_summary$scenario_type <- factor(
-  error_summary$scenario_type,
-  levels = c("Baseline", "Low", "Central", "High"),
-  ordered = TRUE
-)
 
 main_text_df <- split(main_text_df, main_text_df$rt_ref)
 
 iwalk(main_text_df, function(x, index) {
+  x$scenario_type <- factor(
+    x$scenario_type,
+    levels = c("Baseline", "Low", "Moderate", "High"),
+    ordered = TRUE
+  )
+
   ## Find the range for each scenario
   err_range <- group_by(x, scenario) %>%
     summarise(low = min(low), high = max(high)) %>%
@@ -111,12 +112,13 @@ iwalk(main_text_df, function(x, index) {
 
   p <- ggplot(x) +
   geom_point(
-    aes(true_eps, med, col = scenario_type),
+    aes(true_eps, med, col = scenario_type, group = scenario_type),
     position = position_dodge(width = dodge_width),
+    ##position = "dodge",
     size = 1.4
   ) +
   geom_linerange(
-    aes(true_eps, ymin = low, ymax = high, col = scenario_type),
+    aes(true_eps, ymin = low, ymax = high, col = scenario_type, group = scenario_type),
     position = position_dodge(width = dodge_width),
       size = 1.1
   ) +
@@ -133,7 +135,7 @@ iwalk(main_text_df, function(x, index) {
   ) +
     scale_color_manual(
       values = values,
-      breaks = c("Low", "Central", "High")
+      breaks = c("Low", "Moderate", "High")
   ) + labs(color = "Scenario Type") +
   xlab("True Transmssion Advantage") +
   ylab("Bias") +
@@ -141,13 +143,14 @@ iwalk(main_text_df, function(x, index) {
   theme(legend.position = "bottom")
 
   save_multiple(p, glue("figures/main_text_fig_{index}"))
+
 })
 
 ## Supplementary figures; error by tmax
 iwalk(split_df, function(x, index) {
   p <- suppl_figure(x$suppl, index) +
     geom_hline(yintercept = 0, linetype = "dashed") +
-    ylab("Error in estimating transmssion advantage")
+    ylab("Bias")
   save_multiple(p, glue("figures/suppl_fig_{index}"))
 })
 ## Same figures for SD
@@ -165,7 +168,7 @@ sd_summary <- affix_label(sd_summary)
 sd_summary <- map(sd_summary, scenario_type_labeller)
 ## give a fake ms_tmax so that everything goes to suppl
 split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
-iwalk(split_df, function(x, index) {yes
+iwalk(split_df, function(x, index) {
   p <- suppl_figure(x$suppl, index) +
     ylab("Uncertainty")
   save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
