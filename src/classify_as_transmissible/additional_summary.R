@@ -23,8 +23,12 @@ true_class <- function(df) {
 ## Summarise classification performance as a
 ## function of tmax and true advantage.
 summary_tmax_eps <- function(x) {
-  group_by(x, across(-sim)) %>%
+  out <- group_by(x, across(-sim)) %>%
     count(est_class) %>% ungroup()
+  ci_95 <- binconf(out$n, 100) %>%
+    tidy()
+  colnames(ci_95) <- c("pt_est", "low", "high")
+  cbind(out, ci_95)
 }
 
 ## More coarse summary
@@ -42,16 +46,18 @@ infiles <- list(
   vary_cv = "vary_cv_eps_summary_df.rds",
   wrong_cv = "wrong_cv_eps_summary_df.rds",
   vary_offs = "vary_offs_eps_summary_df.rds",
-  undepsep = "underrep_eps_summary_df.rds"
+  underrep = "underrep_eps_summary_df.rds"
 )
+
 eps_summary <- map(infiles, readRDS)
-classified <- map_dfr(
+
+classified <- map(
   eps_summary, function(x) {
     x$true_label <- true_class(x)
     classified <- classify_epsilon(x)
     x <- select(classified, tmax, sim, rt_ref:est_class)
     summary_tmax_eps(x)
-  }, .id = "scenario"
+  }
 )
 
 saveRDS(classified, "classification_by_scenario.rds")

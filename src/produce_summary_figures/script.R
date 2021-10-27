@@ -112,7 +112,7 @@ iwalk(main_text_df, function(x, index) {
 
   p <- ggplot(x) +
   geom_point(
-    aes(true_eps, med, col = scenario_type, group = scenario_type),
+    aes(true_eps, med, col = scenario_type),
     position = position_dodge(width = dodge_width),
     ##position = "dodge",
     size = 1.4
@@ -175,12 +175,39 @@ iwalk(split_df, function(x, index) {
 })
 ## Classification
 classified <- readRDS("classification_by_scenario.rds")
-classified <- split(classified, classified$scenario)
 classified <- affix_label(classified)
-plots <- iwalk(
+classified <- map(classified, scenario_type_labeller)
+plots <- imap(
   classified, function(x, scenario) {
+  x$scenario_type <- factor(
+    x$scenario_type,
+    levels = c("Baseline", "Low", "Moderate", "High"),
+    ordered = TRUE
+  )
+
     ggplot(x) +
-      geom_point(aes(true_eps, n))
+      geom_point(
+        aes(true_eps, `pt_est.PointEst`, col = scenario_type),
+        position = position_dodge(width = dodge_width),
+        size = 1.4
+      ) +
+      geom_linerange(
+        aes(true_eps, ymin = `pt_est.Lower`, ymax = `pt_est.Upper`, col = scenario_type),
+        position = position_dodge(width = dodge_width),
+        size = 1.1
+      ) +
+  facet_grid(
+    tmax~rt_ref,
+    labeller = labeller(tmax = tmax_labeller,
+                        rt_ref = rt_labeller)
+  ) +
+    scale_color_manual(
+      values = values,
+      breaks = c("Low", "Moderate", "High")
+    ) +
+    xlab("True Transmssion Advantage") +
+    theme_manuscript() +
+    theme(legend.position = "bottom")
   }
 )
 
