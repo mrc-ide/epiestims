@@ -1,11 +1,14 @@
 script: additional_summary.R
 packages:
+- broom
 - dplyr
 - ggplot2
+- Hmisc
 - janitor
 - purrr
-- stargazer
+- readr
 - tidyr
+- stargazer
 
 artefacts:
   data:

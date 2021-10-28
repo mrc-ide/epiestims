@@ -21,7 +21,8 @@ one_loc_step_eps_summary$true_eps <- round(
 ## based on true advantage.
 one_loc_step_eps_summary$true_label <- true_class(one_loc_step_eps_summary)
 classified <- classify_epsilon(one_loc_step_eps_summary)
-tall <- summary_tmax_eps_stepwise(classified)
+x <- select(classified, tmax, sim, rt_ref:est_class)
+tall <- summary_tmax_eps_stepwise(x)
 saveRDS(tall, "one_loc_step_classified.rds")
 
 ## Summary across rt change
@@ -63,7 +64,8 @@ two_loc_step_eps_summary$true_eps <- round(
 ## based on true advantage.
 two_loc_step_eps_summary$true_label <- true_class(two_loc_step_eps_summary)
 classified <- classify_epsilon(two_loc_step_eps_summary)
-tall <- summary_tmax_eps_stepwise(classified)
+x <- select(classified, tmax, sim, rt_ref_l1:est_class)
+tall <- summary_tmax_eps_stepwise(x)
 saveRDS(tall, "two_loc_step_classified.rds")
 
 ## Summary across rt change
@@ -104,7 +106,8 @@ two_loc_step_diff_eps_summary$true_eps <- round(
 ## based on true advantage.
 two_loc_step_diff_eps_summary$true_label <- true_class(two_loc_step_diff_eps_summary)
 classified <- classify_epsilon(two_loc_step_diff_eps_summary)
-tall <- summary_tmax_eps_stepwise(classified)
+x <- select(classified, tmax, sim, rt_ref_l1:est_class)
+tall <- summary_tmax_eps_stepwise(x)
 saveRDS(tall, "two_loc_step_diff_classified.rds")
 
 ## Summary across rt change

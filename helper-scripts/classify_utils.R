@@ -38,14 +38,22 @@ summary_tmax_eps <- function(x) {
 
 ## Summarise classification performance as a
 ## function of tmax and true advantage (when x has no confidence variable).
+# summary_tmax_eps_stepwise <- function(x) {
+#   x <- tabyl(x, true_eps, est_class, tmax) %>%
+#     adorn_percentages("row") %>%
+#     bind_rows(.id = "tmax")
+#   
+#   gather(
+#     x, classification, val, `Unclear`:`Variant more transmissible`
+#   )
+# }
+
 summary_tmax_eps_stepwise <- function(x) {
-  x <- tabyl(x, true_eps, est_class, tmax) %>%
-    adorn_percentages("row") %>%
-    bind_rows(.id = "tmax")
-  
-  gather(
-    x, classification, val, `Unclear`:`Variant more transmissible`
-  )
+  out <- group_by(x, across(-sim)) %>%
+    count(est_class) %>% ungroup()
+  ci_95 <- binconf(out$n, 100) %>%
+    tidy()
+  cbind(out, ci_95[['x']])
 }
 
 
