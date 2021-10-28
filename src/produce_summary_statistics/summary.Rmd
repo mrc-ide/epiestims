@@ -158,25 +158,8 @@ summary(x$sd) %>%
 ## Classification stats
 
 ```{r summary-6}
-infiles <- c(Underreporting = "underrep_classified.rds",
-             `Different SI CV` = "vary_cv_classified.rds",
-             Superspreading = "vary_offs_classified.rds", 
-             `Different SI Mean` = "vary_si_classified.rds",
-             `Misspecified CV` = "wrong_cv_classified.rds",
-             `Misspecified Mean` = "wrong_si_classified.rds")
+classified <- readRDS("classification_by_scenario.rds")
 
-classified <- map(infiles, readRDS)
-
-classified <- map(
-  classified, function(x) {
-    x <- mutate_if(x, is.numeric, percent, 0.1)
-    spread(x, classification, val)
-  })
-x50 <- map_dfr(classified, ~ .[.$tmax == 50, ], .id = "scenario")
-```
-
-```{r summary-7}
-knitr::kable(x50[, c(-2, -3)])
 ```
 
 ## Summary of SARS-CoV-2 Variants

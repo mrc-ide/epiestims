@@ -137,7 +137,7 @@ iwalk(main_text_df, function(x, index) {
       values = values,
       breaks = c("Low", "Moderate", "High")
   ) + labs(color = "Scenario Type") +
-  xlab("True Transmssion Advantage") +
+  xlab("True Transmission Advantage") +
   ylab("Bias") +
   theme_manuscript() +
     theme(legend.position = "bottom",
@@ -178,7 +178,15 @@ iwalk(split_df, function(x, index) {
 ## Classification
 classified <- readRDS("classification_by_scenario.rds")
 classified <- affix_label(classified)
+classified[["same_si"]] <- classified[["vary_si"]]
+classified <- map2(
+  classified, ms_vars, function(x, vars) {
+    x[x$label %in% vars, ]
+  }
+)
+
 classified <- map(classified, scenario_type_labeller)
+
 iwalk(
   classified, function(x, scenario) {
   x$scenario_type <- factor(
@@ -186,6 +194,10 @@ iwalk(
     levels = c("Baseline", "Low", "Moderate", "High"),
     ordered = TRUE
   )
+  x$true_eps <- factor(
+    x$true_eps, levels = unique(x$true_eps)
+  )
+
   idx1 <- which(x$true_label == "No transmission advantage" &
                x$est_class == "Unclear")
   idx2 <- which(x$true_label == x$est_class)
@@ -211,15 +223,16 @@ iwalk(
                               rt_ref = rt_labeller)
         ) +
     scale_color_manual(
-      values = values,
-      breaks = c("Low", "Moderate", "High")
+      values = values[as.character(unique(y$scenario_type))]
     ) +
-    xlab("True Transmssion Advantage") +
+    xlab("True Transmission Advantage") +
     ylab("Proportion classified correctly") +
     theme_manuscript() +
     theme(legend.position = "bottom",
           legend.title = element_blank())
-
+      if (scenario == "same_si") {
+        p <- p + theme(legend.position = "none")
+      }
        save_multiple(
       p, glue("figures/{scenario}_{index}_classification")
     )
