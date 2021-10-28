@@ -10,7 +10,7 @@ true_epsilon_vs_95CrI <- function(x) {
     ) +
     geom_hline(yintercept = 0.95, linetype = "dashed") +
     ylab("Proportion in 95% CrI") +
-    xlab("True transmission advantage") +
+    xlab("True Transmission Advantage") +
     ylim(0, 1) +
     theme_manuscript() +
     labs(color = "Reference Rt") +
@@ -22,36 +22,41 @@ true_epsilon_vs_95CrI <- function(x) {
 true_epsilon_vs_error <- function(x, color_by) {
   p <- ggplot(x) +
     geom_point(
-      aes(true_eps, med, col = label),
+      aes(true_eps, med), col = "black",
       position = position_dodge(width = dodge_width),
       size = 2
     ) +
     geom_linerange(
-      aes(true_eps, ymin = low, ymax = high, col = label),
+      aes(true_eps, ymin = low, ymax = high), col = "black",
       position = position_dodge(width = dodge_width),
       size = 1.1
     ) +
     geom_hline(yintercept = 0, linetype = "dashed") +
-    ylab("Estimated - True transmission advantage") +
-    xlab("True transmission advantage") +
+    ylab("Bias") +
+    xlab("True Transmission Advantage") +
     labs(color = color_by) +
-    theme_manuscript()
+    theme_manuscript(base_size = 14)
   p
 }
 
 classification_fig <- function(df) {
   p <- ggplot(df) +
-  geom_line(
-    aes(true_eps, val, col = classification),
-    size = 1.2
-  ) +
-  facet_wrap(
-    ~tmax, labeller = labeller(tmax = tmax_labeller),
-    ncol = 2
-  ) +
-  xlab("True transmission advantage") +
-  ylab("Proportion") +
-  theme_manuscript() +
-  theme(legend.title = element_blank())
+    geom_point(
+      aes(true_eps, PointEst), col = "black",
+      size = 1.4
+    ) +
+    geom_linerange(
+      aes(true_eps, ymin = `Lower`, ymax = `Upper`), col = "black",
+      size = 1.1
+    ) +
+    facet_grid(
+      tmax~rt_change,
+      labeller = labeller(tmax = tmax_labeller,
+                          rt_change = rt_change_labeller)
+    ) +
+    xlab("True Transmission Advantage") +
+    ylab("Proportion classified correctly") +
+    theme_manuscript(base_size = 14) +
+    theme(legend.title = element_blank())
   p
 }

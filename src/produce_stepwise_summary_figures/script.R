@@ -42,7 +42,7 @@ one_loc_step_err$true_eps <- factor(
 )
 one_loc_step_err$rt_change <- factor(paste(one_loc_step_err$rt_ref,
                                            one_loc_step_err$rt_post_step,
-                                           sep = " -> ")
+                                           sep = " to ")
 )
 one_loc_step_err$si_mu_variant <- 5.4
 one_loc_step_err$label <- multiplier_label(
@@ -62,8 +62,28 @@ save_multiple(psi, "figures/one_loc_step_error_by_tmax")
 
 
 one_loc_step_classified <- readRDS("one_loc_step_classified.rds")
-p <- classification_fig(one_loc_step_classified)
-save_multiple(p, "figures/one_loc_step_classification")
+one_loc_step_classified$rt_change <- factor(paste(one_loc_step_classified$rt_ref,
+                                                  one_loc_step_classified$rt_post_step,
+                                                  sep = " to ")
+)
+one_loc_step_classified$true_eps <- factor(
+  one_loc_step_classified$true_eps, levels = eps_vals, ordered = TRUE
+)
+idx1 <- which(one_loc_step_classified$true_label == "No transmission advantage" &
+                one_loc_step_classified$est_class == "Unclear")
+idx2 <- which(one_loc_step_classified$true_label == one_loc_step_classified$est_class)
+x <- one_loc_step_classified[c(idx1, idx2), ]
+y <- split(x, x$rt_change)
+
+iwalk(y, function(change, index) {
+  
+  p <- classification_fig(change)
+  save_multiple(
+    p, glue("figures/one_loc_step_classification_{index}")
+  )
+  
+})
+
 
 
 ######################################################################
@@ -77,7 +97,7 @@ two_loc_step_err$true_eps <- factor(
 )
 two_loc_step_err$rt_change <- factor(paste(two_loc_step_err$rt_ref_l1,
                                            two_loc_step_err$rt_post_step_l1,
-                                           sep = " -> ")
+                                           sep = " to ")
 )
 
 two_loc_step_err$label <- multiplier_label(
@@ -95,10 +115,28 @@ psi <- true_epsilon_vs_error(two_loc_step_err, "Variant SI Mean") +
 save_multiple(psi, "figures/two_loc_step_error_by_tmax")
 
 
-
 two_loc_step_classified <- readRDS("two_loc_step_classified.rds")
-p <- classification_fig(two_loc_step_classified)
-save_multiple(p, "figures/two_loc_step_classification")
+two_loc_step_classified$rt_change <- factor(paste(two_loc_step_classified$rt_ref_l1,
+                                                  two_loc_step_classified$rt_post_step_l1,
+                                                  sep = " to ")
+)
+two_loc_step_classified$true_eps <- factor(
+  two_loc_step_classified$true_eps, levels = eps_vals, ordered = TRUE
+)
+idx1 <- which(two_loc_step_classified$true_label == "No transmission advantage" &
+                two_loc_step_classified$est_class == "Unclear")
+idx2 <- which(two_loc_step_classified$true_label == two_loc_step_classified$est_class)
+x <- two_loc_step_classified[c(idx1, idx2), ]
+y <- split(x, x$rt_change)
+
+iwalk(y, function(change, index) {
+  
+  p <- classification_fig(change)
+  save_multiple(
+    p, glue("figures/two_loc_step_classification_{index}")
+  )
+  
+})
 
 ######################################################################
 ######################################################################
@@ -138,7 +176,29 @@ save_multiple(psi, "figures/two_loc_step_diff_error_by_tmax")
 
 
 two_loc_step_diff_classified <- readRDS("two_loc_step_diff_classified.rds")
-p <- classification_fig(two_loc_step_diff_classified)
-save_multiple(p, "figures/two_loc_step_diff_classification")
+
+
+loc1_change <- paste(two_loc_step_diff_classified$rt_ref_l1,
+                     two_loc_step_diff_classified$rt_post_step_l1,
+                     sep = " -> ")
+loc2_change <- paste(two_loc_step_diff_classified$rt_ref_l2,
+                     two_loc_step_diff_classified$rt_post_step_l2,
+                     sep = " -> ")
+
+
+two_loc_step_diff_classified$rt_change <- paste("Location 1: ", loc1_change,
+                                         ", Location 2: ", loc2_change)
+two_loc_step_diff_classified$true_eps <- factor(
+  two_loc_step_diff_classified$true_eps, levels = eps_vals, ordered = TRUE
+)
+idx1 <- which(two_loc_step_diff_classified$true_label == "No transmission advantage" &
+                two_loc_step_diff_classified$est_class == "Unclear")
+idx2 <- which(two_loc_step_diff_classified$true_label == two_loc_step_diff_classified$est_class)
+x <- two_loc_step_diff_classified[c(idx1, idx2), ]
+
+p <- classification_fig(x)
+save_multiple(
+  p, "figures/two_loc_step_diff_classification"
+)
 
 if (! is.null(dev.list())) dev.off()
