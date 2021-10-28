@@ -6,7 +6,7 @@ packages:
 - Hmisc
 - janitor
 - purrr
-- stargazer
+- readr
 - tidyr
 
 artefacts:
@@ -14,6 +14,7 @@ artefacts:
     description: Classified for cases where 95% CrI does not contain true value
     filenames:
       - classification_by_scenario.rds
+      - classification_by_scenario.csv      
       
 depends:
   summarise_one_location_vary_si:

@@ -61,3 +61,5 @@ classified <- map(
 
 saveRDS(classified, "classification_by_scenario.rds")
 
+classified <- bind_rows(classified, .id = "scenario")
+readr::write_csv(classified, "classification_by_scenario.csv")
