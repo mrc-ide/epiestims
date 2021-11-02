@@ -190,14 +190,23 @@ eps_err_summary_df <- pmap_dfr(
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
 
-saveRDS(eps_summary_df, "eps_summary_df.rds")
+saveRDS(eps_err_summary_df, "err_summary_df.rds")
 
+
+# summarise the mean here (mu) but can also choose to summarise median (`50%`)
+x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
+    summarise(
+      low = quantile(mu, 0.025), med = quantile(mu, 0.5),
+      high = quantile(mu, 0.975)
+    )
+
+saveRDS(x, "err_summary_by_all_vars.rds")
 
 
 x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
   summarise(
-    low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
-    high = quantile(`50%`, 0.975)
+    low = quantile(sd, 0.025), med = quantile(sd, 0.5),
+    high = quantile(sd, 0.975)
   )
 
-saveRDS(x, "err_summary_by_all_vars.rds")
+saveRDS(x, "err_sd_summary_by_all_vars.rds")

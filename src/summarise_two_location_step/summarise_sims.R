@@ -203,7 +203,7 @@ eps_err_summary_df <- pmap_dfr(
 )
 eps_err_summary_df <- na.omit(eps_err_summary_df)
 
-saveRDS(eps_summary_df, "eps_summary_df.rds")
+saveRDS(eps_err_summary_df, "err_summary_df.rds")
 
 
 
@@ -216,3 +216,14 @@ x <- group_by(eps_err_summary_df, rt_ref_l1, rt_post_step_l1, step_time_l1,
   ) %>% ungroup()
 
 saveRDS(x, "err_summary_by_all_vars.rds")
+
+
+x <- group_by(eps_err_summary_df, rt_ref_l1, rt_post_step_l1, step_time_l1,
+              rt_ref_l2, rt_post_step_l2, step_time_l2, si_mu_variant,
+              tmax, true_eps) %>%
+  summarise(
+    low = quantile(sd, 0.025), med = quantile(sd, 0.5),
+    high = quantile(sd, 0.975)
+  ) %>% ungroup()
+
+saveRDS(x, "err_sd_summary_by_all_vars.rds")
