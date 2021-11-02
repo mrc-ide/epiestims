@@ -39,6 +39,25 @@ true_epsilon_vs_error <- function(x, color_by) {
   p
 }
 
+
+true_epsilon_vs_sd <- function(x) {
+  p <- ggplot(x) +
+    geom_point(
+      aes(true_eps, med), col = "black",
+      position = position_dodge(width = dodge_width),
+      size = 2
+    ) +
+    geom_linerange(
+      aes(true_eps, ymin = low, ymax = high), col = "black",
+      position = position_dodge(width = dodge_width),
+      size = 1.1
+    ) +
+    ylab("Uncertainty") +
+    xlab("True Transmission Advantage") +
+    theme_manuscript(base_size = 14)
+  p
+}
+
 classification_fig <- function(df) {
   p <- ggplot(df) +
     geom_point(
