@@ -153,6 +153,9 @@ iwalk(split_df, function(x, index) {
   p <- suppl_figure(x$suppl, index) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     ylab("Bias")
+  if (index == "same_si") {
+    p <- p + theme(legend.position = "none")
+  }
   save_multiple(p, glue("figures/suppl_fig_{index}"))
 })
 ## Same figures for SD
@@ -173,6 +176,10 @@ split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
 iwalk(split_df, function(x, index) {
   p <- suppl_figure(x$suppl, index) +
     ylab("Uncertainty")
+  if (index == "same_si") {
+    p <- p + theme(legend.position = "none")
+  }
+
   save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
 })
 ## Classification
@@ -203,10 +210,10 @@ iwalk(
   idx2 <- which(x$true_label == x$est_class)
   x <- x[c(idx1, idx2), ]
 
-  x <- split(x, x$rt_ref)
+ x <- split(x, x$rt_ref)
   iwalk(x,
-        function(y, index) {
-      p <- ggplot(y) +
+       function(y, index) {
+      p <- ggplot() +
       geom_point(
         aes(true_eps, `PointEst`, col = scenario_type),
         position = position_dodge(width = dodge_width),
@@ -232,6 +239,10 @@ iwalk(
           legend.title = element_blank())
       if (scenario == "same_si") {
         p <- p + theme(legend.position = "none")
+      }
+      if (index == "1.1") {
+        p <- p + theme(legend.position = "none",
+                       axis.title.x = element_blank())
       }
        save_multiple(
       p, glue("figures/{scenario}_{index}_classification")
