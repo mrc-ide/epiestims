@@ -4,6 +4,7 @@ packages:
 - dplyr
 - ggplot2
 - glue
+- lubridate
 - purrr
 - RColorBrewer
 - snakecase

@@ -26,6 +26,14 @@ incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
 incidence[["french_betagamma"]] <- incidence[["french"]]
 date_min <- map(incidence, ~ min(.$date))
+#### Date breaks to start in the 1st of every month
+xaxis_breaks <- map(
+  incidence, function(x) {
+    xmin <- round_date(min(x$date), "month")
+    xmax <- round_date(max(x$date), "month")
+    seq(xmin, xmax, "2 months")
+  }
+)
 
 regional <- readRDS("epsilon_qntls_per_region.rds")
 regional[["french_betagamma"]] <-
@@ -111,8 +119,8 @@ tall_incid <- map2(
   }
 )
 
-incid_plots <- map(
-  tall_incid, function(x) {
+incid_plots <- map2(
+  tall_incid, xaxis_breaks, function(x, breaks) {
     variants <- intersect(names(palette), unique(x$variant))
     values <- palette[variants]
     ggplot(x) +
@@ -124,7 +132,7 @@ incid_plots <- map(
         values = values, labels = variant_nicenames
       ) +
       scale_x_date(
-        date_breaks = date_breaks,
+        breaks = breaks,
         date_labels = date_labels
       ) +
       coord_cartesian(clip = "off") +
@@ -173,17 +181,23 @@ walk(
     xtall <- gather(x, region, incid, -date, -variant)
     xtall$date <- as.Date(xtall$date)
     ##xtall$region <- stringr::str_wrap(xtall$region, 25)
+    breaks <- seq(
+      round_date(min(xtall$date), "month"),
+      round_date(max(xtall$date), "month"),
+      "2 months"
+    )
     p <- ggplot(xtall) +
       geom_line(aes(date, incid, col = variant), size = 1.1) +
       facet_wrap(
         ~region, scales = "free_y", ncol = 3,
-        labeller = labeller(region = label_wrap_gen(10))
+        labeller = labeller(region = region_short_names)
       ) +
       scale_color_manual(
         values = values, labels = variant_nicenames,
       ) +
       scale_x_date(
-        date_breaks = date_breaks,
+        ##date_breaks = date_breaks,
+        breaks = breaks,
         date_labels = date_labels
       ) +
       coord_cartesian(clip = "off") +
@@ -230,7 +244,10 @@ regional_plots <- map2(
         aes(region, ymin = `2.5%`, ymax = `97.5%`, color = color),
         size = 1.1
       ) +
-      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      geom_hline(
+        yintercept = 1, linetype = "dashed", color = "red",
+        size = 1.2
+      ) +
       ##expand_limits(y = 1) +
       ##ylim(0.5, 2) +
       scale_color_identity(
@@ -240,8 +257,8 @@ regional_plots <- map2(
         labels = region_short_names
       ) +
       scale_y_continuous(
-        limits = c(0, 2),
-        breaks = seq(0, 2, by = 0.5)
+        limits = c(0, 1.8),
+        breaks = seq(0, 1.8, by = 0.5)
       ) +
       ylab("Effective transmission advantage") +
       ##coord_flip() +
@@ -344,9 +361,16 @@ twodbin <-pmap(
     )
     maxrt <- max(c(maxrt, mv_estim$ymax))
     ggplot() +
-      geom_bin2d(
-        data = x, aes(reference, variant), bins = 25
-      ) +
+      stat_density_2d(
+        data = x,
+        geom = "raster",
+        aes(reference, variant, fill = after_stat(ndensity)),
+        contour = FALSE
+      ) + scale_fill_viridis_c() +
+      ## geom_density_2d_filled(
+      ##   data = x, aes(reference, variant),
+      ##   contour_var = "ndensity"
+      ## ) +
       geom_line(
         data = mv_estim,
         aes(x = x, y = y),
@@ -361,11 +385,12 @@ twodbin <-pmap(
         intercept = 0, slope = 1, col = "grey50",
         linetype = "dashed", size = 1.2
       ) +
-      scale_fill_gradientn(colours = r) +
-      xlim(0, maxrt) +
-      ylim(0, maxrt) +
+      ##scale_fill_gradientn(colours = r) +
+      xlim(0, 3) +
+      ylim(0, 3) +
       xlab(xname) +
       ylab(yname) +
+      labs("Density") +
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0),
@@ -389,7 +414,7 @@ iwalk(
 ################################################
 
 plots_over_time <- map2(
-  eps_over_time, date_min, function(x, xmin) {
+  eps_over_time, xaxis_breaks, function(x, xmin) {
     x$date <- as.Date(x$date)
     ggplot(x) +
       geom_point(aes(date, `50%`), size = 2) +
@@ -403,9 +428,10 @@ plots_over_time <- map2(
         breaks = seq(0.5, 2, by = 0.5)
       ) +
       scale_x_date(
-        date_breaks = date_breaks,
-        date_labels = date_labels,
-        limits = c(as.Date(xmin), NA)
+        breaks = xmin,
+        ## date_breaks = date_breaks,
+        date_labels = date_labels
+        ## limits = c(as.Date(xmin), NA)
       ) +
       ylab("Effective transmission advantage") +
       xlab("Estimation using data reported up to") +
@@ -534,7 +560,7 @@ eps_with_prop <- map2(
       geom_line(
         aes(proportion, `50%`), size = 1.1
       ) +
-      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+      geom_hline(yintercept = 1, linetype = "dashed", color = "red", size = 1.2) +
       expand_limits(y = 1) +
       scale_x_continuous(labels = mypercent) +
       ## scale_color_manual(
@@ -579,11 +605,11 @@ plots2axis <- pmap(
   list(
     x = eps_over_time,
     y = both_together,
-    y2label =  c("Proportion of Alpha",
-                 "Proportion of Alpha",
-                 "Proportion of Delta",
-                 "Proportion of Beta/Gamma"),
-    xmin = date_min
+    y2label =  c("Cumulative Proportion of Alpha",
+                 "Cumulative Proportion of Alpha",
+                 "Cumulative Proportion of Delta",
+                 "Cumulative Proportion of Beta/Gamma"),
+    xmin = xaxis_breaks
   ),
   function(x, y, y2label, xmin) {
     y <- select(y, date, proportion)
@@ -603,18 +629,19 @@ plots2axis <- pmap(
         size = 1.1
       ) +
       geom_hline(
-        yintercept = 1, linetype = "dashed", color = "red"
+        yintercept = 1, linetype = "dashed", color = "red", size = 1.2
       ) +
-      geom_line(aes(y = proportion_scaled), linetype = "dashed") +
+      geom_line(aes(y = proportion_scaled), color = "blue") +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
-        limits = c(0, 2),
-        breaks = seq(0, 2, by = 0.5)
+        limits = c(0, 1.8),
+        breaks = seq(0, 1.8, by = 0.5)
       ) +
       scale_x_date(
-        date_breaks = date_breaks,
+        breaks = xmin,
+        ## date_breaks = date_breaks,
         date_labels = date_labels,
-        limits = c(as.Date(xmin), NA)
+        limits = c(min(xmin), NA)
       ) +
       coord_cartesian(clip = "off") +
       ylab("Effective Transmission Advantage") +
@@ -623,7 +650,9 @@ plots2axis <- pmap(
       theme(
         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
         legend.title = element_blank(),
-        axis.line.y.right = element_line(linetype = "dashed")
+        axis.line.y.right = element_line(color = "blue"),
+        axis.title.y.right = element_text(color = "blue"),
+        axis.text.y.right = element_text(color = "blue")
       )
 
   }
