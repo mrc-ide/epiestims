@@ -1,0 +1,64 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- purrr
+- stargazer
+- tidyr
+
+sources: R/utils.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/same_si_1.1_classification.pdf
+
+depends:
+  classify_as_transmissible:
+    id: latest
+    use:
+      classification_by_scenario.rds: classification_by_scenario.rds
+  summarise_one_location_vary_si:
+    id: latest
+    use:
+      vary_si_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      vary_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds      
+  summarise_one_location_wrong_si:
+    id: latest
+    use:
+      wrong_si_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      wrong_si_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      wrong_si_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds            
+  summarise_one_location_vary_offspring:
+    id: latest
+    use:
+      vary_offs_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      vary_offs_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_offs_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_vary_cv:
+    id: latest
+    use:
+      vary_cv_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      vary_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      vary_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_wrong_cv:
+    id: latest
+    use:
+      wrong_cv_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      wrong_cv_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      wrong_cv_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_one_location_underreporting:
+    id: latest
+    use:
+      underrep_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      underrep_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      underrep_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      

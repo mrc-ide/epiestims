@@ -57,25 +57,6 @@ classification_fig <- function(df) {
   p
 }
 
-## x is a list of data.frames -
-## either mean error or SD
-affix_label <- function(x) {
- x[["vary_si"]]$label <- multiplier_label(
-   x[["vary_si"]]$si_mu_variant, si_mu_ref
- )
- x[["wrong_si"]]$label <- multiplier_label(
-   x[["wrong_si"]]$si_mu_variant, si_mu_ref
- )
- x[["vary_cv"]]$label <- multiplier_label(
-   x[["vary_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
- )
- x[["wrong_cv"]]$label <- multiplier_label(
-   x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
- )
- x[["vary_offs"]]$label <- factor( x[["vary_offs"]]$kappa)
- x[["underrep"]]$label <- factor(x[["underrep"]]$p_report)
- x
-}
 
 ## x is the output of affix_label
 main_and_suppl <- function(x, ms_vars, ms_tmax) {
