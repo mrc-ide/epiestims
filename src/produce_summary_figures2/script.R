@@ -137,7 +137,7 @@ eps_summary <- map(
 })
 
 scenarios <- names(eps_summary)
-
+names(scenarios) <- scenarios
 together <- map(
   scenarios, function(x) {
     x1 <- error_summary[[x]]
@@ -160,4 +160,74 @@ together <- map(
   }
 )
 
+
+iwalk(
+  together, function(x, scenario) {
+    x <- split(x, list(x$tmax, x$rt_ref))
+    iwalk(x, function(y, index) {
+      y$scenario_type <- factor(
+        y$scenario_type,
+        levels = c("Baseline", "Low", "Moderate", "High"),
+        ordered = TRUE
+      )
+      y$true_eps <- factor(
+        y$true_eps, levels = unique(y$true_eps)
+      )
+      y$metric <- factor(
+        y$metric, levels = c("Bias", "Uncertainty",
+                             "Coverage probability",
+                             "Classification"),
+        ordered = TRUE
+      )
+      ## Coverage probability to go from 0 to 1
+      dummy <- data.frame(
+        metric = "Coverage probability",
+        true_eps = levels(y$true_eps),
+        low = 0, high = 1
+      )
+      dummy2 <- data.frame(metric = "Bias", y = 0)
+      dummy$metric <- factor(
+        dummy$metric, levels = levels(y$metric)
+      )
+      dummy2$metric <- factor(
+        dummy2$metric, levels = levels(y$metric)
+      )
+      p <- ggplot(y) +
+        geom_point(
+          aes(true_eps, med, col = scenario_type),
+          position = position_dodge(width = dodge_width),
+          size = 1.4
+        ) +
+        geom_linerange(
+          aes(true_eps, ymin = low, ymax = high,
+              col = scenario_type),
+          position = position_dodge(width = dodge_width),
+          size = 1.1
+        ) +
+        geom_blank(
+          data = dummy, aes(y = low)
+        ) +
+        geom_blank(
+          data = dummy, aes(y = high)
+        ) +
+        geom_hline(
+          data = dummy2, aes(yintercept = y),
+          linetype = "dashed"
+        ) +
+        facet_wrap(~metric, scales = "free_y", ncol = 2) +
+        theme_manuscript() +
+        scale_color_manual(
+          values = values,
+          breaks = c("Low", "Moderate", "High")
+        ) + labs(color = "Scenario Type") +
+        xlab("Transmission Advantage") +
+        ylab("")
+
+      save_multiple(
+        p, glue("figures/{scenario}_{index}")
+      )
+    }
+    )
+  }
+)
 
