@@ -1,4 +1,24 @@
 ## orderly::orderly_develop_start()
+## x is a list of data.frames -
+## either mean error or SD
+affix_label <- function(x) {
+ x[["vary_si"]]$label <- multiplier_label(
+   x[["vary_si"]]$si_mu_variant, si_mu_ref
+ )
+ x[["wrong_si"]]$label <- multiplier_label(
+   x[["wrong_si"]]$si_mu_variant, si_mu_ref
+ )
+ x[["vary_cv"]]$label <- multiplier_label(
+   x[["vary_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
+ )
+ x[["wrong_cv"]]$label <- multiplier_label(
+   x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
+ )
+ x[["vary_offs"]]$label <- factor( x[["vary_offs"]]$kappa)
+ x[["underrep"]]$label <- factor(x[["underrep"]]$p_report)
+ x
+}
+
 source("R/fig_utils.R")
 dir.create("figures")
 dodge_width <- 0.5
@@ -181,11 +201,15 @@ iwalk(
       )
       ## Coverage probability to go from 0 to 1
       dummy <- data.frame(
-        metric = "Coverage probability",
-        true_eps = levels(y$true_eps),
-        low = 0, high = 1
+        metric = c("Bias", "Coverage probability"),
+        ##true_eps = levels(y$true_eps),
+        low = 0,
+        high = 1
       )
-      dummy2 <- data.frame(metric = "Bias", y = 0)
+      dummy2 <- data.frame(
+        metric = c("Bias", "Coverage probability"),
+        y = c(0, 0.95)
+      )
       dummy$metric <- factor(
         dummy$metric, levels = levels(y$metric)
       )
@@ -222,7 +246,9 @@ iwalk(
         ) + labs(color = "Scenario Type") +
         xlab("Transmission Advantage") +
         ylab("")
-
+      if (scenario == "same_si") {
+        p <- p + theme(legend.position = "none")
+      }
       save_multiple(
         p, glue("figures/{scenario}_{index}")
       )

@@ -366,7 +366,7 @@ twodbin <-pmap(
         geom = "raster",
         aes(reference, variant, fill = after_stat(ndensity)),
         contour = FALSE
-      ) + scale_fill_viridis_c() +
+      ) + scale_fill_viridis_c("Density", option = "inferno") +
       ## geom_density_2d_filled(
       ##   data = x, aes(reference, variant),
       ##   contour_var = "ndensity"
