@@ -18,7 +18,7 @@ artefacts:
   staticgraph:
     description: Various summary figures
     filenames:
-      - figures/same_si_1.1_classification.pdf
+      - figures/main_text_fig_1.6.pdf
 
 depends:
   classify_as_transmissible:

@@ -220,13 +220,12 @@ iwalk(
         geom_point(
           aes(true_eps, med, col = scenario_type),
           position = position_dodge(width = dodge_width),
-          size = 1.4
+          size = 1.2
         ) +
         geom_linerange(
           aes(true_eps, ymin = low, ymax = high,
               col = scenario_type),
-          position = position_dodge(width = dodge_width),
-          size = 1.1
+          position = position_dodge(width = dodge_width)
         ) +
         geom_blank(
           data = dummy, aes(y = low)

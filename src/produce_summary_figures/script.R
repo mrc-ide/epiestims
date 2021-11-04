@@ -115,12 +115,11 @@ iwalk(main_text_df, function(x, index) {
     aes(true_eps, med, col = scenario_type),
     position = position_dodge(width = dodge_width),
     ##position = "dodge",
-    size = 1.4
+    size = 1.2
   ) +
   geom_linerange(
     aes(true_eps, ymin = low, ymax = high, col = scenario_type, group = scenario_type),
-    position = position_dodge(width = dodge_width),
-      size = 1.1
+    position = position_dodge(width = dodge_width)
   ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_blank(
@@ -147,112 +146,6 @@ iwalk(main_text_df, function(x, index) {
   save_multiple(p, glue("figures/main_text_fig_{index}"))
 
 })
-
-## Supplementary figures; error by tmax
-iwalk(split_df, function(x, index) {
-  p <- suppl_figure(x$suppl, index) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    ylab("Bias")
-  if (index == "same_si") {
-    p <- p + theme(legend.position = "none")
-  }
-  save_multiple(p, glue("figures/suppl_fig_{index}"))
-})
-## Same figures for SD
-infiles <- list(
-  vary_si = "vary_si_err_sd_summary_by_all_vars.rds",
-  wrong_si = "wrong_si_err_sd_summary_by_all_vars.rds",
-  vary_cv = "vary_cv_err_sd_summary_by_all_vars.rds",
-  wrong_cv = "wrong_cv_err_sd_summary_by_all_vars.rds",
-  vary_offs = "vary_offs_err_sd_summary_by_all_vars.rds",
-  underrep = "underrep_err_sd_summary_by_all_vars.rds"
-)
-
-sd_summary <- map(infiles, readRDS)
-sd_summary <- affix_label(sd_summary)
-sd_summary <- map(sd_summary, scenario_type_labeller)
-## give a fake ms_tmax so that everything goes to suppl
-split_df <- main_and_suppl(sd_summary, ms_vars, ms_tmax = "60")
-iwalk(split_df, function(x, index) {
-  p <- suppl_figure(x$suppl, index) +
-    ylab("Uncertainty")
-  if (index == "same_si") {
-    p <- p + theme(legend.position = "none")
-  }
-
-  save_multiple(p, glue("figures/suppl_sd_fig_{index}"))
-})
-## Classification
-classified <- readRDS("classification_by_scenario.rds")
-classified <- affix_label(classified)
-classified[["same_si"]] <- classified[["vary_si"]]
-classified <- map2(
-  classified, ms_vars, function(x, vars) {
-    x[x$label %in% vars, ]
-  }
-)
-
-classified <- map(classified, scenario_type_labeller)
-
-iwalk(
-  classified, function(x, scenario) {
-  x$scenario_type <- factor(
-    x$scenario_type,
-    levels = c("Baseline", "Low", "Moderate", "High"),
-    ordered = TRUE
-  )
-  x$true_eps <- factor(
-    x$true_eps, levels = unique(x$true_eps)
-  )
-
-  idx1 <- which(x$true_label == "No transmission advantage" &
-               x$est_class == "Unclear")
-  idx2 <- which(x$true_label == x$est_class)
-  x <- x[c(idx1, idx2), ]
-
- x <- split(x, x$rt_ref)
-  iwalk(x,
-       function(y, index) {
-      p <- ggplot() +
-      geom_point(
-        aes(true_eps, `PointEst`, col = scenario_type),
-        position = position_dodge(width = dodge_width),
-        size = 1.4
-      ) +
-      geom_linerange(
-        aes(true_eps, ymin = `Lower`, ymax = `Upper`, col = scenario_type),
-        position = position_dodge(width = dodge_width),
-        size = 1.1
-      ) +
-        facet_grid(
-          tmax~rt_ref,
-          labeller = labeller(tmax = tmax_labeller,
-                              rt_ref = rt_labeller)
-        ) +
-    scale_color_manual(
-      values = values[as.character(unique(y$scenario_type))]
-    ) +
-    xlab("True Transmission Advantage") +
-    ylab("Proportion classified correctly") +
-    theme_manuscript() +
-    theme(legend.position = "bottom",
-          legend.title = element_blank())
-      if (scenario == "same_si") {
-        p <- p + theme(legend.position = "none")
-      }
-      if (index == "1.1") {
-        p <- p + theme(legend.position = "none",
-                       axis.title.x = element_blank())
-      }
-       save_multiple(
-      p, glue("figures/{scenario}_{index}_classification")
-    )
-}
-  )
-
-
-  }
-)
 
 
 if (! is.null(dev.list())) dev.off()

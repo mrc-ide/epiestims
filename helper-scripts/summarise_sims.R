@@ -62,6 +62,7 @@ eps_summary <- map(
       }, .id = "tmax"
     )
     out <- estimate_uncertain(out)
+    out
   }
 )
 
@@ -120,8 +121,8 @@ saveRDS(eps_err_summary_df, "eps_err_summary_df.rds")
 message("var = ", var)
 x <- group_by(eps_err_summary_df, rt_ref, .data[[var]], true_eps, tmax) %>%
   summarise(
-    low = quantile(mu, 0.025), med = quantile(mu, 0.5),
-    high = quantile(mu, 0.975)
+    low = mean(mu) - sd(mu), med = mean(mu),
+    high = mean(mu) + sd(mu)
   ) %>% ungroup()
 
 message("Summarising eps_err_summary_df by", var, "OK")
@@ -130,8 +131,8 @@ saveRDS(x, "err_summary_by_all_vars.rds")
 
 x <- group_by(eps_err_summary_df, rt_ref, .data[[var]], true_eps, tmax) %>%
   summarise(
-    low = quantile(sd, 0.025), med = quantile(sd, 0.5),
-    high = quantile(sd, 0.975)
+    low = mean(sd) - sd(sd), med = mean(sd),
+    high = mean(sd) + sd(sd)
   ) %>% ungroup()
 
 message("Summarising eps_err_summary_df SD by", var, "OK")
@@ -139,8 +140,7 @@ saveRDS(x, "err_sd_summary_by_all_vars.rds")
 
 
 by_all_vars <-  group_by(
-  eps_summary_df,
-  rt_ref, .data[[var]], tmax, true_eps
+  eps_summary_df, rt_ref, .data[[var]], true_eps, tmax
 ) %>% summarise_sims
 
 message("Summarising eps_summary_df by", var, "OK")
