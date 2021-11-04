@@ -48,6 +48,7 @@ one_loc_step_err$si_mu_variant <- 5.4
 one_loc_step_err$label <- multiplier_label(
   one_loc_step_err$si_mu_variant, si_mu_ref
 )
+one_loc_step_err$metric <- "Bias" # variable for faceting plots
 
 ## Error over tmax and rt_change
 
@@ -76,6 +77,7 @@ one_loc_step_sd$si_mu_variant <- 5.4
 one_loc_step_sd$label <- multiplier_label(
   one_loc_step_sd$si_mu_variant, si_mu_ref
 )
+one_loc_step_sd$metric <- "Uncertainty"
 
 psd <- true_epsilon_vs_sd(one_loc_step_sd) +
   facet_grid(
@@ -98,6 +100,7 @@ idx1 <- which(one_loc_step_classified$true_label == "No transmission advantage" 
                 one_loc_step_classified$est_class == "Unclear")
 idx2 <- which(one_loc_step_classified$true_label == one_loc_step_classified$est_class)
 x <- one_loc_step_classified[c(idx1, idx2), ]
+x$metric <- "Classification"
 y <- split(x, x$rt_change)
 
 iwalk(y, function(change, index) {
@@ -110,6 +113,94 @@ iwalk(y, function(change, index) {
 })
 
 
+one_loc_step_classified <- rename(x,
+                                med = PointEst, low = Lower, high = Upper)
+
+# Coverage probability
+one_loc_step_coverage <- readRDS("one_loc_step_eps_summary_by_all_vars.rds")
+one_loc_step_coverage <- filter(one_loc_step_coverage, pt_est != "NaN")
+one_loc_step_coverage$rt_change <- factor(paste(one_loc_step_coverage$rt_ref,
+                                                  one_loc_step_coverage$rt_post_step,
+                                                  sep = " to ")
+)
+one_loc_step_coverage$true_eps <- factor(
+  one_loc_step_coverage$true_eps, levels = eps_vals, ordered = TRUE
+)
+one_loc_step_coverage$metric <- "Coverage probability"
+one_loc_step_coverage <- rename(one_loc_step_coverage,
+                                med = pt_est, low = lower, high = upper)
+
+
+one_loc_step_coverage$rt_ref <- as.numeric(one_loc_step_coverage$rt_ref)
+one_loc_step_coverage$rt_post_step <- as.numeric(one_loc_step_coverage$rt_post_step)
+
+
+together <- rbind(one_loc_step_err, one_loc_step_sd,
+                  one_loc_step_coverage, one_loc_step_classified)
+
+
+together$metric <- factor(
+  together$metric, levels = c("Bias", "Uncertainty",
+                              "Coverage probability",
+                              "Classification"),
+  ordered = TRUE
+)
+
+
+dummy <- data.frame(
+  metric = c("Bias", "Coverage probability"),
+  ##true_eps = levels(y$true_eps),
+  low = 0,
+  high = 1
+)
+dummy2 <- data.frame(
+  metric = c("Bias", "Coverage probability"),
+  y = c(0, 0.95)
+)
+dummy$metric <- factor(
+  dummy$metric, levels = levels(together$metric)
+)
+dummy2$metric <- factor(
+  dummy2$metric, levels = levels(together$metric)
+)
+
+
+
+y <- split(together, list(together$tmax, together$rt_change))
+iwalk(y, function(z, index) {
+
+p <- ggplot(z) +
+  geom_point(
+    aes(true_eps, med), col = "black",
+    position = position_dodge(width = dodge_width),
+    size = 1.4
+  ) +
+  geom_linerange(
+    aes(true_eps, ymin = low, ymax = high),
+    col = "black",
+    position = position_dodge(width = dodge_width),
+    size = 1.1
+  ) +
+  geom_blank(
+    data = dummy, aes(y = low)
+  ) +
+  geom_blank(
+    data = dummy, aes(y = high)
+  ) +
+  geom_hline(
+    data = dummy2, aes(yintercept = y),
+    linetype = "dashed"
+  ) +
+  facet_wrap(~metric, scales = "free_y", ncol = 2) +
+  theme_manuscript() +
+  xlab("Transmission Advantage") +
+  ylab("")
+
+save_multiple(
+  p, glue("figures/one_loc_step_panel_{index}")
+)
+
+})
 
 ######################################################################
 ######################################################################
