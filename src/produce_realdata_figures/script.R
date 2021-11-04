@@ -360,17 +360,11 @@ twodbin <-pmap(
       ymax = x2 * mv_estimate[["97.5%"]]
     )
     maxrt <- max(c(maxrt, mv_estim$ymax))
-    ggplot() +
-      stat_density_2d(
-        data = x,
-        geom = "raster",
-        aes(reference, variant, fill = after_stat(ndensity)),
-        contour = FALSE
-      ) + scale_fill_viridis_c("Density", option = "inferno") +
-      ## geom_density_2d_filled(
-      ##   data = x, aes(reference, variant),
-      ##   contour_var = "ndensity"
-      ## ) +
+    ggplot(x) +
+      geom_bin2d(
+        aes(reference, variant, fill = ..density..),
+        bins = 25) +
+      scale_fill_gradientn(colours = r) +
       geom_line(
         data = mv_estim,
         aes(x = x, y = y),
@@ -394,7 +388,7 @@ twodbin <-pmap(
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0),
-        legend.key.width = unit(1.5, "cm")
+        legend.key.width = unit(2.5, "cm")
       )
   }
 )
@@ -615,7 +609,8 @@ plots2axis <- pmap(
     y <- select(y, date, proportion)
     x$date <- as.Date(x$date)
     z <- left_join(x, y, by = "date")
-    coeff <-  max(z$`97.5%`) / max(z$proportion)
+    ## coeff <-  max(z$`97.5%`) / max(z$proportion)
+    coeff <- 1.8
     z$proportion_scaled <- z$proportion * coeff
     message("Max z$`97.5%`", max(z$`97.5%`))
     message("Range of proportion", range(z$proportion))
