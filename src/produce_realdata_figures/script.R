@@ -18,7 +18,8 @@ date_labels <- "%d-%b"
 
 variant_nicenames <- c(
   wildtype = "Wildtype", alpha = "Alpha",
-  delta = "Delta", betagamma = "Beta/Gamma"
+  delta = "Delta", betagamma = "Beta/Gamma",
+  `beta/gamma` = "Beta/Gamma"
 )
 
 ## Read all data first to get consistent ylimits
@@ -184,7 +185,7 @@ walk(
     breaks <- seq(
       round_date(min(xtall$date), "month"),
       round_date(max(xtall$date), "month"),
-      "2 months"
+      "1 month"
     )
     p <- ggplot(xtall) +
       geom_line(aes(date, incid, col = variant), size = 1.1) +
@@ -199,6 +200,9 @@ walk(
         ##date_breaks = date_breaks,
         breaks = breaks,
         date_labels = date_labels
+      ) +
+      scale_y_continuous(
+        n.breaks = 3
       ) +
       coord_cartesian(clip = "off") +
       ylab("Daily incidence") +
@@ -227,7 +231,8 @@ regional_plots <- map2(
     ## Arrange columns in the same order
     ## for rbind
     y <- y[, colnames(x)]
-    x <- arrange(x, desc(`50%`))
+    ## x <- arrange(x, desc(`50%`))
+    x <- arrange(x, `50%`)
     x <- rbind(x, y)
     x$region <- factor(
       x$region,
