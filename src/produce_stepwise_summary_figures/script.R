@@ -42,7 +42,7 @@ one_loc_step_err$true_eps <- factor(
 )
 one_loc_step_err$rt_change <- factor(paste(one_loc_step_err$rt_ref,
                                            one_loc_step_err$rt_post_step,
-                                           sep = " to ")
+                                           sep = "_to_")
 )
 one_loc_step_err$si_mu_variant <- 5.4
 one_loc_step_err$label <- multiplier_label(
@@ -71,7 +71,7 @@ one_loc_step_sd$true_eps <- factor(
 )
 one_loc_step_sd$rt_change <- factor(paste(one_loc_step_sd$rt_ref,
                                           one_loc_step_sd$rt_post_step,
-                                           sep = " to ")
+                                           sep = "_to_")
 )
 one_loc_step_sd$si_mu_variant <- 5.4
 one_loc_step_sd$label <- multiplier_label(
@@ -91,7 +91,7 @@ save_multiple(psd, "figures/one_loc_step_sd_by_tmax")
 one_loc_step_classified <- readRDS("one_loc_step_classified.rds")
 one_loc_step_classified$rt_change <- factor(paste(one_loc_step_classified$rt_ref,
                                                   one_loc_step_classified$rt_post_step,
-                                                  sep = " to ")
+                                                  sep = "_to_")
 )
 one_loc_step_classified$true_eps <- factor(
   one_loc_step_classified$true_eps, levels = eps_vals, ordered = TRUE
@@ -120,7 +120,7 @@ one_loc_step_coverage <- readRDS("one_loc_step_eps_summary_by_all_vars.rds")
 one_loc_step_coverage <- filter(one_loc_step_coverage, pt_est != "NaN")
 one_loc_step_coverage$rt_change <- factor(paste(one_loc_step_coverage$rt_ref,
                                                   one_loc_step_coverage$rt_post_step,
-                                                  sep = " to ")
+                                                  sep = "_to_")
 )
 one_loc_step_coverage$true_eps <- factor(
   one_loc_step_coverage$true_eps, levels = eps_vals, ordered = TRUE
@@ -155,7 +155,7 @@ two_loc_step_err$true_eps <- factor(
 )
 two_loc_step_err$rt_change <- factor(paste(two_loc_step_err$rt_ref_l1,
                                            two_loc_step_err$rt_post_step_l1,
-                                           sep = " to ")
+                                           sep = "_to_")
 )
 
 two_loc_step_err$label <- multiplier_label(
@@ -183,7 +183,7 @@ two_loc_step_sd$true_eps <- factor(
 )
 two_loc_step_sd$rt_change <- factor(paste(two_loc_step_sd$rt_ref_l1,
                                           two_loc_step_sd$rt_post_step_l1,
-                                           sep = " to ")
+                                           sep = "_to_")
 )
 
 two_loc_step_sd$label <- multiplier_label(
@@ -206,7 +206,7 @@ save_multiple(psd, "figures/two_loc_step_sd_by_tmax")
 two_loc_step_classified <- readRDS("two_loc_step_classified.rds")
 two_loc_step_classified$rt_change <- factor(paste(two_loc_step_classified$rt_ref_l1,
                                                   two_loc_step_classified$rt_post_step_l1,
-                                                  sep = " to ")
+                                                  sep = "_to_")
 )
 two_loc_step_classified$true_eps <- factor(
   two_loc_step_classified$true_eps, levels = eps_vals, ordered = TRUE
@@ -236,7 +236,7 @@ two_loc_step_coverage <- readRDS("two_loc_step_eps_summary_by_all_vars.rds")
 two_loc_step_coverage <- filter(two_loc_step_coverage, pt_est != "NaN")
 two_loc_step_coverage$rt_change <- factor(paste(two_loc_step_coverage$rt_ref_l1,
                                                 two_loc_step_coverage$rt_post_step_l1,
-                                                sep = " to ")
+                                                sep = "_to_")
 )
 two_loc_step_coverage$true_eps <- factor(
   two_loc_step_coverage$true_eps, levels = eps_vals, ordered = TRUE
