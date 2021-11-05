@@ -205,8 +205,8 @@ x <- group_by(eps_err_summary_df, rt_ref_l1, rt_post_step_l1, step_time_l1,
               rt_ref_l2, rt_post_step_l2, step_time_l2, si_mu_variant,
               tmax, true_eps) %>%
   summarise(
-    low = quantile(`50%`, 0.025), med = quantile(`50%`, 0.5),
-    high = quantile(`50%`, 0.975)
+    low = mean(mu) - sd(mu), med = mean(mu),
+    high = mean(mu) + sd(mu)
   ) %>% ungroup()
 
 saveRDS(x, "err_summary_by_all_vars.rds")
@@ -216,8 +216,8 @@ x <- group_by(eps_err_summary_df, rt_ref_l1, rt_post_step_l1, step_time_l1,
               rt_ref_l2, rt_post_step_l2, step_time_l2, si_mu_variant,
               tmax, true_eps) %>%
   summarise(
-    low = quantile(sd, 0.025), med = quantile(sd, 0.5),
-    high = quantile(sd, 0.975)
+    low = mean(sd) - sd(sd), med = mean(sd),
+    high = mean(sd) + sd(sd)
   ) %>% ungroup()
 
 saveRDS(x, "err_sd_summary_by_all_vars.rds")

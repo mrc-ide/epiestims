@@ -79,3 +79,63 @@ classification_fig <- function(df) {
     theme(legend.title = element_blank())
   p
 }
+
+panel_fig <- function(joined_data, panel_name) {
+  
+  dummy <- data.frame(
+    metric = c("Bias", "Coverage probability"),
+    ##true_eps = levels(y$true_eps),
+    low = 0,
+    high = 1
+  )
+  dummy2 <- data.frame(
+    metric = c("Bias", "Coverage probability"),
+    y = c(0, 0.95)
+  )
+  dummy$metric <- factor(
+    dummy$metric, levels = levels(joined_data$metric)
+  )
+  dummy2$metric <- factor(
+    dummy2$metric, levels = levels(joined_data$metric)
+  )
+  
+  
+  
+  y <- split(joined_data, list(joined_data$tmax, joined_data$rt_change))
+  iwalk(y, function(z, index) {
+    
+    p <- ggplot(z) +
+      geom_point(
+        aes(true_eps, med), col = "black",
+        position = position_dodge(width = dodge_width),
+        size = 1.2
+      ) +
+      geom_linerange(
+        aes(true_eps, ymin = low, ymax = high),
+        col = "black",
+        position = position_dodge(width = dodge_width)
+      ) +
+      geom_blank(
+        data = dummy, aes(y = low)
+      ) +
+      geom_blank(
+        data = dummy, aes(y = high)
+      ) +
+      geom_hline(
+        data = dummy2, aes(yintercept = y),
+        linetype = "dashed"
+      ) +
+      facet_wrap(~metric, scales = "free_y", ncol = 2) +
+      theme_manuscript() +
+      xlab("Transmission Advantage") +
+      ylab("")
+    
+    save_multiple(
+      p, glue("figures/{panel_name}_panel_{index}")
+    )
+    
+  })
+  
+  
+  
+}

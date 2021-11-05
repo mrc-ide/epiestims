@@ -3,7 +3,7 @@ multiplier_label <- function(val, ref) {
 }
 
 theme_manuscript <- function(base_size = 20) {
-  theme_minimal() %+replace%
+  theme_classic() %+replace%
     theme(
       text = element_text(size = base_size),
       axis.line = element_line(size = 1.05),
