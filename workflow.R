@@ -1,4 +1,5 @@
 library(orderly)
+
 a <- orderly_run("summarise_one_location_vary_si")
 orderly_commit(a)
 
