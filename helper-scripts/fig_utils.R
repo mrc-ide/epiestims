@@ -2,13 +2,14 @@ multiplier_label <- function(val, ref) {
   paste("X", round(val/ref, 1))
 }
 
-theme_manuscript <- function(base_size = 20) {
+theme_manuscript <- function(base_size = 16) {
   theme_classic() %+replace%
     theme(
       text = element_text(size = base_size),
-      axis.line = element_line(size = 1.05),
+      ##axis.line = element_line(size = 1.05),
+      ##strip.background = element_rect(size = 1.05),
       legend.position = "top",
-      axis.text.x = element_text(angle = 45)
+      axis.text.x = element_text(angle = 55)
     )
 }
 ## give filename without the extension
