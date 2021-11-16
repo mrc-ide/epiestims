@@ -776,7 +776,7 @@ si_tables <- pmap(
 iwalk(
   si_tables, function(x, i) {
     out <- ggtexttable(
-      si_tables[[1]], rows = NULL, cols = colnames(x),
+      x, rows = NULL, cols = colnames(x),
       theme = ttheme("mBlue", base_size = 9)
     )
     save_multiple(out, glue("figures/{i}_si_table"))
