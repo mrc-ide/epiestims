@@ -196,7 +196,8 @@ names(d[[2]])[3:4] <- c('delta','alpha')
 
 I_UK1 <- format_I(dat = d$alpha , variants = variants[[1]])
 I_UK2 <- format_I(dat = d$delta , variants = variants[[2]])
-
+## Delta incidence is incomplete. Truncate last 4 days
+I_UK2 <- purrr::map(I_UK2, function(x) x[seq(1, nrow(x) - 4), ])
 
 ```
 

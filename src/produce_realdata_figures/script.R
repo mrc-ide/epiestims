@@ -1,7 +1,7 @@
 ## orderly::orderly_develop_start()
 source("R/fig_utils.R")
 dir.create("figures")
-
+mypercent <- function(x) scales::percent(x)
 palette <- c(
   wildtype = "#0f0e0e",
   alpha = "#E69F00",
@@ -70,35 +70,36 @@ eps_over_time[["french"]] <-
 
 ## Region short names
 region_short_names <- function(region) {
-    lookup <- c(ARA = "Auvergne-Rhône-Alpes",
-                BFC = "Bourgogne-Franche-Comté",
-                BRE = "Bretagne",
-      CVL = "Centre-Val de Loire",
-      `20R` = "Corse",
-      GES = "Grand Est",
-      GP = "Guadeloupe",
-      GF = "Guyane",
-      HDF = "Hauts-de-France",
-      IDF = "Île-de-France",
-      RE  = "La Réunion",
-      MQ = "Martinique",
-      YT = "Mayotte",
-      NOR = "Normandie",
-      NAQ = "Nouvelle-Aquitaine",
-      OCC = "Occitanie",
-      PDL = "Pays de la Loire",
-      PAC = "Provence-Alpes-Côte d'Azur",
-      EE = "East of England",
-      LON = "London",
-      MID = "Midlands",
-      NE = "North East and Yorkshire",
-      NW = "North West",
-      SE = "South East",
-      SW = "South West",
-      ENG = "England",
-      FR = "France"
-      )
-    names(lookup)[lookup %in% region]
+  short_name <- case_when(
+    region == "Auvergne-Rhône-Alpes" ~ "ARA",
+    region ==  "Bourgogne-Franche-Comté" ~ "BFC",
+    region ==  "Bretagne"  ~ "BRE",
+    region ==  "Centre-Val de Loire" ~ "CVL",
+    region ==  "Corse" ~ "20R",
+    region ==  "Grand Est" ~ "GES",
+    region ==  "Guadeloupe" ~ "GP",
+    region ==  "Guyane"  ~ "GF",
+    region ==  "Hauts-de-France" ~ "HDF",
+    region ==    "Île-de-France" ~ "IDF",
+    region ==     "La Réunion" ~ "RE",
+    region ==    "Martinique" ~ "MQ",
+    region ==    "Mayotte" ~ "YT",
+    region ==    "Normandie" ~ "NOR",
+    region ==    "Nouvelle-Aquitaine" ~ "NAQ",
+    region ==    "Occitanie" ~ "OCC",
+    region ==    "Pays de la Loire" ~ "PDL",
+    region ==    "Provence-Alpes-Côte d'Azur" ~ "PAC",
+    region ==    "East of England" ~ "EE",
+    region ==    "London" ~ "LON",
+    region ==    "Midlands" ~ "MID",
+    region ==    "North East and Yorkshire" ~ "NE",
+    region ==    "North West" ~ "NW",
+    region ==    "South East" ~ "SE",
+    region ==    "South West" ~ "SW",
+    region ==    "England" ~ "ENG",
+    region ==    "France" ~ "FR"
+  )
+  short_name
 }
 
 
@@ -124,6 +125,7 @@ incid_plots <- map2(
   tall_incid, xaxis_breaks, function(x, breaks) {
     variants <- intersect(names(palette), unique(x$variant))
     values <- palette[variants]
+    coeff <- max(x$incid)
     ggplot(x) +
       geom_line(
         aes(date, incid, col = variant),
@@ -136,6 +138,15 @@ incid_plots <- map2(
         breaks = breaks,
         date_labels = date_labels
       ) +
+      scale_y_continuous(
+        labels = scales::label_number(suffix = "K", scale = 1e-3),
+        ## This is a dummy secondary axis. Keeping everything else
+        ## i.e. axis labels and tick labels the same to help with alignment.
+        sec.axis = sec_axis(~./coeff, name = "Cumulative proportion of Alpha",
+                            labels = mypercent)
+
+      ) +
+      expand_limits(x = range(breaks)) +
       coord_cartesian(clip = "off") +
       ylab("Daily incidence") +
       xlab("") +
@@ -143,10 +154,16 @@ incid_plots <- map2(
       theme(
         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
         ##Axis.title.x = element_blank(),
-        legend.title = element_blank()
+        legend.title = element_blank(),
+        ## We don't actually want to show the right y-axis
+        axis.line.y.right = element_line(color = "white"),
+        axis.title.y.right = element_text(color = "white"),
+        axis.text.y.right = element_text(color = "white"),
+        axis.ticks.y.right = element_line(color = "white")
       )
   }
 )
+
 iwalk(
   incid_plots, function(p, name) {
     save_multiple(
@@ -187,8 +204,9 @@ walk(
       round_date(max(xtall$date), "month"),
       "1 month"
     )
+
     p <- ggplot(xtall) +
-      geom_line(aes(date, incid, col = variant), size = 1.1) +
+      geom_line(aes(date, incid, col = variant)) +
       facet_wrap(
         ~region, scales = "free_y", ncol = 3,
         labeller = labeller(region = region_short_names)
@@ -209,9 +227,14 @@ walk(
       xlab("") +
       theme_manuscript() +
       theme(
+        text = element_text(size = 14),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         legend.title = element_blank(),
-        legend.position = "top"
+        legend.position = "top",
+        ### Transparent right axis so panels a and c can be aligned
+        axis.line.y.right = element_line(color = "blue"),
+        axis.title.y.right = element_text(color = "blue"),
+        axis.text.y.right = element_text(color = "blue")
       )
 
     save_multiple(
@@ -233,13 +256,14 @@ regional_plots <- map2(
     y <- y[, colnames(x)]
     ## x <- arrange(x, desc(`50%`))
     x <- arrange(x, `50%`)
-    x <- rbind(x, y)
+    x <- rbind(y, x)
     x$region <- factor(
       x$region,
       levels = x$region,
       ordered = TRUE
     )
-
+    xmax <- 1.8 ## For everyhing except delta
+    if (x$variant[1] == "delta_vs_alpha") xmax <- 2
     ggplot(x) +
       geom_point(
         aes(region, `50%`, color = color),
@@ -262,8 +286,8 @@ regional_plots <- map2(
         labels = region_short_names
       ) +
       scale_y_continuous(
-        limits = c(0, 1.8),
-        breaks = seq(0, 1.8, by = 0.5)
+        limits = c(0, xmax),
+        breaks = seq(0, xmax, by = 0.5)
       ) +
       ylab("Effective transmission advantage") +
       ##coord_flip() +
@@ -468,7 +492,7 @@ iwalk(
 ##################################################
 ###### Panel E. Estimates with proportion of variant
 ##################################################
-mypercent <- function(x) scales::percent(x)
+
 eps_over_time_with_prop <- readRDS("epsilon_estimates_with_variant_proportion.rds")
 eps_over_time_with_prop[["french_betagamma"]] <-
   eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant != "alpha_vs_wild", ]
@@ -520,7 +544,7 @@ eps_with_prop <- map2(
           ) +
         expand_limits(y = 1) +
         scale_x_continuous(labels = mypercent) +
-        ylab("Effective Transmission Advantage") +
+        ylab("Effective transmission advantage") +
         xlab(xlabel) +
         theme_manuscript() +
         theme(
@@ -604,10 +628,10 @@ plots2axis <- pmap(
   list(
     x = eps_over_time,
     y = both_together,
-    y2label =  c("Cumulative Proportion of Alpha",
-                 "Cumulative Proportion of Alpha",
-                 "Cumulative Proportion of Delta",
-                 "Cumulative Proportion of Beta/Gamma"),
+    y2label =  c("Cumulative proportion of Alpha",
+                 "Cumulative proportion of Alpha",
+                 "Cumulative proportion of Delta",
+                 "Cumulative proportion of Beta/Gamma"),
     xmin = xaxis_breaks
   ),
   function(x, y, y2label, xmin) {
@@ -615,7 +639,9 @@ plots2axis <- pmap(
     x$date <- as.Date(x$date)
     z <- left_join(x, y, by = "date")
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
-    coeff <- 1.8
+    coeff <- 1.8 ## For everyhing except delta
+    if (x$variant[1] == "delta_vs_alpha") coeff <- 2
+
     z$proportion_scaled <- z$proportion * coeff
     message("Max z$`97.5%`", max(z$`97.5%`))
     message("Range of proportion", range(z$proportion))
@@ -644,7 +670,7 @@ plots2axis <- pmap(
         limits = c(min(xmin), NA)
       ) +
       coord_cartesian(clip = "off") +
-      ylab("Effective Transmission Advantage") +
+      ylab("Effective transmission advantage") +
       xlab("") +
       theme_manuscript() +
       theme(
@@ -678,3 +704,8 @@ iwalk(
   }
 )
 
+## Try my luck with cowplot
+pmap(
+  list(p1 = incid_plots, p2 = twodbin, p3 = plots2axis,
+       p4 = regional_plots)
+)
