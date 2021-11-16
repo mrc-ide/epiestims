@@ -705,23 +705,29 @@ iwalk(
   }
 )
 
-## Try my luck with cowplot
-## Doesn't work. messes up font size,
-## pwalk(
-##   list(p1 = incid_plots, p2 = twodbin, p3 = plots2axis,
-##        p4 = regional_plots, index = seq_along(incid_plots)),
-##   function(p1, p2, p3, p4, index) {
-##          p <- plot_grid(
-##            p1, p2, p3, p4, align = "hv",
-##            axis = "l", nrow = 2, ncol = 2,
-##            labels = "AUTO"
-##          )
-##          ggsave2(
-##            glue("figures/{index}.png"), p,
-##            width = 17.8,
-##            height = 21,
-##            units = "cm"
-##          )
+### Summary tables
+naive_eps <- map(
+  c(french = "naive_epsilon_fr.rds",
+    uk_alpha_wild = "naive_epsilon_UK1.rds",
+    uk_delta_alpha = "naive_epsilon_UK2.rds"), function(x) {
+      readRDS(x)$sum_epsilon
+    }
+)
 
-##        }
-## )
+naive_eps[["french_betagamma"]] <- naive_eps[["french"]][["wild_beta/gamma"]]
+naive_eps[["french"]] <- naive_eps[["french"]][["wild_alpha"]]
+naive_eps[["uk_alpha_wild"]] <- naive_eps[["uk_alpha_wild"]][[1]]
+naive_eps[["uk_delta_alpha"]] <- naive_eps[["uk_delta_alpha"]][[1]]
+
+si_tables <- pmap(
+  list(naive = naive_eps, mvepi = regional, overall = national),
+  function(naive, mvepi, overall) {
+    overall$region <- "All"
+    mvepi <- rbind(overall[, colnames(mvepi)], mvepi)
+    naive$formatted <- pretty_ci(naive$med, naive$low, naive$up)
+    mvepi$formatted <- pretty_ci(mvepi$`50%`, mvepi$`2.5%`, mvepi$`97.5%`)
+    naive <- select(naive, "Region/Time-Period" = name, `Naive` = formatted)
+    mvepi <- select(mvepi, "Region/Time-Period" = region, `MV-EpiEstim` = formatted)
+    left_join(naive, mvepi, by = "Region/Time-Period")
+  }
+)

@@ -48,6 +48,10 @@ depends:
         Rt_epi_fr.rds: Rt_epi_fr.rds
         Rt_epi_UK1.rds: Rt_epi_UK1.rds
         Rt_epi_UK2.rds: Rt_epi_UK2.rds
+        naive_epsilon_fr.rds: naive_epsilon_fr.rds
+        naive_epsilon_UK1.rds: naive_epsilon_UK1.rds
+        naive_epsilon_UK2.rds: naive_epsilon_UK2.rds
+        
   - mv_epiestim_weekly_estimates:
       id: latest
       use:
