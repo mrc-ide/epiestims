@@ -19,7 +19,7 @@ artefacts:
       - epsilon_qntls_per_region.rds
       - epsilon_estimates_whole_country.rds
       - epsilon_qntls_whole_country.rds
-      
+      - epsilon_qntls_time_periods.rds
 depends:
   - mv_epiestim_weekly_estimates:
       id: latest
@@ -32,4 +32,5 @@ depends:
          I_fr.rds: I_fr.rds
          I_UK1.rds: I_UK1.rds
          I_UK2.rds: I_UK2.rds
+         periods.rds: periods.rds
          

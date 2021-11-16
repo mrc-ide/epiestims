@@ -4,6 +4,7 @@ packages:
 - cowplot
 - dplyr
 - ggplot2
+- ggpubr
 - glue
 - lubridate
 - purrr
@@ -42,6 +43,7 @@ depends:
       use:
         epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
         epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
+        epsilon_qntls_time_periods.rds: epsilon_qntls_time_periods.rds
   - naive_epsilon_estimates:
       id: latest
       use:

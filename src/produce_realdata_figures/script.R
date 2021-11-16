@@ -719,15 +719,44 @@ naive_eps[["french"]] <- naive_eps[["french"]][["wild_alpha"]]
 naive_eps[["uk_alpha_wild"]] <- naive_eps[["uk_alpha_wild"]][[1]]
 naive_eps[["uk_delta_alpha"]] <- naive_eps[["uk_delta_alpha"]][[1]]
 
+## MV-EpiEstim time periods Q1-4
+mvepi_q <- readRDS("epsilon_qntls_time_periods.rds")
+mvepi_q[["french_betagamma"]] <-
+  mvepi_q[["french"]][mvepi_q[["french"]]$variant != "alpha_vs_wild", ]
+mvepi_q[["french"]] <-
+  mvepi_q[["french"]][mvepi_q[["french"]]$variant == "alpha_vs_wild", ]
+
+pretty_ci <- function(val, low, high, round_to = 2) {
+  f <- function(x) {
+    format(round(x, round_to), nsmall = 2)
+  }
+  glue("{f(val)} ({f(low)}, {f(high)})")
+}
+
 si_tables <- pmap(
-  list(naive = naive_eps, mvepi = regional, overall = national),
-  function(naive, mvepi, overall) {
+  list(naive = naive_eps, mvepi = regional, overall = national, qx = mvepi_q),
+  function(naive, mvepi, overall, qx) {
     overall$region <- "All"
     mvepi <- rbind(overall[, colnames(mvepi)], mvepi)
+    qx$region <- qx$time_period
+    mvepi <- rbind(qx[, colnames(mvepi)], mvepi)
+    idx <- which(is.na(naive$med))
     naive$formatted <- pretty_ci(naive$med, naive$low, naive$up)
+    naive$formatted[idx] <- "-"
     mvepi$formatted <- pretty_ci(mvepi$`50%`, mvepi$`2.5%`, mvepi$`97.5%`)
     naive <- select(naive, "Region/Time-Period" = name, `Naive` = formatted)
     mvepi <- select(mvepi, "Region/Time-Period" = region, `MV-EpiEstim` = formatted)
     left_join(naive, mvepi, by = "Region/Time-Period")
+  }
+)
+
+
+iwalk(
+  si_tables, function(x, i) {
+    out <- ggtexttable(
+      si_tables[[1]], rows = NULL, cols = colnames(x),
+      theme = ttheme("mBlue", base_size = 9)
+    )
+    save_multiple(out, glue("figures/{i}_si_table"))
   }
 )
