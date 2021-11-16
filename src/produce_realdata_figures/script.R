@@ -30,9 +30,9 @@ date_min <- map(incidence, ~ min(.$date))
 #### Date breaks to start in the 1st of every month
 xaxis_breaks <- map(
   incidence, function(x) {
-    xmin <- round_date(min(x$date), "month")
+    xmin <- round_date(min(x$date), "14 days")
     xmax <- round_date(max(x$date), "month")
-    seq(xmin, xmax, "2 months")
+    seq(as.Date(xmin), as.Date(xmax), "2 months")
   }
 )
 
@@ -733,9 +733,26 @@ pretty_ci <- function(val, low, high, round_to = 2) {
   glue("{f(val)} ({f(low)}, {f(high)})")
 }
 
+## get dates corresponding to quarters
+periods <- readRDS("periods.rds")
+periods[["french_betagamma"]] <- periods[["periods_fr"]]
+
+quarter_dates <- map2(
+  incidence, periods, function(incid, period) {
+    t_min <- period$intervals[-1] ## Remove the first element
+    t_min <- head(t_min, -1)
+    t_max <- period$intervals[-c(1, 2)]
+    t_min <- format(incid$date[t_min], "%d-%b-%Y")
+    t_max <- format(incid$date[t_max], "%d-%b-%Y")
+    glue("{t_min} to {t_max}")
+  }
+)
+
+
 si_tables <- pmap(
-  list(naive = naive_eps, mvepi = regional, overall = national, qx = mvepi_q),
-  function(naive, mvepi, overall, qx) {
+  list(naive = naive_eps, mvepi = regional, overall = national, qx = mvepi_q,
+       qd = quarter_dates),
+  function(naive, mvepi, overall, qx, qd) {
     overall$region <- "All"
     mvepi <- rbind(overall[, colnames(mvepi)], mvepi)
     qx$region <- qx$time_period
@@ -746,7 +763,12 @@ si_tables <- pmap(
     mvepi$formatted <- pretty_ci(mvepi$`50%`, mvepi$`2.5%`, mvepi$`97.5%`)
     naive <- select(naive, "Region/Time-Period" = name, `Naive` = formatted)
     mvepi <- select(mvepi, "Region/Time-Period" = region, `MV-EpiEstim` = formatted)
-    left_join(naive, mvepi, by = "Region/Time-Period")
+    out <- left_join(naive, mvepi, by = "Region/Time-Period")
+    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 1"] <- qd[1]
+    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 2"] <- qd[2]
+    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 3"] <- qd[3]
+    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 4"] <- qd[4]
+    out
   }
 )
 

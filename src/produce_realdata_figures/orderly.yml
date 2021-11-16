@@ -38,6 +38,7 @@ depends:
         I_fr.rds: I_fr.rds
         I_UK1.rds: I_UK1.rds
         I_UK2.rds: I_UK2.rds
+        periods.rds: periods.rds        
   - mv_epiestim_regional_estimates:
       id: latest
       use:
