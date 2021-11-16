@@ -4,7 +4,7 @@ dir.create("figures")
 mypercent <- function(x) scales::percent(x)
 palette <- c(
   wildtype = "#0f0e0e",
-  alpha = "#E69F00",
+  alpha = "#56B4E9",
   betagamma = "#56B4E9",
   `beta/gamma` = "#56B4E9",
   delta = "#009E73",
@@ -632,9 +632,10 @@ plots2axis <- pmap(
                  "Cumulative proportion of Alpha",
                  "Cumulative proportion of Delta",
                  "Cumulative proportion of Beta/Gamma"),
-    xmin = xaxis_breaks
+    xmin = xaxis_breaks,
+    col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
-  function(x, y, y2label, xmin) {
+  function(x, y, y2label, xmin, col) {
     y <- select(y, date, proportion)
     x$date <- as.Date(x$date)
     z <- left_join(x, y, by = "date")
@@ -648,11 +649,11 @@ plots2axis <- pmap(
     message("Coeff = ", coeff)
     ggplot(z, aes(x = date)) +
       geom_point(
-        aes(y = `50%`), size = 2
+        aes(y = `50%`), size = 2, colour = col
       ) +
       geom_linerange(
         aes(ymin = `2.5%`, ymax = `97.5%`),
-        size = 1.1
+        size = 1.1, colour = col
       ) +
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red", size = 1.2
@@ -705,7 +706,22 @@ iwalk(
 )
 
 ## Try my luck with cowplot
-pmap(
-  list(p1 = incid_plots, p2 = twodbin, p3 = plots2axis,
-       p4 = regional_plots)
-)
+## Doesn't work. messes up font size,
+## pwalk(
+##   list(p1 = incid_plots, p2 = twodbin, p3 = plots2axis,
+##        p4 = regional_plots, index = seq_along(incid_plots)),
+##   function(p1, p2, p3, p4, index) {
+##          p <- plot_grid(
+##            p1, p2, p3, p4, align = "hv",
+##            axis = "l", nrow = 2, ncol = 2,
+##            labels = "AUTO"
+##          )
+##          ggsave2(
+##            glue("figures/{index}.png"), p,
+##            width = 17.8,
+##            height = 21,
+##            units = "cm"
+##          )
+
+##        }
+## )

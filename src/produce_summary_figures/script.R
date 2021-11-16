@@ -139,7 +139,7 @@ iwalk(main_text_df, function(x, index) {
   xlab("True Transmission Advantage") +
   ylab("Bias") +
   theme_manuscript() +
-    theme(legend.position = "bottom",
+    theme(legend.position = "top",
           legend.title = element_blank())
 
 

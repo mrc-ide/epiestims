@@ -1,12 +1,14 @@
 script: script.R
 
 packages:
+- cowplot
 - dplyr
 - ggplot2
 - glue
 - lubridate
 - purrr
 - RColorBrewer
+- scales
 - snakecase
 - tidyr
 

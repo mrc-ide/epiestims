@@ -7,7 +7,7 @@ t_min <- 10L
 ## priors <- default_priors()
 priors <- list(
   epsilon = list(shape = 1, scale = 1),
-  R = list(shape = 0.04, scale = 25)
+  R = list(shape = 1, scale = 1)
 )
 
 mcmc_controls <- list(

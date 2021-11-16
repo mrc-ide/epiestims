@@ -29,7 +29,7 @@ theme_manuscript <- function(base_size = 16) {
       ##axis.line = element_line(size = 1.05),
       ##strip.background = element_rect(size = 1.05),
       legend.position = "top",
-      axis.text.x = element_text(angle = 45)
+      axis.text.x = element_text(angle = 55)
     )
 }
 ## give filename without the extension
