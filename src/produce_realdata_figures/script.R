@@ -27,13 +27,19 @@ incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
 incidence[["french_betagamma"]] <- incidence[["french"]]
 date_min <- map(incidence, ~ min(.$date))
-#### Date breaks to start in the 1st of every month
-xaxis_breaks <- map(
-  incidence, function(x) {
-    xmin <- round_date(min(x$date), "14 days")
-    xmax <- round_date(max(x$date), "month")
-    seq(as.Date(xmin), as.Date(xmax), "2 months")
-  }
+
+xaxis_breaks <- list(
+  french = as.Date(c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")),
+  uk_alpha_wild = as.Date(
+    c("2020-09-01", "2020-10-01", "2020-11-01", "2020-12-01", "2021-01-01",
+      "2021-02-01", "2021-03-01"
+      )),
+  uk_delta_alpha = as.Date(
+    c("2021-03-15", "2021-04-15", "2021-05-15", "2021-06-15")
+  ),
+  french_betagamma = as.Date(
+    c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")
+  )
 )
 
 regional <- readRDS("epsilon_qntls_per_region.rds")
@@ -246,10 +252,13 @@ walk(
 #################################################
 ###### Panel C. Regional estimates
 #################################################
-regional_plots <- map2(
-  regional, national, function(x, y) {
+regional_plots <- pmap(
+  list(x = regional, y = national,
+       z = palette[c("alpha", "alpha", "delta", "betagamma")]
+       ),
+  function(x, y, z) {
     ## Easier than creating a palette
-    x$color <- "#0f0e0e" ## muted black
+    x$color <- z
     y$color <- palette[[y$region[1]]]
     ## Arrange columns in the same order
     ## for rbind
@@ -263,7 +272,7 @@ regional_plots <- map2(
       ordered = TRUE
     )
     xmax <- 1.8 ## For everyhing except delta
-    if (x$variant[1] == "delta_vs_alpha") xmax <- 2
+    if (x$variant[1] == "delta_vs_alpha") xmax <- 2.5
     ggplot(x) +
       geom_point(
         aes(region, `50%`, color = color),
@@ -641,7 +650,7 @@ plots2axis <- pmap(
     z <- left_join(x, y, by = "date")
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
-    if (x$variant[1] == "delta_vs_alpha") coeff <- 2
+    if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
 
     z$proportion_scaled <- z$proportion * coeff
     message("Max z$`97.5%`", max(z$`97.5%`))
@@ -649,7 +658,7 @@ plots2axis <- pmap(
     message("Coeff = ", coeff)
     ggplot(z, aes(x = date)) +
       geom_point(
-        aes(y = `50%`), size = 2, colour = col
+        aes(y = `50%`), colour = col, size = 4
       ) +
       geom_linerange(
         aes(ymin = `2.5%`, ymax = `97.5%`),
