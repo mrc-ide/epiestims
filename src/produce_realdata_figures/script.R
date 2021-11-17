@@ -5,8 +5,8 @@ mypercent <- function(x) scales::percent(x)
 palette <- c(
   wildtype = "#0f0e0e",
   alpha = "#56B4E9",
-  betagamma = "#56B4E9",
-  `beta/gamma` = "#56B4E9",
+  betagamma = "#CC79A7",
+  `beta/gamma` = "#CC79A7",
   delta = "#009E73",
   England = "#cc0000",
   France = "#0000ff"
