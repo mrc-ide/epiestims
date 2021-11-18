@@ -4,7 +4,7 @@ dir.create("figures")
 mypercent <- function(x) scales::percent(x)
 palette <- c(
   wildtype = "#0f0e0e",
-  alpha = "#56B4E9",
+  alpha = "#E69F00",
   betagamma = "#CC79A7",
   `beta/gamma` = "#CC79A7",
   delta = "#009E73",
@@ -258,8 +258,10 @@ regional_plots <- pmap(
        ),
   function(x, y, z) {
     ## Easier than creating a palette
-    x$color <- z
-    y$color <- palette[[y$region[1]]]
+    x$shape <- 21
+    y$shape <- 23
+    x$colour <- z
+    y$colour <- "black"
     ## Arrange columns in the same order
     ## for rbind
     y <- y[, colnames(x)]
@@ -274,13 +276,13 @@ regional_plots <- pmap(
     xmax <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") xmax <- 2.5
     ggplot(x) +
-      geom_point(
-        aes(region, `50%`, color = color),
-        size = 4
-      ) +
       geom_linerange(
-        aes(region, ymin = `2.5%`, ymax = `97.5%`, color = color),
-        size = 1.1
+        aes(region, ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1, colour = z, stroke = 0
+      ) +
+      geom_point(
+        aes(region, `50%`, shape = shape, colour = colour),
+        size = 4, fill = z, stroke = 2
       ) +
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red",
@@ -288,8 +290,11 @@ regional_plots <- pmap(
       ) +
       ##expand_limits(y = 1) +
       ##ylim(0.5, 2) +
-      scale_color_identity(
-        breaks = c("#0f0e0e", palette[[y$region[1]]])
+      scale_shape_identity(
+        breaks = c(21, 23)
+      ) +
+      scale_colour_identity(
+        breaks = c(z, "black")
       ) +
       scale_x_discrete(
         labels = region_short_names
@@ -398,6 +403,8 @@ twodbin <-pmap(
       ymax = x2 * mv_estimate[["97.5%"]]
     )
     maxrt <- max(c(maxrt, mv_estim$ymax))
+    xlim <- 3
+    if (name[2] == "delta") xlim <- 6
     ggplot(x) +
       geom_bin2d(
         aes(reference, variant, fill = ..density..),
@@ -418,8 +425,8 @@ twodbin <-pmap(
         linetype = "dashed", size = 1.2
       ) +
       ##scale_fill_gradientn(colours = r) +
-      xlim(0, 3) +
-      ylim(0, 3) +
+      xlim(0, xlim) +
+      ylim(0, xlim) +
       xlab(xname) +
       ylab(yname) +
       labs("Density") +
@@ -482,13 +489,13 @@ iwalk(
       p <- p +
         geom_point(
           data = volzetal, aes(date, y),
-          col = "#E69F00", size = 2,
+          size = 4,
           position = position_nudge(x = 2)
         ) +
         geom_linerange(
           data = volzetal,
           aes(date, ymin = ymin, ymax = ymax),
-          col = "#E69F00", size = 1.1,
+          size = 1.1,
           position = position_nudge(x = 2)
       )
     }
@@ -700,13 +707,13 @@ iwalk(
       p <- p +
         geom_point(
           data = volzetal, aes(date, y),
-          col = "#E69F00", size = 2,
+          size = 4,
           position = position_nudge(x = 2)
         ) +
         geom_linerange(
           data = volzetal,
           aes(date, ymin = ymin, ymax = ymax),
-          col = "#E69F00", size = 1.1,
+          size = 1.1,
           position = position_nudge(x = 2)
       )
     }
