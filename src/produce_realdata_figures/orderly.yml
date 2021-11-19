@@ -60,4 +60,4 @@ depends:
       use:
         cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
         epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
-        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds        
+        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds

@@ -278,7 +278,7 @@ regional_plots <- pmap(
     ggplot(x) +
       geom_linerange(
         aes(region, ymin = `2.5%`, ymax = `97.5%`),
-        size = 1.1, colour = z, stroke = 0
+        size = 1.1, colour = z
       ) +
       geom_point(
         aes(region, `50%`, shape = shape, colour = colour),
@@ -429,11 +429,13 @@ twodbin <-pmap(
       ylim(0, xlim) +
       xlab(xname) +
       ylab(yname) +
+     coord_fixed() +
       labs("Density") +
       theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0),
-        legend.key.width = unit(2.5, "cm")
+        legend.key.height = unit(1.2, "cm"),
+        legend.position = "right"
       )
   }
 )
@@ -443,6 +445,7 @@ iwalk(
     save_multiple(
       p, glue("figures/{name}_2dbin")
     )
+    knitr::plot_crop(glue("figures/{name}_2dbin.png"))
   }
 )
 
@@ -677,8 +680,8 @@ plots2axis <- pmap(
       geom_line(aes(y = proportion_scaled), color = "blue") +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
-        limits = c(0, 1.8),
-        breaks = seq(0, 1.8, by = 0.5)
+        limits = c(0, coeff),
+        breaks = seq(0, coeff, by = 0.5)
       ) +
       scale_x_date(
         breaks = xmin,
@@ -780,10 +783,10 @@ si_tables <- pmap(
     naive <- select(naive, "Region/Time-Period" = name, `Naive` = formatted)
     mvepi <- select(mvepi, "Region/Time-Period" = region, `MV-EpiEstim` = formatted)
     out <- left_join(naive, mvepi, by = "Region/Time-Period")
-    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 1"] <- qd[1]
-    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 2"] <- qd[2]
-    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 3"] <- qd[3]
-    out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 4"] <- qd[4]
+    ## out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 1"] <- qd[1]
+    ## out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 2"] <- qd[2]
+    ## out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 3"] <- qd[3]
+    ## out["Region/Time-Period"][out["Region/Time-Period"] == "Quarter 4"] <- qd[4]
     out
   }
 )
@@ -793,8 +796,51 @@ iwalk(
   si_tables, function(x, i) {
     out <- ggtexttable(
       x, rows = NULL, cols = colnames(x),
-      theme = ttheme("mBlue", base_size = 9)
+      theme = ttheme(base_size = 8,
+                     padding = unit(c(5, 4), "mm"),
+                     tbody.style = tbody_style(fill = rep("#ffffff", 2),
+                                               hjust = 0, x = 0.1))
+
     )
+    out <- out %>%
+      tab_add_hline(at.row = c(1, 2), row.side = "top", linewidth = 3, linetype = 1) %>%
+      tab_add_hline(at.row = nrow(x) + 1, row.side = "bottom", linewidth = 3, linetype = 1) %>%
+      ## Line after "All"
+      tab_add_hline(at.row = 3, row.side = "top", linewidth = 2, linetype = 1) %>%
+      ## Line after end of regions, before quarters
+      tab_add_hline(at.row = nrow(x) - 2, row.side = "top", linewidth = 2, linetype = 1)
+
     save_multiple(out, glue("figures/{i}_si_table"))
   }
 )
+
+
+###########################
+pwalk(
+  list(a = incid_plots,
+       b = twodbin,
+       c = plots2axis,
+       d = regional_plots,
+       index = names(incid_plots)
+       ),
+  function(a, b, c, d, index) {
+    p1 <- plot_grid(
+      a, c, nrow = 2, rel_heights = c(1, 1),
+      align = "hv", axis = "l"##, label_x = 0.1, label_size = 12, labels = c("A", "C"),
+    )
+    save_multiple(p1, glue("figures/{index}_a_c"))
+
+    p2 <- plot_grid(b)
+    ##save_multiple(p2, )
+    ggsave(
+      glue("figures/{index}_b.png"), p2, dpi = 500
+    )
+
+    p3 <- plot_grid(d)
+    ggsave(
+      glue("figures/{index}_d.png"), p3, dpi = 500
+    )
+
+  }
+)
+

@@ -111,7 +111,6 @@ sd_summary <- map(
 
 
 
-
 classified <- readRDS("classification_by_scenario.rds")
 classified <- affix_label(classified)
 classified[["same_si"]] <- classified[["vary_si"]]
@@ -130,7 +129,8 @@ classified <- map(
 )
 
 
-## Same figures for SD
+
+
 infiles <- list(
   vary_si = "vary_si_eps_summary_by_all_vars.rds",
   wrong_si = "wrong_si_eps_summary_by_all_vars.rds",

@@ -22,10 +22,11 @@ multiplier_label <- function(val, ref) {
   paste("X", round(val/ref, 1))
 }
 
-theme_manuscript <- function(base_size = 16) {
+theme_manuscript <- function(base_size = 14) {
   theme_classic() %+replace%
     theme(
       text = element_text(size = base_size),
+##      axis.title = element_text(size = 12),
       ##axis.line = element_line(size = 1.05),
       ##strip.background = element_rect(size = 1.05),
       legend.position = "top",
