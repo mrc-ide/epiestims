@@ -15,7 +15,8 @@ affix_label <- function(x) {
    x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
  )
  x[["vary_offs"]]$label <- factor( x[["vary_offs"]]$kappa)
- x[["underrep"]]$label <- factor(x[["underrep"]]$p_report)
+ ## To distinguish it from vary offspring
+ x[["underrep"]]$label <- paste0("p", x[["underrep"]]$p_report)
  x
 }
 
@@ -31,7 +32,10 @@ values <- c(
   "Moderate" = "#ffa500",
   "Low" = "#005900",
   "High" = "#b20000",
-  "Baseline" = "#222222"
+  "Baseline" = "#222222",
+  "0.5" = "#ffa500",
+  "0.8" = "#005900",
+  "0.2" = "#b20000"
 )
 
 ## We have run more scenarios than we want to show in the
@@ -42,7 +46,7 @@ ms_vars <- list(
   vary_cv = c("X 0.5", "X 1.5", "X 2"),
   wrong_cv = c("X 0.5", "X 1.5", "X 2"),
   vary_offs = c("0.1", "0.5", "1"),
-  underrep = c("0.2", "0.5", "0.8"),
+  underrep = c("p0.2", "p0.5", "p0.8"),
   same_si = "X 1"
 )
 
@@ -158,6 +162,7 @@ eps_summary <- map(
 
 scenarios <- names(eps_summary)
 names(scenarios) <- scenarios
+
 together <- map(
   scenarios, function(x) {
     x1 <- error_summary[[x]]
@@ -185,11 +190,21 @@ iwalk(
   together, function(x, scenario) {
     x <- split(x, list(x$tmax, x$rt_ref))
     iwalk(x, function(y, index) {
-      y$scenario_type <- factor(
-        y$scenario_type,
-        levels = c("Baseline", "Low", "Moderate", "High"),
-        ordered = TRUE
-      )
+      if (scenario == "underrep") {
+        y$scenario_type <- factor(
+          y$scenario_type,
+          levels = c("0.2", "0.5", "0.8"),
+          ordered = TRUE
+        )
+        breaks <- c("0.2", "0.5", "0.8")
+      } else {
+        y$scenario_type <- factor(
+          y$scenario_type,
+          levels = c("Baseline", "Low", "Moderate", "High"),
+          ordered = TRUE
+        )
+        breaks <- c("Low", "Moderate", "High")
+      }
       y$true_eps <- factor(
         y$true_eps, levels = unique(y$true_eps)
       )
@@ -199,12 +214,18 @@ iwalk(
                              "Classification"),
         ordered = TRUE
       )
+
+      ## Construct dummy data.frame to control facet scales
       ## Coverage probability to go from 0 to 1
+      min_bias <- ifelse(scenario == "wrong_si", -2.5, -1.5)
+      max_bias <- ifelse(scenario == "wrong_si", 17.5, 1.5)
+      min_sd <- -0.1
+      max_sd <- ifelse(scenario == "wrong_si", 1, 0.75)
       dummy <- data.frame(
-        metric = c("Bias", "Coverage probability"),
+        metric = c("Bias", "Coverage probability", "Uncertainty"),
         ##true_eps = levels(y$true_eps),
-        low = 0,
-        high = 1
+        low = c(min_bias, 0, min_sd),
+        high = c(max_bias, 1, max_sd)
       )
       dummy2 <- data.frame(
         metric = c("Bias", "Coverage probability"),
@@ -241,12 +262,17 @@ iwalk(
         theme_manuscript() +
         scale_color_manual(
           values = values,
-          breaks = c("Low", "Moderate", "High")
-        ) + labs(color = "Scenario Type") +
+          breaks = breaks
+        ) +
         xlab("Transmission Advantage") +
         ylab("")
       if (scenario == "same_si") {
         p <- p + theme(legend.position = "none")
+      }
+      if (scenario == "underrep") {
+        p <- p + labs(color = "Reporting probability")
+      } else {
+        p <- p + labs(color = "Scenario Type")
       }
       save_multiple(
         p, glue("figures/{scenario}_{index}")

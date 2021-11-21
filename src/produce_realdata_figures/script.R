@@ -156,11 +156,12 @@ incid_plots <- map2(
       coord_cartesian(clip = "off") +
       ylab("Daily incidence") +
       xlab("") +
-      theme_manuscript() +
+  theme_manuscript() +
       theme(
         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
         ##Axis.title.x = element_blank(),
         legend.title = element_blank(),
+        ##legend.position = c(0.2, 0.85),
         ## We don't actually want to show the right y-axis
         axis.line.y.right = element_line(color = "white"),
         axis.title.y.right = element_text(color = "white"),
@@ -282,7 +283,7 @@ regional_plots <- pmap(
       ) +
       geom_point(
         aes(region, `50%`, shape = shape, colour = colour),
-        size = 4, fill = z, stroke = 2
+        size = 2, fill = z, stroke = 2
       ) +
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red",
@@ -307,7 +308,7 @@ regional_plots <- pmap(
       ##coord_flip() +
       theme_manuscript() +
       theme(
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        ##axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         axis.title.x = element_blank()
       )
   }
@@ -393,6 +394,7 @@ twodbin <-pmap(
     yname <- glue(
       "Reproduction number for {to_title_case(name[2])}"
     )
+    if (name[2] == "beta/gamma") yname <- "Reproduction number for Beta/Gamma"
     message(yname)
     maxrt <- ceiling(max(x, na.rm = TRUE))
     x2 <- seq(0, maxrt, length.out = 10)
@@ -445,7 +447,7 @@ iwalk(
     save_multiple(
       p, glue("figures/{name}_2dbin")
     )
-    knitr::plot_crop(glue("figures/{name}_2dbin.png"))
+    ##knitr::plot_crop(glue("figures/{name}_2dbin.png"))
   }
 )
 
@@ -455,58 +457,58 @@ iwalk(
 ###### Panel D. Estimates over time
 ################################################
 
-plots_over_time <- map2(
-  eps_over_time, xaxis_breaks, function(x, xmin) {
-    x$date <- as.Date(x$date)
-    ggplot(x) +
-      geom_point(aes(date, `50%`), size = 2) +
-      geom_linerange(
-        aes(date, ymin = `2.5%`, ymax = `97.5%`),
-        size = 1.1
-      ) +
-      geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-      scale_y_continuous(
-        limits = c(0.5, 2),
-        breaks = seq(0.5, 2, by = 0.5)
-      ) +
-      scale_x_date(
-        breaks = xmin,
-        ## date_breaks = date_breaks,
-        date_labels = date_labels
-        ## limits = c(as.Date(xmin), NA)
-      ) +
-      ylab("Effective transmission advantage") +
-      xlab("Estimation using data reported up to") +
-      theme_manuscript() +
-      theme(
-        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
-        ##axis.title.x = element_blank(),
-        legend.title = element_blank()
-      )
-  }
-)
+## plots_over_time <- map2(
+##   eps_over_time, xaxis_breaks, function(x, xmin) {
+##     x$date <- as.Date(x$date)
+##     ggplot(x) +
+##       geom_point(aes(date, `50%`), size = 2) +
+##       geom_linerange(
+##         aes(date, ymin = `2.5%`, ymax = `97.5%`),
+##         size = 1.1
+##       ) +
+##       geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+##       scale_y_continuous(
+##         limits = c(0.5, 2),
+##         breaks = seq(0.5, 2, by = 0.5)
+##       ) +
+##       scale_x_date(
+##         breaks = xmin,
+##         ## date_breaks = date_breaks,
+##         date_labels = date_labels
+##         ## limits = c(as.Date(xmin), NA)
+##       ) +
+##       ylab("Effective transmission advantage") +
+##       xlab("Estimation using data reported up to") +
+##       theme_manuscript() +
+##       theme(
+##         axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+##         ##axis.title.x = element_blank(),
+##         legend.title = element_blank()
+##       )
+##   }
+## )
 
-iwalk(
-  plots_over_time, function(p, name) {
-    if (name == "uk_alpha_wild") {
-      p <- p +
-        geom_point(
-          data = volzetal, aes(date, y),
-          size = 4,
-          position = position_nudge(x = 2)
-        ) +
-        geom_linerange(
-          data = volzetal,
-          aes(date, ymin = ymin, ymax = ymax),
-          size = 1.1,
-          position = position_nudge(x = 2)
-      )
-    }
-    save_multiple(
-      p, glue("figures/{name}_over_time")
-    )
-  }
-)
+## iwalk(
+##   plots_over_time, function(p, name) {
+##     if (name == "uk_alpha_wild") {
+##       p <- p +
+##         geom_point(
+##           data = volzetal, aes(date, y),
+##           size = 4,
+##           position = position_nudge(x = 2)
+##         ) +
+##         geom_linerange(
+##           data = volzetal,
+##           aes(date, ymin = ymin, ymax = ymax),
+##           size = 1.1,
+##           position = position_nudge(x = 2)
+##       )
+##     }
+##     save_multiple(
+##       p, glue("figures/{name}_over_time")
+##     )
+##   }
+## )
 
 ##################################################
 ###### Panel E. Estimates with proportion of variant
@@ -541,96 +543,96 @@ both_together <- pmap(
   }
 )
 
-eps_with_prop <- map2(
-    both_together,
-    c("Proportion of Alpha",
-      "Proportion of Alpha",
-      "Proportion of Delta",
-      "Proportion of Beta/Gamma"
-      ), function(x, xlabel) {
-        message(xlabel)
-        ##x <- x[x$prior == "Default priors", ]
-        p <- ggplot(x) +
-          geom_point(
-            aes(proportion, `50%`), size = 2
-          ) +
-          geom_linerange(
-            aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
-            size = 1.1
-          ) +
-          geom_hline(
-            yintercept = 1, linetype = "dashed", color = "red"
-          ) +
-        expand_limits(y = 1) +
-        scale_x_continuous(labels = mypercent) +
-        ylab("Effective transmission advantage") +
-        xlab(xlabel) +
-        theme_manuscript() +
-        theme(
-          axis.text.x = element_text(angle = 0),
-          legend.title = element_blank()
-        )
-    p
-  }
-)
+## eps_with_prop <- map2(
+##     both_together,
+##     c("Proportion of Alpha",
+##       "Proportion of Alpha",
+##       "Proportion of Delta",
+##       "Proportion of Beta/Gamma"
+##       ), function(x, xlabel) {
+##         message(xlabel)
+##         ##x <- x[x$prior == "Default priors", ]
+##         p <- ggplot(x) +
+##           geom_point(
+##             aes(proportion, `50%`), size = 2
+##           ) +
+##           geom_linerange(
+##             aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
+##             size = 1.1
+##           ) +
+##           geom_hline(
+##             yintercept = 1, linetype = "dashed", color = "red"
+##           ) +
+##         expand_limits(y = 1) +
+##         scale_x_continuous(labels = mypercent) +
+##         ylab("Effective transmission advantage") +
+##         xlab(xlabel) +
+##         theme_manuscript() +
+##         theme(
+##           axis.text.x = element_text(angle = 0),
+##           legend.title = element_blank()
+##         )
+##     p
+##   }
+## )
 
-iwalk(
-  eps_with_prop, function(p, name) {
-    save_multiple(
-      p, glue("figures/{name}_over_proportion")
-    )
-  }
-)
+## iwalk(
+##   eps_with_prop, function(p, name) {
+##     save_multiple(
+##       p, glue("figures/{name}_over_proportion")
+##     )
+##   }
+## )
 
 ## Somewhat tricky to see the different prior is
 ## making
-eps_with_prop <- map2(
-    both_together,
-    c("Proportion of Alpha",
-      "Proportion of Alpha",
-      "Proportion of Delta",
-      "Proportion of Beta/Gamma"
-      ), function(x, xlabel) {
-        message(xlabel)
-        xmax <- min(c(max(x$proportion)/2, 0.1))
-        ##x$proportion <- log(x$proportion)
-        p <- ggplot(x) +
-      geom_ribbon(
-        aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
-        alpha = 0.2
-      ) +
-      geom_line(
-        aes(proportion, `50%`), size = 1.1
-      ) +
-      geom_hline(yintercept = 1, linetype = "dashed", color = "red", size = 1.2) +
-      expand_limits(y = 1) +
-      scale_x_continuous(labels = mypercent) +
-      ## scale_color_manual(
-      ##   values = c(
-      ##     `Default prior` = "#0f0e0e",
-      ##     `Informative prior` = "#CC79A7"
-      ##   ),
-      ##   aesthetics = c("col", "fill")
-      ## ) +
-      ylab("Effective Transmission Advantage") +
-      xlab(xlabel) +
-      theme_manuscript() +
-      theme(
-        axis.text.x = element_text(angle = 0),
-        legend.title = element_blank()
-      )
+## eps_with_prop <- map2(
+##     both_together,
+##     c("Proportion of Alpha",
+##       "Proportion of Alpha",
+##       "Proportion of Delta",
+##       "Proportion of Beta/Gamma"
+##       ), function(x, xlabel) {
+##         message(xlabel)
+##         xmax <- min(c(max(x$proportion)/2, 0.1))
+##         ##x$proportion <- log(x$proportion)
+##         p <- ggplot(x) +
+##       geom_ribbon(
+##         aes(proportion, ymin = `2.5%`, ymax = `97.5%`),
+##         alpha = 0.2
+##       ) +
+##       geom_line(
+##         aes(proportion, `50%`), size = 1.1
+##       ) +
+##       geom_hline(yintercept = 1, linetype = "dashed", color = "red", size = 1.2) +
+##       expand_limits(y = 1) +
+##       scale_x_continuous(labels = mypercent) +
+##       ## scale_color_manual(
+##       ##   values = c(
+##       ##     `Default prior` = "#0f0e0e",
+##       ##     `Informative prior` = "#CC79A7"
+##       ##   ),
+##       ##   aesthetics = c("col", "fill")
+##       ## ) +
+##       ylab("Effective Transmission Advantage") +
+##       xlab(xlabel) +
+##       theme_manuscript() +
+##       theme(
+##         axis.text.x = element_text(angle = 0),
+##         legend.title = element_blank()
+##       )
 
-    p
-  }
-)
+##     p
+##   }
+## )
 
-iwalk(
-  eps_with_prop, function(p, name) {
-    save_multiple(
-      p, glue("figures/{name}_over_proportion_SI")
-    )
-  }
-)
+## iwalk(
+##   eps_with_prop, function(p, name) {
+##     save_multiple(
+##       p, glue("figures/{name}_over_proportion_SI")
+##     )
+##   }
+## )
 ### Putting everthing together
 ## p1 <- incid_plots[[1]]
 ## p2 <- twodbin[[1]]
@@ -668,7 +670,7 @@ plots2axis <- pmap(
     message("Coeff = ", coeff)
     ggplot(z, aes(x = date)) +
       geom_point(
-        aes(y = `50%`), colour = col, size = 4
+        aes(y = `50%`), colour = col, size = 3
       ) +
       geom_linerange(
         aes(ymin = `2.5%`, ymax = `97.5%`),
@@ -792,55 +794,64 @@ si_tables <- pmap(
 )
 
 
-iwalk(
-  si_tables, function(x, i) {
-    out <- ggtexttable(
-      x, rows = NULL, cols = colnames(x),
-      theme = ttheme(base_size = 8,
-                     padding = unit(c(5, 4), "mm"),
-                     tbody.style = tbody_style(fill = rep("#ffffff", 2),
-                                               hjust = 0, x = 0.1))
+## iwalk(
+##   si_tables, function(x, i) {
+##     out <- ggtexttable(
+##       x, rows = NULL, cols = colnames(x),
+##       theme = ttheme(base_size = 8,
+##                      padding = unit(c(5, 4), "mm"),
+##                      tbody.style = tbody_style(fill = rep("#ffffff", 2),
+##                                                hjust = 0, x = 0.1))
 
-    )
-    out <- out %>%
-      tab_add_hline(at.row = c(1, 2), row.side = "top", linewidth = 3, linetype = 1) %>%
-      tab_add_hline(at.row = nrow(x) + 1, row.side = "bottom", linewidth = 3, linetype = 1) %>%
-      ## Line after "All"
-      tab_add_hline(at.row = 3, row.side = "top", linewidth = 2, linetype = 1) %>%
-      ## Line after end of regions, before quarters
-      tab_add_hline(at.row = nrow(x) - 2, row.side = "top", linewidth = 2, linetype = 1)
+##     )
+##     out <- out %>%
+##       tab_add_hline(at.row = c(1, 2), row.side = "top", linewidth = 3, linetype = 1) %>%
+##       tab_add_hline(at.row = nrow(x) + 1, row.side = "bottom", linewidth = 3, linetype = 1) %>%
+##       ## Line after "All"
+##       tab_add_hline(at.row = 3, row.side = "top", linewidth = 2, linetype = 1) %>%
+##       ## Line after end of regions, before quarters
+##       tab_add_hline(at.row = nrow(x) - 2, row.side = "top", linewidth = 2, linetype = 1)
 
-    save_multiple(out, glue("figures/{i}_si_table"))
-  }
-)
+##     save_multiple(out, glue("figures/{i}_si_table"))
+##   }
+## )
 
 
 ###########################
-pwalk(
-  list(a = incid_plots,
-       b = twodbin,
-       c = plots2axis,
-       d = regional_plots,
-       index = names(incid_plots)
-       ),
-  function(a, b, c, d, index) {
-    p1 <- plot_grid(
-      a, c, nrow = 2, rel_heights = c(1, 1),
-      align = "hv", axis = "l"##, label_x = 0.1, label_size = 12, labels = c("A", "C"),
-    )
-    save_multiple(p1, glue("figures/{index}_a_c"))
+## pwalk(
+##   list(a = incid_plots,
+##        b = twodbin,
+##        c = plots2axis,
+##        d = regional_plots,
+##        index = names(incid_plots)
+##        ),
+##   function(a, b, c, d, index) {
+##     p1 <- plot_grid(
+##       a, c, nrow = 2, rel_heights = c(1, 1),
+##       align = "hv", axis = "l"##, label_x = 0.1, label_size = 12, labels = c("A", "C"),
+##     )
+##     save_multiple(p1, glue("figures/{index}_a_c"))
 
-    p2 <- plot_grid(b)
-    ##save_multiple(p2, )
-    ggsave(
-      glue("figures/{index}_b.png"), p2, dpi = 500
-    )
+##     p1 <- plot_grid(a)
+##     ggsave(
+##       glue("figures/{index}_a.png"), p1, width = 10, height = 5, unit = "cm"
+##     )
 
-    p3 <- plot_grid(d)
-    ggsave(
-      glue("figures/{index}_d.png"), p3, dpi = 500
-    )
+##     p2 <- plot_grid(b)
+##     ##save_multiple(p2, )
+##     ggsave(
+##       glue("figures/{index}_b.png"), p2, dpi = 500, width = 10, height = 10, unit = "cm"
+##     )
+##     p1 <- plot_grid(c)
+##     ggsave(
+##       glue("figures/{index}_c.png"), p1, width = 10, height = 5, unit = "cm"
+##     )
 
-  }
-)
+##     p3 <- plot_grid(d)
+##     ggsave(
+##       glue("figures/{index}_d.png"), p3, dpi = 500, width = 6, height = 3, unit = "cm"
+##     )
+
+##   }
+## )
 

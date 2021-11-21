@@ -9,9 +9,9 @@ scenario_type_labeller <- function(x) {
     x$label == "0.5" ~ "Moderate",
     x$label == "1" ~ "Low",
     ## Underreporting
-    x$label == "0.2" ~ "High",
-    x$label == "0.5" ~ "Moderate",
-    x$label == "0.8" ~ "Low"
+    x$label == "p0.2" ~ "0.2",
+    x$label == "p0.5" ~ "0.5",
+    x$label == "p0.8" ~ "0.8"
   )
   x
 }
@@ -22,11 +22,11 @@ multiplier_label <- function(val, ref) {
   paste("X", round(val/ref, 1))
 }
 
-theme_manuscript <- function(base_size = 14) {
+theme_manuscript <- function(base_size = 16) {
   theme_classic() %+replace%
     theme(
       text = element_text(size = base_size),
-##      axis.title = element_text(size = 12),
+      ##axis.title = element_text(size = 12),
       ##axis.line = element_line(size = 1.05),
       ##strip.background = element_rect(size = 1.05),
       legend.position = "top",
