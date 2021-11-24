@@ -82,16 +82,23 @@ classification_fig <- function(df) {
 
 panel_fig <- function(joined_data, panel_name) {
   
+  ## Construct dummy data.frame to control facet scales
+  ## Coverage probability to go from 0 to 1
+  min_bias <- -1.5
+  max_bias <- 1.5
+  min_sd <- -0.1
+  max_sd <- 0.75
   dummy <- data.frame(
-    metric = c("Bias", "Coverage probability"),
+    metric = c("Bias", "Coverage probability", "Uncertainty", "Classification"),
     ##true_eps = levels(y$true_eps),
-    low = 0,
-    high = 1
+    low = c(min_bias, 0, min_sd, 0),
+    high = c(max_bias, 1, max_sd, 1)
   )
   dummy2 <- data.frame(
     metric = c("Bias", "Coverage probability"),
     y = c(0, 0.95)
   )
+  
   dummy$metric <- factor(
     dummy$metric, levels = levels(joined_data$metric)
   )
