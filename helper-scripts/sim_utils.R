@@ -298,3 +298,49 @@ simulate_stepwise_incid_wrapper2 <- function(rt_ref_l1, rt_post_step_l1, step_ti
   names(out) <- seq_len(nsims)
   out
 }
+
+# Wrapper for simulating incidence with a changing epsilon
+simulate_varyeps_incid_wrapper <- function(rt_ref, epsilon, si, incid_init,
+                                   n_loc = 1, n_v = 2,
+                                   ndays = 100, nsims = 100,
+                                   p_report = 1, ...) {
+  ## having this as 20 and starting with 1 case of the variant can lead to an infinite loop
+  min_var_cases <- 5
+  ## Calculate reproduction number for variant
+  rt_variant <- epsilon * rt_ref
+  ## Assume reproduction number remains the same
+  ## over the time period
+  ## Make a vector that goes across rows
+  R <- array(NA, dim = c(ndays, n_loc, n_v))
+  R[,,1] <- rep(rt_ref, each = ndays)
+  R[,,2] <- rt_variant
+  out <- rerun(
+    nsims,
+    simulate_incidence(
+      incid_init, n_loc, n_v, ndays, R, si, p_report
+    )
+  )
+  ## total number of cases at the end of the first 10 days
+  ## simulation for the variant.
+  ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
+  out <- out[ncases > min_var_cases]
+  message("# of simulations with more than 5 cases ", length(out))
+  ## At this point out may have less than
+  ## the desired number of simulations
+  success <- length(out)
+  while (success < nsims) {
+    message("More sims needed ", nsims - success)
+    more <- rerun(
+      nsims - success,
+      simulate_incidence(
+        incid_init, n_loc, n_v, ndays, R, si, p_report, ...
+      )
+    )
+    out <- append(out, more)
+    ncases <- map_dbl(out, function(x) sum(x[1:20, , 2]))
+    out <- out[ncases > min_var_cases]
+    success <- length(out)
+  }
+  names(out) <- seq_len(nsims)
+  out
+}
