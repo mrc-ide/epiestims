@@ -156,71 +156,71 @@ saveRDS(by_tmax, "eps_summary_by_tmax.rds")
 
 # Error summary
 
-eps_err_summary <- map2(
-  seq_len(nrow(sim_params)),
-  sim_params$epsilon,
-  function(index, epsilon) {
-    infile <- glue("outputs/estimate_joint_{index}.rds")
-    if (!file.exists(infile)) {
-      warning(infile, " not present")
-      return(NULL)
-    }
-    res <- readRDS(infile)
-    message("At ", infile)
-    names(res) <- tmax_all
-    map_dfr(
-      res, function(res_tmax) {
-        map_dfr(
-          res_tmax, function(res_sim) {
-            summarise_epsilon_error(res_sim[[1]], epsilon)
-          }, .id = "sim"
-        )
-      }, .id = "tmax"
-    )
-  }
-)
-
-saveRDS(eps_err_summary, "eps_err_summary.rds")
-
-
-x <- as.list(sim_params)
-x <- append(x, list(summary = eps_err_summary))
-
-
-eps_err_summary_df <- pmap_dfr(
-  x, function(rt_ref, epsilon_init, epsilon_final, epsilon_change,
-              si_mu_variant, si_std_variant, summary) {
-    summary$rt_ref <- rt_ref
-    # summary$epsilon_init <- epsilon_init
-    # summary$epsilon_final <- epsilon_final
-    # summary$true_eps <- true_eps$epsilon[true_eps$time == summary$tmax]
-    summary$si_mu_variant <- si_mu_variant
-    summary
-  }
-)
-
-eps_err_summary_df <- left_join(eps_err_summary_df, true_eps,
-                                by = c("tmax" = "time"))
-
-eps_err_summary_df <- na.omit(eps_err_summary_df)
-
-saveRDS(eps_err_summary_df, "err_summary_df.rds")
-
-
-# summarise the mean here (mu) but can also choose to summarise median (`50%`)
-x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
-  summarise(
-    low = mean(mu) - sd(mu), med = mean(mu),
-    high = mean(mu) + sd(mu)
-  )
-
-saveRDS(x, "err_summary_by_all_vars.rds")
-
-
-x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
-  summarise(
-    low = mean(sd) - sd(sd), med = mean(sd),
-    high = mean(sd) + sd(sd)
-  )
-
-saveRDS(x, "err_sd_summary_by_all_vars.rds")
+# eps_err_summary <- map2(
+#   seq_len(nrow(sim_params)),
+#   sim_params$epsilon,
+#   function(index, epsilon) {
+#     infile <- glue("outputs/estimate_joint_{index}.rds")
+#     if (!file.exists(infile)) {
+#       warning(infile, " not present")
+#       return(NULL)
+#     }
+#     res <- readRDS(infile)
+#     message("At ", infile)
+#     names(res) <- tmax_all
+#     map_dfr(
+#       res, function(res_tmax) {
+#         map_dfr(
+#           res_tmax, function(res_sim) {
+#             summarise_epsilon_error(res_sim[[1]], epsilon)
+#           }, .id = "sim"
+#         )
+#       }, .id = "tmax"
+#     )
+#   }
+# )
+# 
+# saveRDS(eps_err_summary, "eps_err_summary.rds")
+# 
+# 
+# x <- as.list(sim_params)
+# x <- append(x, list(summary = eps_err_summary))
+# 
+# 
+# eps_err_summary_df <- pmap_dfr(
+#   x, function(rt_ref, epsilon_init, epsilon_final, epsilon_change,
+#               si_mu_variant, si_std_variant, summary) {
+#     summary$rt_ref <- rt_ref
+#     # summary$epsilon_init <- epsilon_init
+#     # summary$epsilon_final <- epsilon_final
+#     # summary$true_eps <- true_eps$epsilon[true_eps$time == summary$tmax]
+#     summary$si_mu_variant <- si_mu_variant
+#     summary
+#   }
+# )
+# 
+# eps_err_summary_df <- left_join(eps_err_summary_df, true_eps,
+#                                 by = c("tmax" = "time"))
+# 
+# eps_err_summary_df <- na.omit(eps_err_summary_df)
+# 
+# saveRDS(eps_err_summary_df, "err_summary_df.rds")
+# 
+# 
+# # summarise the mean here (mu) but can also choose to summarise median (`50%`)
+# x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
+#   summarise(
+#     low = mean(mu) - sd(mu), med = mean(mu),
+#     high = mean(mu) + sd(mu)
+#   )
+# 
+# saveRDS(x, "err_summary_by_all_vars.rds")
+# 
+# 
+# x <- group_by(eps_err_summary_df, rt_ref, rt_post_step, true_eps, tmax) %>%
+#   summarise(
+#     low = mean(sd) - sd(sd), med = mean(sd),
+#     high = mean(sd) + sd(sd)
+#   )
+# 
+# saveRDS(x, "err_sd_summary_by_all_vars.rds")
