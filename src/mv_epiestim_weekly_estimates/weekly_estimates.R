@@ -7,6 +7,13 @@ infiles <- list(
 )
 
 incidence <- map(infiles, readRDS)
+## Start analysis at a later time point for checking.
+incidence <- modify2(
+  incidence, as.Date(c("2021-03-23", "2020-10-27", "2020-10-27")),
+  function(x, y) {
+    map(x, function(z) z[z$date >= y, ])
+  }
+)
 
 incid_array <- map(
   incidence, function(x) {
