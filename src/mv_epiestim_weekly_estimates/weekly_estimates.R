@@ -28,7 +28,29 @@ incid_array <- map(
     }
   incid
 })
+
 saveRDS(incid_array, "incidence_array.rds")
+
+inftvty <- map2(
+  incid_array, incidence, function(x, df) {
+    nlocation <- dim(x)[2]
+    nvariant <- dim(x)[3]
+    si <- epi_params$SI
+    map_dfr(
+      1:nlocation, function(loc) {
+        map_dfr(1:nvariant, function(var) {
+          incid <- x[, loc, var, drop = TRUE]
+          data.frame(
+            inftvty = overall_infectivity(incid, si),
+            location = colnames(df[[var]])[1 + loc],
+            variant = names(df)[var],
+            date = df[[var]][["date"]]
+          )
+        })
+      })
+  }
+)
+
 
 estimates <- map2(
   incid_array, incidence, function(x, df) {
