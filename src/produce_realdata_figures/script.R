@@ -335,7 +335,7 @@ epiestim_rt <- map(infiles, readRDS)
 ## variant outputs
 select_variant <- list(
   c("wild", "alpha"), c("wild", "alpha"),
-  c("alpha", "delta"), c("alpha", "beta/gamma")
+  c("alpha", "delta"), c("wild", "beta/gamma")
 )
 names(select_variant) <- names(epiestim_rt)
 ## pooled estimates from region-weeks included
