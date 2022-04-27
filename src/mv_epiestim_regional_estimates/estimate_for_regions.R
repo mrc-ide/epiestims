@@ -136,27 +136,32 @@ saveRDS(eps_qntls, "epsilon_qntls_time_periods.rds")
 
 
 eps_over_time <- map2(
-  incid_array, periods, function(incid, period) {
-    t_min <- period$intervals[-1] ## Remove the first element
-    t_min <- head(t_min, -1)
-    t_max <- period$intervals[-c(1, 2)]
-
-    out <- map2(
-      t_min, t_max, function(tmin, tmax) {
-        message("tmin = ", tmin)
-        message("tmax = ", tmax)
-        message("nrow(incid) = ", nrow(incid))
-        estimate_advantage(
-          incid = incid,
-          si_distr = cbind_rep(x = epi_params$SI, n = dim(incid)[3]),
-          mcmc_control = mcmc_controls,
-          priors = priors,
-          t_min = as.integer(tmin),
-          t_max = as.integer(tmax)
+  incid_array, incidence, function(x, df) {
+    locations <- names(df[[1]])[-1]
+    t_max <- seq(
+      from = t_min + 7,
+      to = dim(x)[1], by = 7
+    )
+    out <- imap(
+      locations,
+      function(location, index) {
+        res <- map(t_max, function(tmax) {
+          message("Location ", location, " tmax = ", tmax)
+          estimate_advantage(
+            incid = x[, index, , drop = FALSE],
+            si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
+            mcmc_control = mcmc_controls,
+            priors = priors,
+            t_min = as.integer(t_min),
+            t_max = as.integer(tmax)
+          )
+        }
         )
+        names(res) <- t_max
+        res
       }
     )
-    names(out) <- paste("Quarter", 1:4)
+    names(out) <- locations
     out
  }
 )
