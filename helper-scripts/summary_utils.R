@@ -48,13 +48,16 @@ summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
 summarise_vec <- function(vec, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
   vec_est <- quantile(vec, probs = probs, na.rm = na.rm)
   ## Tall. make wide
-  eps_df <- tibble::rownames_to_column(data.frame(vec_est, check.names = FALSE))
-  eps_df <- tidyr::spread(eps_df, rowname, vec_est)
+  eps_df <- rownames_to_column(data.frame(vec_est, check.names = FALSE))
+  eps_df <- spread(eps_df, rowname, vec_est)
   eps_df$mu <- mean(vec, na.rm = na.rm)
   eps_df$sd <- sd(vec, na.rm = na.rm)
   eps_df
 }
-
+## This function assumes a single epsilon being returned.
+## To fix this, we need to change summarise_vec to use apply
+## Not fixing this in case it breaks something else. Do not use this
+## function if you have more than one epsilon.
 summarise_epsilon <- function(fit, ...) {
   eps_df <- summarise_vec(fit$epsilon)
   eps_df$param <- "epsilon"

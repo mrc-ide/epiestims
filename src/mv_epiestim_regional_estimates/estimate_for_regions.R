@@ -1,3 +1,4 @@
+## orderly::orderly_develop_start(use_draft = "newer")
 source("mv_epiestim_params.R")
 epi_params <- readRDS('Epi_param.rds')
 
@@ -31,6 +32,7 @@ estimates <- map2(
     out
   }
 )
+
 saveRDS(estimates, "epsilon_estimates_per_region.rds")
 
 eps_qntls <- map2(
@@ -42,15 +44,7 @@ eps_qntls <- map2(
   ),
   function(region, variants) {
     map_dfr(region, function(x) {
-      out <- apply(
-        x[["epsilon"]], 1, quantile,
-        prob = c(0.025, 0.5, 0.975)
-      )
-      out <- data.frame(out)
-      names(out) <- variants
-      out <- tibble::rownames_to_column(out, "qntl")
-      out <- tidyr::gather(out, variant, epsilon, -qntl)
-      tidyr::spread(out, qntl, epsilon)
+      summarise_epsilon(x, variants)
     }, .id = "region")
   })
 
@@ -80,15 +74,7 @@ eps_qntls <- map2(
     uk_delta_alpha = c("delta_vs_alpha")
   ),
   function(x, variants) {
-    out <- apply(
-      x[["epsilon"]], 1, quantile,
-      prob = c(0.025, 0.5, 0.975)
-    )
-    out <- data.frame(out)
-    names(out) <- variants
-    out <- tibble::rownames_to_column(out, "qntl")
-    out <- tidyr::gather(out, variant, epsilon, -qntl)
-    spread(out, qntl, epsilon)
+    summarise_epsilon(x, variants)
   })
 
 
@@ -105,6 +91,9 @@ eps_quarte <- map2(
 
     out <- map2(
       t_min, t_max, function(tmin, tmax) {
+        message("tmin = ", tmin)
+        message("tmax = ", tmax)
+        message("nrow(incid) = ", nrow(incid))
         estimate_advantage(
           incid = incid,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(incid)[3]),
@@ -145,3 +134,29 @@ eps_qntls <- map2(
 
 saveRDS(eps_qntls, "epsilon_qntls_time_periods.rds")
 
+
+eps_over_time <- map2(
+  incid_array, periods, function(incid, period) {
+    t_min <- period$intervals[-1] ## Remove the first element
+    t_min <- head(t_min, -1)
+    t_max <- period$intervals[-c(1, 2)]
+
+    out <- map2(
+      t_min, t_max, function(tmin, tmax) {
+        message("tmin = ", tmin)
+        message("tmax = ", tmax)
+        message("nrow(incid) = ", nrow(incid))
+        estimate_advantage(
+          incid = incid,
+          si_distr = cbind_rep(x = epi_params$SI, n = dim(incid)[3]),
+          mcmc_control = mcmc_controls,
+          priors = priors,
+          t_min = as.integer(tmin),
+          t_max = as.integer(tmax)
+        )
+      }
+    )
+    names(out) <- paste("Quarter", 1:4)
+    out
+ }
+)
