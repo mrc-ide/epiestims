@@ -1,7 +1,7 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("mv_epiestim_params.R")
 epi_params <- readRDS('Epi_param.rds')
-
+## Use half the reported cases to estimate.
 infiles <- list(
   french = 'I_fr.rds', uk_alpha_wild = 'I_UK1.rds',
   uk_delta_alpha = 'I_UK2.rds'
@@ -24,46 +24,15 @@ incid_array <- map(
     incid <- array(
       NA, dim = c(time, nlocation, nvariant)
     )
-    for(i in 1:nvariant) {
-      incid[,,i] <- as.matrix(x[[i]][, -1])
+    incid[,,1] <- as.matrix(x[[1]][, -1])
+    for(i in 2:nvariant) {
+      incid[,,i] <- 0.5 * as.matrix(x[[i]][, -1])
     }
   incid
 })
 
 saveRDS(incid_array, "incidence_array.rds")
 
-inftvty <- map2(
-  incid_array, incidence, function(x, df) {
-    nlocation <- dim(x)[2]
-    nvariant <- dim(x)[3]
-    si <- epi_params$SI
-    map_dfr(
-      1:nlocation, function(loc) {
-        map_dfr(1:nvariant, function(var) {
-          incid <- x[, loc, var, drop = TRUE]
-          data.frame(
-            inftvty = overall_infectivity(incid, si),
-            location = colnames(df[[var]])[1 + loc],
-            variant = names(df)[var],
-            date = df[[var]][["date"]]
-          )
-        })
-      })
-  }
-)
-
-## x <- inftvty[[2]]
-## x$date <- as.Date(x$date)
-## p <- ggplot(x, aes(date, inftvty, col = variant)) +
-##   geom_line() +
-##   facet_wrap(~location, scales = "free_y") +
-##   theme_minimal() +
-##   theme(
-##     legend.position = "top",
-##     legend.title = element_blank(),
-##     axis.title.x = element_blank()
-##   ) +
-##   ylab("Overall Infectivity")
 
 
 estimates <- map2(
