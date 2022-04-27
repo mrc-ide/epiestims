@@ -165,3 +165,40 @@ eps_over_time <- map2(
     out
  }
 )
+
+eps_over_time_qntls <- map2(
+  eps_over_time,   list(
+    french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
+    uk_alpha_wild = c("alpha_vs_wild"),
+    uk_delta_alpha = c("delta_vs_alpha")
+    ), function(x, variants) {
+    map_dfr(x, function(y) {
+      map_dfr(
+        y, ~ summarise_epsilon(., variants),
+        .id = "tmax"
+      )
+    }, .id = "location")
+  }
+)
+
+x <- eps_over_time_qntls[[2]]
+x$tmax <- as.integer(x$tmax)
+
+ggplot(x) +
+  geom_point(
+    aes(x = tmax, y = `50%`, col = location),
+    position = position_dodge(
+      width = 4
+    )
+  ) +
+  geom_linerange(
+    aes(x = tmax, ymin = `2.5%`, ymax = `97.5%`, col = location),
+    position = position_dodge(width = 4)
+  ) +
+  geom_hline(
+    yintercept = 1, linetype = "dashed", color = "red"
+  ) +
+  ylab("Effective Transmission Advantage") +
+  xlab("tmax") +
+  theme_minimal() +
+  theme(legend.position = "top", legend.title = element_blank())
