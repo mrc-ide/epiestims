@@ -18,7 +18,7 @@ estimates <- map2(
     out <- imap(
       locations, function(location, index) {
         message("Location ", location)
-        estimate_joint(
+        estimate_advantage(
           incid = x[, index, , drop = FALSE],
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
@@ -61,7 +61,7 @@ saveRDS(eps_qntls, "epsilon_qntls_per_region.rds")
 ## for easy compilation
 all_regions <- map(
   incid_array, function(x) {
-    estimate_joint(
+    estimate_advantage(
       incid = x,
       si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
       mcmc_control = mcmc_controls,
@@ -105,7 +105,7 @@ eps_quarte <- map2(
 
     out <- map2(
       t_min, t_max, function(tmin, tmax) {
-        estimate_joint(
+        estimate_advantage(
           incid = incid,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(incid)[3]),
           mcmc_control = mcmc_controls,

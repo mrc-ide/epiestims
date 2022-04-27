@@ -75,12 +75,12 @@ estimates <- map2(
     out <- map(
       t_max, function(tmax) {
         message("t_max = ", tmax)
-        estimate_joint(
+        estimate_advantage(
           incid = x,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
           priors = priors,
-          t_min = t_min,
+          t_min = as.integer(tmax - 6), # t_min,
           t_max = as.integer(tmax)
         )
     })
