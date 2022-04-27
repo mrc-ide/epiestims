@@ -9,6 +9,7 @@ packages:
 - epitrix
 - glue
 - purrr
+- tibble
 - tidyr
 
 artefacts:
@@ -19,7 +20,9 @@ artefacts:
       - epsilon_estimates_over_time.rds
       - epsilon_qntls_over_time.rds      
       - cuml_incid_all_variants.rds
-      - epsilon_estimates_with_variant_proportion.rds      
+      - epsilon_estimates_with_variant_proportion.rds
+      - nonoverlapping_epsilon_qntls.rds
+      - nonoverlapping_epsilon_estimates.rds
       
 depends:
   - clean_french_england_data:

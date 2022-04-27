@@ -66,7 +66,7 @@ inftvty <- map2(
 ##   ylab("Overall Infectivity")
 
 
-estimates <- map2(
+nonovl_estimates <- map2(
   incid_array, incidence, function(x, df) {
     t_max <- seq(
       from = t_min + 7,
@@ -89,6 +89,34 @@ estimates <- map2(
   }
 )
 
+saveRDS(
+  nonovl_estimates,
+  "nonoverlapping_epsilon_estimates.rds"
+)
+
+estimates <- map2(
+  incid_array, incidence, function(x, df) {
+    t_max <- seq(
+      from = t_min + 7,
+      to = dim(x)[1], by = 7
+    )
+    out <- map(
+      t_max, function(tmax) {
+        message("t_max = ", tmax)
+        estimate_advantage(
+          incid = x,
+          si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
+          mcmc_control = mcmc_controls,
+          priors = priors,
+          t_min = as.integer(t_min),
+          t_max = as.integer(tmax)
+        )
+    })
+    names(out) <- df[[1]][["date"]][t_max]
+    out
+  }
+)
+
 saveRDS(estimates, "epsilon_estimates_over_time.rds")
 
 eps_estimates <- map2(
@@ -98,21 +126,46 @@ eps_estimates <- map2(
     uk_alpha_wild = c("alpha_vs_wild"),
     uk_delta_alpha = c("delta_vs_alpha")
   ),
-  function(region, variants) {
-    map_dfr(region, function(x) {
+  function(estimate, variants) {
+    map_dfr(estimate, function(x) {
       out <- apply(
         x[["epsilon"]], 1, quantile,
         prob = c(0.025, 0.5, 0.975)
       )
       out <- data.frame(out)
       names(out) <- variants
-      out <- tibble::rownames_to_column(out, "qntl")
+      out <- rownames_to_column(out, "qntl")
       out <- gather(out, variant, epsilon, -qntl)
       spread(out, qntl, epsilon)
     }, .id = "date")
   })
 
 saveRDS(eps_estimates, "epsilon_qntls_over_time.rds")
+
+
+nonovl_eps_estimates <- map2(
+  nonovl_estimates,
+  list(
+    french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
+    uk_alpha_wild = c("alpha_vs_wild"),
+    uk_delta_alpha = c("delta_vs_alpha")
+  ),
+  function(estimate, variants) {
+    map_dfr(estimate, function(x) {
+      out <- apply(
+        x[["epsilon"]], 1, quantile,
+        prob = c(0.025, 0.5, 0.975)
+      )
+      out <- data.frame(out)
+      names(out) <- variants
+      out <- rownames_to_column(out, "qntl")
+      out <- gather(out, variant, epsilon, -qntl)
+      spread(out, qntl, epsilon)
+    }, .id = "date")
+  })
+
+saveRDS(nonovl_eps_estimates,
+        "nonoverlapping_epsilon_qntls.rds")
 
 ## National incidence
 fr_total_incid <- data.frame(
