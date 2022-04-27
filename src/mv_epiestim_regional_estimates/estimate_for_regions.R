@@ -181,24 +181,70 @@ eps_over_time_qntls <- map2(
   }
 )
 
-x <- eps_over_time_qntls[[2]]
-x$tmax <- as.integer(x$tmax)
+## x <- eps_over_time_qntls[[2]]
+## x$tmax <- as.integer(x$tmax)
 
-ggplot(x) +
-  geom_point(
-    aes(x = tmax, y = `50%`, col = location),
-    position = position_dodge(
-      width = 4
+## ggplot(x) +
+##   geom_point(
+##     aes(x = tmax, y = `50%`, col = location),
+##     position = position_dodge(
+##       width = 4
+##     )
+##   ) +
+##   geom_linerange(
+##     aes(x = tmax, ymin = `2.5%`, ymax = `97.5%`, col = location),
+##     position = position_dodge(width = 4)
+##   ) +
+##   geom_hline(
+##     yintercept = 1, linetype = "dashed", color = "red"
+##   ) +
+##   ylab("Effective Transmission Advantage") +
+##   xlab("tmax") +
+##   theme_minimal() +
+##   theme(legend.position = "top", legend.title = element_blank())
+
+eps_non_overlapping <- map2(
+  incid_array, incidence, function(x, df) {
+    locations <- names(df[[1]])[-1]
+    t_max <- seq(
+      from = t_min + 7,
+      to = dim(x)[1], by = 7
     )
-  ) +
-  geom_linerange(
-    aes(x = tmax, ymin = `2.5%`, ymax = `97.5%`, col = location),
-    position = position_dodge(width = 4)
-  ) +
-  geom_hline(
-    yintercept = 1, linetype = "dashed", color = "red"
-  ) +
-  ylab("Effective Transmission Advantage") +
-  xlab("tmax") +
-  theme_minimal() +
-  theme(legend.position = "top", legend.title = element_blank())
+    out <- imap(
+      locations,
+      function(location, index) {
+        res <- map(t_max, function(tmax) {
+          message("Location ", location, " tmax = ", tmax)
+          estimate_advantage(
+            incid = x[, index, , drop = FALSE],
+            si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
+            mcmc_control = mcmc_controls,
+            priors = priors,
+            t_min = as.integer(tmax - 6),
+            t_max = as.integer(tmax)
+          )
+        }
+        )
+        names(res) <- t_max
+        res
+      }
+    )
+    names(out) <- locations
+    out
+ }
+)
+
+eps_non_overlapping_qntls <- map2(
+  eps_over_time,   list(
+    french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
+    uk_alpha_wild = c("alpha_vs_wild"),
+    uk_delta_alpha = c("delta_vs_alpha")
+    ), function(x, variants) {
+    map_dfr(x, function(y) {
+      map_dfr(
+        y, ~ summarise_epsilon(., variants),
+        .id = "tmax"
+      )
+    }, .id = "location")
+  }
+)
