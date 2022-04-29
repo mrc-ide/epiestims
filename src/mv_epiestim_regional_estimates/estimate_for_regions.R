@@ -166,6 +166,8 @@ eps_over_time <- map2(
  }
 )
 
+saveRDS(eps_over_time, "weekly_regional_epsilon.rds")
+
 eps_over_time_qntls <- map2(
   eps_over_time,   list(
     french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
@@ -180,7 +182,7 @@ eps_over_time_qntls <- map2(
     }, .id = "location")
   }
 )
-
+saveRDS(eps_over_time_qntls, "weekly_regional_epsilon_qntls.rds")
 ## x <- eps_over_time_qntls[[2]]
 ## x$tmax <- as.integer(x$tmax)
 
@@ -233,9 +235,10 @@ eps_non_overlapping <- map2(
     out
  }
 )
+saveRDS(eps_non_overlapping, "nonoverlapping_weekly_regional_epsilon.rds")
 
 eps_non_overlapping_qntls <- map2(
-  eps_over_time,   list(
+  eps_non_overlapping,   list(
     french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
     uk_alpha_wild = c("alpha_vs_wild"),
     uk_delta_alpha = c("delta_vs_alpha")
@@ -248,3 +251,25 @@ eps_non_overlapping_qntls <- map2(
     }, .id = "location")
   }
 )
+saveRDS(eps_non_overlapping_qntls, "nonoverlapping_weekly_regional_epsilon_qntls.rds")
+## x <- eps_non_overlapping_qntls[[2]]
+## x$tmax <- as.integer(x$tmax)
+
+## ggplot(x) +
+##   geom_point(
+##     aes(x = tmax, y = `50%`, col = location),
+##     position = position_dodge(
+##       width = 4
+##     )
+##   ) +
+##   geom_linerange(
+##     aes(x = tmax, ymin = `2.5%`, ymax = `97.5%`, col = location),
+##     position = position_dodge(width = 4)
+##   ) +
+##   geom_hline(
+##     yintercept = 1, linetype = "dashed", color = "red"
+##   ) +
+##   ylab("Effective Transmission Advantage") +
+##   xlab("tmax") +
+##   theme_minimal() +
+##   theme(legend.position = "top", legend.title = element_blank())

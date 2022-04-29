@@ -1,4 +1,4 @@
-script: estimate_for_regions.R
+script: script.R
 
 global_resources:
   mv_epiestim_params.R: mv_epiestim_params.R
@@ -7,6 +7,7 @@ packages:
 - dplyr
 - EpiEstim
 - epitrix
+- ggplot2
 - glue
 - purrr
 - tibble
@@ -31,6 +32,7 @@ depends:
       id: latest
       use:
         incidence_array.rds: incidence_array.rds
+        nonoverlapping_epsilon_qntls.rds: nonoverlapping_epsilon_qntls.rds
   - clean_french_england_data:
       id: latest
       use:
@@ -38,5 +40,4 @@ depends:
          I_fr.rds: I_fr.rds
          I_UK1.rds: I_UK1.rds
          I_UK2.rds: I_UK2.rds
-         periods.rds: periods.rds
-         
+         periods.rds: periods.rds         
