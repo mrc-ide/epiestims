@@ -32,25 +32,25 @@ incid_array <- map(
 
 saveRDS(incid_array, "incidence_array.rds")
 
-inftvty <- map2(
-  incid_array, incidence, function(x, df) {
-    nlocation <- dim(x)[2]
-    nvariant <- dim(x)[3]
-    si <- epi_params$SI
-    map_dfr(
-      1:nlocation, function(loc) {
-        map_dfr(1:nvariant, function(var) {
-          incid <- x[, loc, var, drop = TRUE]
-          data.frame(
-            inftvty = overall_infectivity(incid, si),
-            location = colnames(df[[var]])[1 + loc],
-            variant = names(df)[var],
-            date = df[[var]][["date"]]
-          )
-        })
-      })
-  }
-)
+## inftvty <- map2(
+##   incid_array, incidence, function(x, df) {
+##     nlocation <- dim(x)[2]
+##     nvariant <- dim(x)[3]
+##     si <- epi_params$SI
+##     map_dfr(
+##       1:nlocation, function(loc) {
+##         map_dfr(1:nvariant, function(var) {
+##           incid <- x[, loc, var, drop = TRUE]
+##           data.frame(
+##             inftvty = overall_infectivity(incid, si),
+##             location = colnames(df[[var]])[1 + loc],
+##             variant = names(df)[var],
+##             date = df[[var]][["date"]]
+##           )
+##         })
+##       })
+##   }
+## )
 
 ## x <- inftvty[[2]]
 ## x$date <- as.Date(x$date)
@@ -65,7 +65,7 @@ inftvty <- map2(
 ##   ) +
 ##   ylab("Overall Infectivity")
 
-
+window <- 6
 nonovl_estimates <- map2(
   incid_array, incidence, function(x, df) {
     t_max <- seq(
@@ -80,10 +80,10 @@ nonovl_estimates <- map2(
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
           priors = priors,
-          t_min = as.integer(tmax - 6), # t_min,
+          t_min = as.integer(tmax - window), # t_min,
           t_max = as.integer(tmax)
         )
-    })
+      })
     names(out) <- df[[1]][["date"]][t_max]
     out
   }
@@ -93,6 +93,28 @@ saveRDS(
   nonovl_estimates,
   "nonoverlapping_epsilon_estimates.rds"
 )
+
+nonovl_eps_estimates <- map2(
+  nonovl_estimates,
+  list(
+    french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
+    uk_alpha_wild = c("alpha_vs_wild"),
+    uk_delta_alpha = c("delta_vs_alpha")
+  ),
+  function(estimate, variants) {
+    map_dfr(estimate, function(x) {
+      summarise_epsilon(x, variants)
+    }, .id = "date")
+  })
+## Hacky, but will do for now.
+nonovl_eps_estimates <- map(
+  nonovl_eps_estimates, function(x) {
+    x$date_min <- as.Date(x$date) - window
+    x
+})
+
+saveRDS(nonovl_eps_estimates, "nonoverlapping_epsilon_qntls.rds")
+
 
 estimates <- map2(
   incid_array, incidence, function(x, df) {
@@ -128,44 +150,20 @@ eps_estimates <- map2(
   ),
   function(estimate, variants) {
     map_dfr(estimate, function(x) {
-      out <- apply(
-        x[["epsilon"]], 1, quantile,
-        prob = c(0.025, 0.5, 0.975)
-      )
-      out <- data.frame(out)
-      names(out) <- variants
-      out <- rownames_to_column(out, "qntl")
-      out <- gather(out, variant, epsilon, -qntl)
-      spread(out, qntl, epsilon)
+      summarise_epsilon(x, variants)
     }, .id = "date")
-  })
+  }
+)
+
+eps_estimates <- map2(eps_estimates, incidence, function(x, df) {
+  x$date_min <- df[[1]][["date"]][t_min]
+  x
+}
+)
 
 saveRDS(eps_estimates, "epsilon_qntls_over_time.rds")
 
 
-nonovl_eps_estimates <- map2(
-  nonovl_estimates,
-  list(
-    french = c("alpha_vs_wild", "beta-gamma_vs_wild"),
-    uk_alpha_wild = c("alpha_vs_wild"),
-    uk_delta_alpha = c("delta_vs_alpha")
-  ),
-  function(estimate, variants) {
-    map_dfr(estimate, function(x) {
-      out <- apply(
-        x[["epsilon"]], 1, quantile,
-        prob = c(0.025, 0.5, 0.975)
-      )
-      out <- data.frame(out)
-      names(out) <- variants
-      out <- rownames_to_column(out, "qntl")
-      out <- gather(out, variant, epsilon, -qntl)
-      spread(out, qntl, epsilon)
-    }, .id = "date")
-  })
-
-saveRDS(nonovl_eps_estimates,
-        "nonoverlapping_epsilon_qntls.rds")
 
 ## National incidence
 fr_total_incid <- data.frame(

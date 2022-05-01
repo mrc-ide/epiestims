@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start()
+## orderly::orderly_develop_start(use_draft = "newer")
 source("R/fig_utils.R")
 dir.create("figures")
 mypercent <- function(x) scales::percent(x)
@@ -673,23 +673,23 @@ plots2axis <- pmap(
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
-
     z$proportion_scaled <- z$proportion * coeff
     message("Max z$`97.5%`", max(z$`97.5%`))
     message("Range of proportion", range(z$proportion))
     message("Coeff = ", coeff)
-    ggplot(z, aes(x = date)) +
-      geom_point(
-        aes(y = `50%`), colour = col, size = 3
-      ) +
+    ggplot(z) +
       geom_linerange(
-        aes(ymin = `2.5%`, ymax = `97.5%`),
-        size = 1.1, colour = col
+        aes(xmax = date, xmin = date_min, y = `50%`), colour = col
+      ) +
+      geom_rect(
+        aes(xmax = date, xmin = date_min, ymin = `2.5%`, ymax = `97.5%`),
+        ##size = 1.1,
+        fill = col, alpha = 0.2, col = NA
       ) +
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red", size = 1.2
       ) +
-      geom_line(aes(y = proportion_scaled), color = "blue") +
+      geom_line(aes(x = date, y = proportion_scaled), color = "blue") +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
         limits = c(0, coeff),
