@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start(use_draft = "newer")
+## orderly::orderly_develop_start()
 source("R/fig_utils.R")
 dir.create("figures")
 mypercent <- function(x) scales::percent(x)
@@ -122,11 +122,6 @@ tall_incid <- map2(
     y <- c("date", y)
     x <- x[, y]
     out <- gather(x, variant, incid, -date)
-    out <- split(out, out$variant) %>%
-      map_dfr(function(x) {
-        x$cum_incid <- cumsum(x$incid)
-        x
-      })
     out$date <- as.Date(out$date)
     out
   }
@@ -137,10 +132,9 @@ incid_plots <- map2(
     variants <- intersect(names(palette), unique(x$variant))
     values <- palette[variants]
     coeff <- max(x$incid)
-    x <- gather(x, var, val, -date, -variant)
     ggplot(x) +
       geom_line(
-        aes(date, val, col = variant, linetype = var),
+        aes(date, incid, col = variant),
         size = 1.1
       ) +
       scale_color_manual(
@@ -150,20 +144,14 @@ incid_plots <- map2(
         breaks = breaks,
         date_labels = date_labels
       ) +
-      scale_y_log10(
-        breaks = trans_breaks("log10", function(x) 10^x),
-        labels = trans_format("log10", math_format(10^.x))
-      ) +
-      ## Commented the bits below to experiment with log-axis;
-      ## still need to the dummy secondary axis back in for the MS.
-      ## scale_y_continuous(
-      ##   labels = scales::label_number(suffix = "K", scale = 1e-3),
-      ##   ## This is a dummy secondary axis. Keeping everything else
-      ##   ## i.e. axis labels and tick labels the same to help with alignment.
-      ##   sec.axis = sec_axis(~./coeff, name = "Cumulative proportion of Alpha",
-      ##                       labels = mypercent)
+      scale_y_continuous(
+        labels = scales::label_number(suffix = "K", scale = 1e-3),
+        ## This is a dummy secondary axis. Keeping everything else
+        ## i.e. axis labels and tick labels the same to help with alignment.
+        sec.axis = sec_axis(~./coeff, name = "Cumulative proportion of Alpha",
+                            labels = mypercent)
 
-      ## ) +
+      ) +
       expand_limits(x = range(breaks)) +
       coord_cartesian(clip = "off") +
       ylab("Daily incidence") +
@@ -192,9 +180,10 @@ iwalk(
 )
 ## Regional incidence plots for Supplementary
 regional_incid <- list(
-  french = "I_fr.rds", uk1 = "I_UK1.rds", uk2 = "I_UK2.rds"
+  french = "I_fr.rds",
+  uk1 = "I_UK1.rds",
+  uk2 = "I_UK2.rds"
 )
-
 regional_incid <- map(regional_incid, readRDS)
 regional_incid <- map(
   regional_incid, function(x) bind_rows(x, .id = "variant")
@@ -673,23 +662,23 @@ plots2axis <- pmap(
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
+
     z$proportion_scaled <- z$proportion * coeff
     message("Max z$`97.5%`", max(z$`97.5%`))
     message("Range of proportion", range(z$proportion))
     message("Coeff = ", coeff)
-    ggplot(z) +
-      geom_linerange(
-        aes(xmax = date, xmin = date_min, y = `50%`), colour = col
+    ggplot(z, aes(x = date)) +
+      geom_point(
+        aes(y = `50%`), colour = col, size = 3
       ) +
-      geom_rect(
-        aes(xmax = date, xmin = date_min, ymin = `2.5%`, ymax = `97.5%`),
-        ##size = 1.1,
-        fill = col, alpha = 0.2, col = NA
+      geom_linerange(
+        aes(ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1, colour = col
       ) +
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red", size = 1.2
       ) +
-      geom_line(aes(x = date, y = proportion_scaled), color = "blue") +
+      geom_line(aes(y = proportion_scaled), color = "blue") +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
         limits = c(0, coeff),
