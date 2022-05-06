@@ -24,7 +24,7 @@ incid_array <- map(
     incid <- array(
       NA, dim = c(time, nlocation, nvariant)
     )
-    incid[,,1] <- as.matrix(x[[1]][, -1])
+    incid[,,1] <- 0.5 * as.matrix(x[[1]][, -1])
     for(i in 2:nvariant) {
       incid[,,i] <- 0.5 * as.matrix(x[[i]][, -1])
     }
@@ -44,7 +44,7 @@ estimates <- map2(
     out <- map(
       t_max, function(tmax) {
         message("t_max = ", tmax)
-        estimate_joint(
+        estimate_advantage(
           incid = x,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
