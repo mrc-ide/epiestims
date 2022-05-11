@@ -1,5 +1,19 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("mv_epiestim_params.R")
+## Proportion of variant in the time frame used for estimation
+window_prop_variant <- function(incid, date_start, date_end) {
+  x <- incid[incid$date >= date_start, ]
+  x <- x[x$date <= date_end, ]
+  out <- apply(x[, -1], 2, cumsum)
+  prop_variant <- out / apply(out, 1, sum)
+  res <- cbind(x, out, prop_variant)
+  names(res) <- c(
+    names(x), glue("cumulative_{names(x[, -1])}"),
+    glue("proportion_{names(x[ ,-1])}")
+  )
+  res
+}
+
 epi_params <- readRDS('Epi_param.rds')
 
 infiles <- list(
@@ -8,13 +22,27 @@ infiles <- list(
 )
 
 incidence <- map(infiles, readRDS)
-## Start analysis at a later time point for checking.
-## incidence <- modify2(
-##   incidence, as.Date(c("2021-03-23", "2020-10-27", "2020-10-27")),
-##   function(x, y) {
-##     map(x, function(z) z[z$date >= y, ])
-##   }
-## )
+
+## National incidence
+fr_total_incid <- data.frame(
+  date = incidence[["french"]][["wild"]][["date"]],
+  wildtype = apply(incidence[["french"]][["wild"]][, -1], 1, sum),
+  alpha = apply(incidence[["french"]][["alpha"]][, -1], 1, sum),
+  betagamma = apply(incidence[["french"]][["beta/gamma"]][, -1], 1, sum)
+)
+
+uk1_total_incid <- data.frame(
+  date = incidence[["uk_alpha_wild"]][["wild"]][["date"]],
+  wildtype = apply(incidence[["uk_alpha_wild"]][["wild"]][, -1], 1, sum),
+  alpha = apply(incidence[["uk_alpha_wild"]][["alpha"]][, -1], 1, sum)
+)
+
+uk2_total_incid <- data.frame(
+  date = incidence[["uk_delta_alpha"]][["alpha"]][["date"]],
+  alpha = apply(incidence[["uk_delta_alpha"]][["alpha"]][, -1], 1, sum),
+  delta = apply(incidence[["uk_delta_alpha"]][["delta"]][, -1], 1, sum)
+)
+
 
 incid_array <- map(
   incidence, function(x) {
@@ -115,6 +143,25 @@ nonovl_eps_estimates <- map(
 
 saveRDS(nonovl_eps_estimates, "nonoverlapping_epsilon_qntls.rds")
 
+nonovl_prop_variant <- map2(
+  nonovl_estimates,
+  list(
+    french = fr_total_incid,
+    uk_alpha_wild = uk1_total_incid,
+    uk_delta_alpha = uk2_total_incid
+  ), function(est, incid) {
+    date_end <- as.Date(names(est))
+    date_start <- date_end - window
+    map2(
+      date_start, date_end,
+      function(start, end) {
+        window_prop_variant(incid, start, end)
+      }
+    )
+  }
+)
+
+saveRDS(nonovl_prop_variant, "nonoverlapping_prop_variant.rds")
 
 estimates <- map2(
   incid_array, incidence, function(x, df) {
@@ -163,46 +210,16 @@ eps_estimates <- map2(eps_estimates, incidence, function(x, df) {
 
 saveRDS(eps_estimates, "epsilon_qntls_over_time.rds")
 
-
-
-## National incidence
-fr_total_incid <- data.frame(
-  date = incidence[["french"]][["wild"]][["date"]],
-  wildtype = apply(incidence[["french"]][["wild"]][, -1], 1, sum),
-  alpha = apply(incidence[["french"]][["alpha"]][, -1], 1, sum),
-  betagamma = apply(incidence[["french"]][["beta/gamma"]][, -1], 1, sum)
-)
-
-uk1_total_incid <- data.frame(
-  date = incidence[["uk_alpha_wild"]][["wild"]][["date"]],
-  wildtype = apply(incidence[["uk_alpha_wild"]][["wild"]][, -1], 1, sum),
-  alpha = apply(incidence[["uk_alpha_wild"]][["alpha"]][, -1], 1, sum)
-)
-
-uk2_total_incid <- data.frame(
-  date = incidence[["uk_delta_alpha"]][["alpha"]][["date"]],
-  alpha = apply(incidence[["uk_delta_alpha"]][["alpha"]][, -1], 1, sum),
-  delta = apply(incidence[["uk_delta_alpha"]][["delta"]][, -1], 1, sum)
-)
-
-
-
 cuml_incid <- map(
   list(
     french = fr_total_incid,
     uk_alpha_wild = uk1_total_incid,
     uk_delta_alpha = uk2_total_incid
   ), function(x) {
-    out <- apply(x[, -1], 2, cumsum)
-    prop_variant <- out / apply(out, 1, sum)
-    res <- cbind(x, out, prop_variant)
-    names(res) <- c(
-      names(x), glue("cumulative_{names(x[, -1])}"),
-      glue("proportion_{names(x[ ,-1])}")
-    )
-    res
+    window_prop_variant(x, min(x$date), max(x$date))
   }
 )
+
 saveRDS(cuml_incid, "cuml_incid_all_variants.rds")
 
 ## x-axis is now the proportion of the variant cases
