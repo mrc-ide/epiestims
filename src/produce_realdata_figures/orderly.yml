@@ -54,10 +54,10 @@ depends:
         naive_epsilon_fr.rds: naive_epsilon_fr.rds
         naive_epsilon_UK1.rds: naive_epsilon_UK1.rds
         naive_epsilon_UK2.rds: naive_epsilon_UK2.rds
-        
   - mv_epiestim_weekly_estimates:
       id: latest
       use:
         cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
         epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
         epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds
+        nonoverlapping_epsilon_qntls.rds: nonoverlapping_epsilon_qntls.rds

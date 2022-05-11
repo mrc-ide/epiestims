@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start()
+## orderly::orderly_develop_start(use_draft = "newer")
 source("R/fig_utils.R")
 dir.create("figures")
 mypercent <- function(x) scales::percent(x)
@@ -68,7 +68,8 @@ volzetal <- data.frame(
   ymin = 1.4, ymax = 1.8, y = 1.74
 )
 
-eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
+##eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
+eps_over_time <- readRDS("nonoverlapping_epsilon_qntls.rds")
 eps_over_time[["french_betagamma"]] <-
   eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
 eps_over_time[["french"]] <-
