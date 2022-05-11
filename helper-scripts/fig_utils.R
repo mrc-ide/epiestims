@@ -89,3 +89,37 @@ variant_nicenames <- c(
   delta = "Delta", betagamma = "Beta/Gamma",
   `beta/gamma` = "Beta/Gamma"
 )
+
+## Region short names
+region_short_names <- function(region) {
+  short_name <- case_when(
+    region == "Auvergne-Rhône-Alpes" ~ "ARA",
+    region ==  "Bourgogne-Franche-Comté" ~ "BFC",
+    region ==  "Bretagne"  ~ "BRE",
+    region ==  "Centre-Val de Loire" ~ "CVL",
+    region ==  "Corse" ~ "20R",
+    region ==  "Grand Est" ~ "GES",
+    region ==  "Guadeloupe" ~ "GP",
+    region ==  "Guyane"  ~ "GF",
+    region ==  "Hauts-de-France" ~ "HDF",
+    region ==    "Île-de-France" ~ "IDF",
+    region ==     "La Réunion" ~ "RE",
+    region ==    "Martinique" ~ "MQ",
+    region ==    "Mayotte" ~ "YT",
+    region ==    "Normandie" ~ "NOR",
+    region ==    "Nouvelle-Aquitaine" ~ "NAQ",
+    region ==    "Occitanie" ~ "OCC",
+    region ==    "Pays de la Loire" ~ "PDL",
+    region ==    "Provence-Alpes-Côte d'Azur" ~ "PAC",
+    region ==    "East of England" ~ "EE",
+    region ==    "London" ~ "LON",
+    region ==    "Midlands" ~ "MID",
+    region ==    "North East and Yorkshire" ~ "NE",
+    region ==    "North West" ~ "NW",
+    region ==    "South East" ~ "SE",
+    region ==    "South West" ~ "SW",
+    region ==    "England" ~ "ENG",
+    region ==    "France" ~ "FR"
+  )
+  short_name
+}
