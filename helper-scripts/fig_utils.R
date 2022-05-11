@@ -68,3 +68,24 @@ pretty_ci <- function(val, low, high, round_to = 2) {
   }
   glue("{f(val)} \n ({f(low)}, {f(high)})")
 }
+
+mypercent <- function(x) scales::percent(x)
+palette <- c(
+  wildtype = "#0f0e0e",
+  alpha = "#E69F00",
+  betagamma = "#CC79A7",
+  `beta/gamma` = "#CC79A7",
+  delta = "#009E73",
+  England = "#cc0000",
+  France = "#0000ff"
+)
+
+date_breaks <- "6 weeks"
+date_labels <- "%d-%b"
+
+
+variant_nicenames <- c(
+  wildtype = "Wildtype", alpha = "Alpha",
+  delta = "Delta", betagamma = "Beta/Gamma",
+  `beta/gamma` = "Beta/Gamma"
+)
