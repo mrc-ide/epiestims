@@ -27,7 +27,6 @@ artefacts:
       - figures/french_betagamma_incidence.png
       
       
-      
 global_resources:
   R/fig_utils.R: fig_utils.R
 
@@ -45,19 +44,10 @@ depends:
         epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
         epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
         epsilon_qntls_time_periods.rds: epsilon_qntls_time_periods.rds
-  - naive_epsilon_estimates:
-      id: latest
-      use:
-        Rt_epi_fr.rds: Rt_epi_fr.rds
-        Rt_epi_UK1.rds: Rt_epi_UK1.rds
-        Rt_epi_UK2.rds: Rt_epi_UK2.rds
-        naive_epsilon_fr.rds: naive_epsilon_fr.rds
-        naive_epsilon_UK1.rds: naive_epsilon_UK1.rds
-        naive_epsilon_UK2.rds: naive_epsilon_UK2.rds
   - mv_epiestim_weekly_estimates:
       id: latest
       use:
         cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
-        epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
-        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds
+        nonoverlapping_prop_variant.rds: nonoverlapping_prop_variant.rds
         nonoverlapping_epsilon_qntls.rds: nonoverlapping_epsilon_qntls.rds
+        epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
