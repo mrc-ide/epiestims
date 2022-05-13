@@ -24,40 +24,6 @@ xaxis_breaks <- list(
 
 
 
-## Region short names
-region_short_names <- function(region) {
-  short_name <- case_when(
-    region == "Auvergne-Rhône-Alpes" ~ "ARA",
-    region ==  "Bourgogne-Franche-Comté" ~ "BFC",
-    region ==  "Bretagne"  ~ "BRE",
-    region ==  "Centre-Val de Loire" ~ "CVL",
-    region ==  "Corse" ~ "20R",
-    region ==  "Grand Est" ~ "GES",
-    region ==  "Guadeloupe" ~ "GP",
-    region ==  "Guyane"  ~ "GF",
-    region ==  "Hauts-de-France" ~ "HDF",
-    region ==    "Île-de-France" ~ "IDF",
-    region ==     "La Réunion" ~ "RE",
-    region ==    "Martinique" ~ "MQ",
-    region ==    "Mayotte" ~ "YT",
-    region ==    "Normandie" ~ "NOR",
-    region ==    "Nouvelle-Aquitaine" ~ "NAQ",
-    region ==    "Occitanie" ~ "OCC",
-    region ==    "Pays de la Loire" ~ "PDL",
-    region ==    "Provence-Alpes-Côte d'Azur" ~ "PAC",
-    region ==    "East of England" ~ "EE",
-    region ==    "London" ~ "LON",
-    region ==    "Midlands" ~ "MID",
-    region ==    "North East and Yorkshire" ~ "NE",
-    region ==    "North West" ~ "NW",
-    region ==    "South East" ~ "SE",
-    region ==    "South West" ~ "SW",
-    region ==    "England" ~ "ENG",
-    region ==    "France" ~ "FR"
-  )
-  short_name
-}
-
 
 ## Panel A. Plot of incidence of variants
 tall_incid <- map2(
@@ -199,3 +165,86 @@ walk(
   }
 )
 
+########## Plots on log scale ########
+tall_incid <- map2(
+  incidence,
+  list(
+    french = c("wildtype", "alpha"),
+    uk_alpha_wild = c("wildtype", "alpha"),
+    uk_delta_alpha = c("alpha", "delta"),
+    french_betagamma = c("wildtype", "betagamma")
+  ),
+  function(x, y) {
+    ydaily <- c("date", y)
+    ycum <- c("date", paste0("cumulative_", y))
+
+    x1 <- x[, ydaily]
+    x1 <- mutate_if(x1, is.numeric, log)
+    out <- gather(x1, variant, `(log) Daily Incidence`, -date)
+    out$date <- as.Date(out$date)
+
+    x2 <- x[, ycum]
+    x2 <- mutate_if(x2, is.numeric, log)
+    out2 <- gather(x2, variant2, `(log) Cumulative Incidence`, -date)
+    out2 <- select(out2, -date)
+
+    out <- cbind(out, out2)
+    gather(
+      out, var, val, -date, -variant, -variant2
+    )
+  }
+)
+
+
+incid_plots <- map2(
+  tall_incid, xaxis_breaks, function(x, breaks) {
+    variants <- intersect(names(palette), unique(x$variant))
+    values <- palette[variants]
+    coeff <- max(x$incid)
+    ggplot(x) +
+      geom_line(
+        aes(date, val, col = variant, linetype = var),
+        size = 1.1
+      ) +
+      scale_color_manual(
+        values = values, labels = variant_nicenames
+      ) +
+      scale_x_date(
+        breaks = breaks,
+        date_labels = date_labels
+      ) +
+      scale_y_continuous(
+        ##labels = trans_format('log10', math_format(10^.x)),
+        sec.axis = sec_axis(
+          ~./coeff, name = "(log) Cumulative Incidence",
+          ##labels = trans_format('log10', math_format(10^.x))
+        )
+      ) +
+      expand_limits(x = range(breaks)) +
+      coord_cartesian(clip = "off") +
+      ylab("log Daily incidence") +
+      xlab("") +
+  theme_manuscript() +
+      theme(
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5),
+        ##Axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.box = "vertical",
+        legend.margin = margin()
+        ##legend.position = c(0.2, 0.85),
+        ## We don't actually want to show the right y-axis
+        ## axis.line.y.right = element_line(color = "white"),
+        ## axis.title.y.right = element_text(color = "white"),
+        ## axis.text.y.right = element_text(color = "white"),
+        ## axis.ticks.y.right = element_line(color = "white")
+      )
+  }
+)
+
+iwalk(
+  incid_plots, function(p, name) {
+    save_multiple(
+      p, glue("figures/{name}_incidence")
+    )
+  }
+)

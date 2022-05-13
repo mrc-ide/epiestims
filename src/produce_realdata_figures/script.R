@@ -50,12 +50,29 @@ nonovl_prop <- map(
   nonovl_prop, function(x) map_dfr(x, ~ .[nrow(.), ])
 )
 
+nonovl_prop <- map2(
+  nonovl_prop,
+  list(
+    french = c("wildtype", "alpha"),
+    uk_alpha_wild = c("cumulative_wildtype", "cumulative_alpha"),
+    uk_delta_alpha = c("cumulative_alpha", "cumulative_delta"),
+    french_betagamma = c("cumulative_wildtype", "cumulative_betagamma")
+  ),
+  function(x, cols) {
+    out <- binconf(x[[cols[2]]], (x[[cols[1]]] + x[[cols[2]]]))
+    cbind(x, data.frame(out))
+  }
+)
+
+
+##
+## broom::tidy(x)
 plots2axis <- pmap(
   list(
     x = nonovl_est,
     y = nonovl_prop,
-    column = c("proportion_alpha", "proportion_alpha",
-                "proportion_delta", "proportion_betagamma"),
+    ## column = c("proportion_alpha", "proportion_alpha",
+    ##             "proportion_delta", "proportion_betagamma"),
     y2label =  c("Cumulative proportion of Alpha",
                  "Cumulative proportion of Alpha",
                  "Cumulative proportion of Delta",
@@ -63,16 +80,16 @@ plots2axis <- pmap(
     xmin = xaxis_breaks,
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
-  function(x, y, column, y2label, xmin, col) {
-    message(column)
-    y[["proportion"]] <- y[[column]]
+  function(x, y, y2label, xmin, col) {
+    message(y2label)
     x$date <- as.Date(x$date)
     z <- left_join(x, y, by = "date")
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
-
-    z$proportion_scaled <- z$proportion * coeff
+    z$proportion_scaled <- z$`PointEst` * coeff
+    z$low_scaled <- z$`Lower` * coeff
+    z$high_scaled <- z$`Upper` * coeff
     message("Max z$`97.5%` ", max(z$`97.5%`))
     message("Range of proportion ", range(z$proportion))
     message("Coeff = ", coeff)
@@ -88,6 +105,7 @@ plots2axis <- pmap(
         yintercept = 1, linetype = "dashed", color = "red", size = 1.2
       ) +
       geom_point(aes(y = proportion_scaled), color = "blue") +
+      geom_linerange(aes(ymin = low_scaled, ymax = high_scaled), color = "blue") +
       geom_line(aes(y = proportion_scaled), color = "blue", alpha = 0.5) +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),

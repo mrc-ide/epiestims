@@ -1,11 +1,13 @@
 script: script.R
 
 packages:
+- broom
 - cowplot
 - dplyr
 - ggplot2
 - ggpubr
 - glue
+- Hmisc
 - lubridate
 - purrr
 - RColorBrewer

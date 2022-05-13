@@ -5,6 +5,7 @@ window_prop_variant <- function(incid, date_start, date_end) {
   x <- incid[incid$date >= date_start, ]
   x <- x[x$date <= date_end, ]
   out <- apply(x[, -1], 2, cumsum)
+  total_cases <- apply(out, 1, sum)
   prop_variant <- out / apply(out, 1, sum)
   res <- cbind(x, out, prop_variant)
   names(res) <- c(
