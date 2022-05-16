@@ -179,13 +179,13 @@ tall_incid <- map2(
     ycum <- c("date", paste0("cumulative_", y))
 
     x1 <- x[, ydaily]
-    x1 <- mutate_if(x1, is.numeric, log)
-    out <- gather(x1, variant, `(log) Daily Incidence`, -date)
+    ##x1 <- mutate_if(x1, is.numeric, log)
+    out <- gather(x1, variant, `Daily Incidence`, -date)
     out$date <- as.Date(out$date)
 
     x2 <- x[, ycum]
-    x2 <- mutate_if(x2, is.numeric, log)
-    out2 <- gather(x2, variant2, `(log) Cumulative Incidence`, -date)
+    ##x2 <- mutate_if(x2, is.numeric, log)
+    out2 <- gather(x2, variant2, `Cumulative Incidence`, -date)
     out2 <- select(out2, -date)
 
     out <- cbind(out, out2)
@@ -200,7 +200,8 @@ incid_plots <- map2(
   tall_incid, xaxis_breaks, function(x, breaks) {
     variants <- intersect(names(palette), unique(x$variant))
     values <- palette[variants]
-    coeff <- max(x$incid)
+    coeff <- max(x$val)
+
     ggplot(x) +
       geom_line(
         aes(date, val, col = variant, linetype = var),
@@ -213,16 +214,16 @@ incid_plots <- map2(
         breaks = breaks,
         date_labels = date_labels
       ) +
-      scale_y_continuous(
-        ##labels = trans_format('log10', math_format(10^.x)),
-        sec.axis = sec_axis(
-          ~./coeff, name = "(log) Cumulative Incidence",
+      scale_y_log10(
+        labels = scales::label_log(digits = 1),
+        sec.axis = dup_axis(
+          name = "Cumulative Incidence",
           ##labels = trans_format('log10', math_format(10^.x))
         )
       ) +
       expand_limits(x = range(breaks)) +
       coord_cartesian(clip = "off") +
-      ylab("log Daily incidence") +
+      ylab("Daily/Cumulative Incidence") +
       xlab("") +
   theme_manuscript() +
       theme(
@@ -230,13 +231,13 @@ incid_plots <- map2(
         ##Axis.title.x = element_blank(),
         legend.title = element_blank(),
         legend.box = "vertical",
-        legend.margin = margin()
+        legend.margin = margin(),
         ##legend.position = c(0.2, 0.85),
         ## We don't actually want to show the right y-axis
-        ## axis.line.y.right = element_line(color = "white"),
-        ## axis.title.y.right = element_text(color = "white"),
-        ## axis.text.y.right = element_text(color = "white"),
-        ## axis.ticks.y.right = element_line(color = "white")
+        axis.line.y.right = element_line(color = "white"),
+        axis.title.y.right = element_text(color = "white"),
+        axis.text.y.right = element_text(color = "white"),
+        axis.ticks.y.right = element_line(color = "white")
       )
   }
 )
@@ -244,7 +245,7 @@ incid_plots <- map2(
 iwalk(
   incid_plots, function(p, name) {
     save_multiple(
-      p, glue("figures/{name}_incidence")
+      p, glue("figures/logscale_{name}_incidence")
     )
   }
 )

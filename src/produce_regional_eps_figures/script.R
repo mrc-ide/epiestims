@@ -1,3 +1,6 @@
+## orderly::orderly_develop_start(use_draft = "newer")
+source("R/fig_utils.R")
+dir.create("figures")
 regional <- readRDS("epsilon_qntls_per_region.rds")
 regional[["french_betagamma"]] <-
   regional[["french"]][regional[["french"]]$variant != "alpha_vs_wild", ]
@@ -87,6 +90,67 @@ iwalk(
   regional_plots, function(p, name) {
     save_multiple(
       p, glue("figures/{name}_regional")
+    )
+  }
+)
+
+#################################
+## Non-overlapping regional estimates
+#################################
+infiles <- list(
+  french = 'I_fr.rds', uk_alpha_wild = 'I_UK1.rds',
+  uk_delta_alpha = 'I_UK2.rds'
+)
+incidence <- map(infiles, readRDS)
+nonovl <- readRDS("nonovl_weekly_regional_epsilon_qntls.rds")
+
+nonovl <- map2(
+  incidence, nonovl, function(x, y) {
+    incid <- x[[1]]
+    y$date <- incid$date[as.integer(y$tmax)]
+    y
+  }
+)
+x <- nonovl[["french"]]
+nonovl[["french_betagamma"]] <- x[x$variant == "beta-gamma_vs_wild", ]
+nonovl[["french"]] <- x[x$variant != "beta-gamma_vs_wild", ]
+palette2 <- palette[c("alpha", "alpha", "delta", "betagamma")]
+
+plots <- map2(nonovl, palette2, function(x, z) {
+  x$date <- as.Date(x$date)
+
+  p <- ggplot(x) +
+    geom_linerange(
+      aes(x = date, ymin = `2.5%`, ymax = `97.5%`, col = location),
+      position = position_dodge(5),
+        size = 1.1##, colour = z
+    ) +
+    geom_point(
+      aes(x = date, y = `50%`, col = location),
+      position = position_dodge(5)
+        ##col = z, fill = z
+    ) +
+    ## facet_wrap(
+    ##   ~location, labeller = labeller(location = region_short_names)
+    ## ) +
+    geom_hline(
+      yintercept = 1, linetype = "dashed", color = "red",
+      size = 1.2
+    ) +
+    ylab("Effective transmission advantage") +
+    theme_manuscript() +
+    theme(
+      axis.title.x = element_blank()
+    )
+
+  p
+
+})
+
+iwalk(
+  plots, function(p, name) {
+    save_multiple(
+      p, glue("figures/nonovl_{name}_regional")
     )
   }
 )
