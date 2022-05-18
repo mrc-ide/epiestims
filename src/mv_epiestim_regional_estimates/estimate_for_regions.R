@@ -217,13 +217,29 @@ eps_non_overlapping <- map2(
       function(location, index) {
         res <- map(t_max, function(tmax) {
           message("Location ", location, " tmax = ", tmax)
+          ## Check if in this period
+          ## incidence for any variant
+          ## is 0. If yes, then do not
+          ## estimate
+          t_min <- as.integer(tmax - 6)
+          t_max <- as.integer(tmax)
+          if (
+            any(
+              colSums(
+                round(x[t_min:t_max, index, ])
+              ) < 1
+            )
+          ) {
+            message("Incidence 0 between ", t_min, " and ", t_max)
+            return(NULL)
+          }
           estimate_advantage(
             incid = x[, index, , drop = FALSE],
             si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
             mcmc_control = mcmc_controls,
             priors = priors,
-            t_min = as.integer(tmax - 6),
-            t_max = as.integer(tmax)
+            t_min = t_min,
+            t_max = t_max
           )
         }
         )
@@ -235,6 +251,7 @@ eps_non_overlapping <- map2(
     out
  }
 )
+
 saveRDS(eps_non_overlapping, "nonoverlapping_weekly_regional_epsilon.rds")
 
 eps_non_overlapping_qntls <- map2(
@@ -243,7 +260,8 @@ eps_non_overlapping_qntls <- map2(
     uk_alpha_wild = c("alpha_vs_wild"),
     uk_delta_alpha = c("delta_vs_alpha")
     ), function(x, variants) {
-    map_dfr(x, function(y) {
+      map_dfr(x, function(y) {
+        y <- keep(y, ~!is.null(.))
       map_dfr(
         y, ~ summarise_epsilon(., variants),
         .id = "tmax"
@@ -251,6 +269,7 @@ eps_non_overlapping_qntls <- map2(
     }, .id = "location")
   }
 )
+
 saveRDS(eps_non_overlapping_qntls, "nonoverlapping_weekly_regional_epsilon_qntls.rds")
 ## x <- eps_non_overlapping_qntls[[2]]
 ## x$tmax <- as.integer(x$tmax)

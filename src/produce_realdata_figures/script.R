@@ -8,19 +8,6 @@ incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
 incidence[["french_betagamma"]] <- incidence[["french"]]
 
-xaxis_breaks <- list(
-  french = as.Date(c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")),
-  uk_alpha_wild = as.Date(
-    c("2020-09-01", "2020-10-01", "2020-11-01", "2020-12-01", "2021-01-01",
-      "2021-02-01", "2021-03-01"
-      )),
-  uk_delta_alpha = as.Date(
-    c("2021-03-15", "2021-04-15", "2021-05-15", "2021-06-15")
-  ),
-  french_betagamma = as.Date(
-    c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")
-  )
-)
 
 ## Epsilon estimates with non-overlapping weekly windows.
 ## Axis 2. Proportion of variant in the window used for estimation

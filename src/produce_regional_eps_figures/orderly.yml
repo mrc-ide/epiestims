@@ -3,6 +3,7 @@ script: script.R
 packages:
 - cowplot
 - dplyr
+- ggh4x
 - ggplot2
 - ggpubr
 - glue
@@ -17,8 +18,8 @@ artefacts:
   staticgraph:
     description: Figures from real data
     filenames:
-      - figures/french_betagamma_2dbin.pdf
-      - figures/french_betagamma_2dbin.png      
+      - figures/french_betagamma_regional.pdf
+      - figures/french_betagamma_regional.png      
 
 global_resources:
   R/fig_utils.R: fig_utils.R

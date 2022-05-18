@@ -101,6 +101,7 @@ infiles <- list(
   french = 'I_fr.rds', uk_alpha_wild = 'I_UK1.rds',
   uk_delta_alpha = 'I_UK2.rds'
 )
+
 incidence <- map(infiles, readRDS)
 nonovl <- readRDS("nonovl_weekly_regional_epsilon_qntls.rds")
 
@@ -116,36 +117,45 @@ nonovl[["french_betagamma"]] <- x[x$variant == "beta-gamma_vs_wild", ]
 nonovl[["french"]] <- x[x$variant != "beta-gamma_vs_wild", ]
 palette2 <- palette[c("alpha", "alpha", "delta", "betagamma")]
 
-plots <- map2(nonovl, palette2, function(x, z) {
+plots <- pmap(
+  list(
+    x = nonovl, row = c(3, 2, 2, 3), z = palette2, breaks = xaxis_breaks
+  ),
+  function(x, row, z, breaks) {
   x$date <- as.Date(x$date)
-
+  x$location_short <- region_short_names(x$location)
   p <- ggplot(x) +
     geom_linerange(
-      aes(x = date, ymin = `2.5%`, ymax = `97.5%`, col = location),
-      position = position_dodge(5),
-        size = 1.1##, colour = z
+      aes(
+        x = date, ymin = `2.5%`, ymax = `97.5%`
+      ),
+        size = 1.1, colour = z
     ) +
     geom_point(
-      aes(x = date, y = `50%`, col = location),
-      position = position_dodge(5)
-        ##col = z, fill = z
-    ) +
-    ## facet_wrap(
-    ##   ~location, labeller = labeller(location = region_short_names)
-    ## ) +
+      aes(x = date, y = `50%`),
+      colour = z
+    )  +
     geom_hline(
       yintercept = 1, linetype = "dashed", color = "red",
       size = 1.2
     ) +
+    facet_wrap(
+      ~location_short, nrow = row, strip.position = "top"
+    ) +
+    scale_x_date(breaks = breaks, date_labels = date_labels) +
     ylab("Effective transmission advantage") +
     theme_manuscript() +
     theme(
-      axis.title.x = element_blank()
+      axis.title.x = element_blank(),
+      panel.border = element_rect(colour = "black", fill = NA),
+      ##ggh4x.axis.nesttext.x = element_blank(),
+      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)
     )
-
   p
 
 })
+
+
 
 iwalk(
   plots, function(p, name) {
