@@ -1,5 +1,6 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("mv_epiestim_params.R")
+max_attempts <- 3
 ## Proportion of variant in the time frame used for estimation
 window_prop_variant <- function(incid, date_start, date_end) {
   x <- incid[incid$date >= date_start, ]
@@ -10,13 +11,17 @@ window_prop_variant <- function(incid, date_start, date_end) {
     names(x), glue("cumulative_{names(x[, -1])}")
   )
   for (col in seq(2, ncol(out))) {
-    ## Assume wildtype is always the first column.
+    ## Assume wildtype (or alpha, when estimating for delta)
+    ## is always the first column.
     wt_plus_var <- out[, 1] + out[, col]
     res$prop_variant <- out[, col] / wt_plus_var
     newname <- glue("proportion_{colnames(out)[col]}")
     names(res)[names(res) == "prop_variant"] <- newname
-  }
 
+    res$prop_variant <- out[, 1] / wt_plus_var
+    newname <- glue("proportion_{colnames(out)[1]}")
+    names(res)[names(res) == "prop_variant"] <- newname
+  }
   res
 }
 
@@ -36,19 +41,14 @@ fr_total_incid <- data.frame(
   alpha = apply(incidence[["french"]][["alpha"]][, -1], 1, sum),
   betagamma = apply(incidence[["french"]][["beta/gamma"]][, -1], 1, sum)
 )
-
-uk1_total_incid <- data.frame(
-  date = incidence[["uk_alpha_wild"]][["wild"]][["date"]],
-  wildtype = apply(incidence[["uk_alpha_wild"]][["wild"]][, -1], 1, sum),
-  alpha = apply(incidence[["uk_alpha_wild"]][["alpha"]][, -1], 1, sum)
+## This is used to calculate proportion, so need
+## to read in unadjusted numbers
+eng_noadj <- readRDS("england_na_not_adjusted.rds")
+uk1_total_incid <- eng_noadj[["alpha"]]
+uk2_total_incid <- eng_noadj[["delta"]]
+uk2_total_incid <- select(
+  uk2_total_incid, date, alpha, delta, unknown
 )
-
-uk2_total_incid <- data.frame(
-  date = incidence[["uk_delta_alpha"]][["alpha"]][["date"]],
-  alpha = apply(incidence[["uk_delta_alpha"]][["alpha"]][, -1], 1, sum),
-  delta = apply(incidence[["uk_delta_alpha"]][["delta"]][, -1], 1, sum)
-)
-
 
 incid_array <- map(
   incidence, function(x) {
@@ -109,7 +109,7 @@ nonovl_estimates <- map2(
     out <- map(
       t_max, function(tmax) {
         message("t_max = ", tmax)
-        estimate_advantage(
+        out2 <- estimate_advantage(
           incid = x,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
@@ -117,6 +117,28 @@ nonovl_estimates <- map2(
           t_min = as.integer(tmax - window), # t_min,
           t_max = as.integer(tmax)
         )
+        attempt <- 1
+        while (! out2[["convergence"]]) {
+          message("Attempt ", attempt)
+          message("Not yet converged")
+          mcmc_controls <- lapply(
+              mcmc_controls, function(x) x * 2L
+          )
+          out2 <- estimate_advantage(
+            incid = x,
+            si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
+            mcmc_control = mcmc_controls,
+            priors = priors,
+            t_min = as.integer(tmax - window), # t_min,
+            t_max = as.integer(tmax)
+          )
+          attempt <- attempt + 1
+          if (attempt > max_attempts) {
+            message("Aborting after 3 attempts")
+            ## return whatever you've got.
+            out2
+          }
+        }
       })
     names(out) <- df[[1]][["date"]][t_max]
     out
@@ -178,7 +200,7 @@ estimates <- map2(
     out <- map(
       t_max, function(tmax) {
         message("t_max = ", tmax)
-        estimate_advantage(
+        out2 <- estimate_advantage(
           incid = x,
           si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
           mcmc_control = mcmc_controls,
@@ -186,6 +208,28 @@ estimates <- map2(
           t_min = as.integer(t_min),
           t_max = as.integer(tmax)
         )
+        attempt <- 1
+        while (! out2[["convergence"]]) {
+          message("Attempt ", attempt)
+          message("Not yet converged")
+          mcmc_controls <- lapply(
+              mcmc_controls, function(x) x * 2L
+          )
+          out2 <- estimate_advantage(
+            incid = x,
+            si_distr = cbind_rep(x = epi_params$SI, n = dim(x)[3]),
+            mcmc_control = mcmc_controls,
+            priors = priors,
+            t_min = as.integer(t_min),
+            t_max = as.integer(tmax)
+          )
+          attempt <- attempt + 1
+          if (attempt > max_attempts) {
+            message("Aborting after 3 attempts")
+            ## return whatever you've got.
+            out2
+          }
+        }
     })
     names(out) <- df[[1]][["date"]][t_max]
     out
