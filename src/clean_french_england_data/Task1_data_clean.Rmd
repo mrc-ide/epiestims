@@ -164,6 +164,24 @@ england$region[which(england$region %in% 'east_of_england')] <- 'East of England
 england$region[which(england$region %in% 'north_west')] <- 'North West'
 england$region[which(england$region %in% 'north_east_and_yorkshire')] <- 'North East and Yorkshire'
 
+## Save data without adjusting for NAs,
+## so that we can estimate alpha proportion
+## from this unadjusted data
+eng_noadj <- group_by(england, date) %>%
+  summarise_if(is.numeric, sum) %>%
+  ungroup()
+
+eng_noadj <- list(
+  alpha = eng_noadj[which((eng_noadj$date >= as.Date('01/09/2020', 
+                                                     format = '%d/%m/%Y')) &
+                          (eng_noadj$date < as.Date('15/03/2021', 
+                                                    format = '%d/%m/%Y'))),],
+  delta = eng_noadj[which(eng_noadj$date >= as.Date('15/03/2021',format = '%d/%m/%Y')),])
+## For Alpha S-gene is negative                                                    
+## For Delta and Wildtype it is positive
+colnames(eng_noadj[["alpha"]]) <- c("date", "wildtype", "alpha", "unknown")
+colnames(eng_noadj[["delta"]]) <- c("date", "delta", "alpha", "unknown")
+saveRDS(eng_noadj, "england_na_not_adjusted.rds")
 
 ## there are some samples not identified as negative or positive, we split those
 ## according to the ratio of the two. In the hopefully rare case that none are
@@ -197,7 +215,7 @@ names(d[[2]])[3:4] <- c('delta','alpha')
 I_UK1 <- format_I(dat = d$alpha , variants = variants[[1]])
 I_UK2 <- format_I(dat = d$delta , variants = variants[[2]])
 ## Delta incidence is incomplete. Truncate last 4 days
-I_UK2 <- purrr::map(I_UK2, function(x) x[seq(1, nrow(x) - 4), ])
+I_UK2 <- map(I_UK2, function(x) x[seq(1, nrow(x) - 4), ])
 
 ```
 

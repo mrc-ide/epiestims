@@ -21,14 +21,16 @@ nonovl_prop <- readRDS("nonoverlapping_prop_variant.rds")
 ## Has all the columns we need.
 cols <- c("date", "wildtype", "betagamma",
           "cumulative_betagamma", "cumulative_wildtype",
-          "proportion_wildtype", "proportion_betagamma")
+          "proportion_betagamma")
 
 nonovl_prop[["french_betagamma"]] <- map(
   nonovl_prop[["french"]], ~ .[, cols]
 )
+
 cols <- c("date", "wildtype", "alpha",
           "cumulative_alpha", "cumulative_wildtype",
-          "proportion_wildtype", "proportion_alpha")
+          "proportion_alpha")
+
 nonovl_prop[["french"]] <- map(nonovl_prop[["french"]], ~ .[, cols])
 
 ## For each variant, for each tmax we have the cumulative propotion

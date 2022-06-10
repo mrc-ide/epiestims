@@ -3,6 +3,7 @@ script: script.R
 packages:
 - dplyr
 - knitr
+- purrr
 - rmarkdown
 
 
@@ -21,4 +22,5 @@ artefacts:
       - I_UK1.rds
       - I_UK2.rds
       - periods.rds
+      - england_na_not_adjusted.rds
     
