@@ -36,16 +36,16 @@ iwalk(
         message("tmax = ", tmax)
         future_imap(incid, function(x, i) {
           message("sim = ", i)
-          if (tmax == 10) {
+          # if (tmax == 10) {
+          #   t_min <- EpiEstim::compute_t_min(x, si_for_est)
+          #   t_max <- as.integer(t_min + tmax)
+          #   t_max <- min(t_max, nrow(x))
+          # } else {
             t_min <- EpiEstim::compute_t_min(x, si_for_est)
             t_max <- as.integer(t_min + tmax)
             t_max <- min(t_max, nrow(x))
-          } else {
-            t_min <- EpiEstim::compute_t_min(x, si_for_est)
-            t_max <- as.integer(t_min + tmax)
-            t_max <- min(t_max, nrow(x))
-            t_min <- as.integer(t_max - 10)
-          }
+            t_min <- as.integer(t_max - estimation_window + 1)
+          # }
           out <- estimate_advantage(
             x, si_for_est, priors, seed = 1,
             t_min = t_min,

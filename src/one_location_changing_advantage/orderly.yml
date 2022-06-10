@@ -9,7 +9,9 @@ packages:
 - purrr
 - utils
 
-parameters: short_run
+parameters:
+- short_run
+- estimation_window
 
 global_resources:
   R/sim_utils.R: sim_utils.R
