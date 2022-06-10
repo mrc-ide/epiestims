@@ -1,4 +1,7 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
+## Set short_run to TRUE while developing task
+short_run <- FALSE
+step_size <- ifelse(short_run, 28L, 7L)
 source("mv_epiestim_params.R")
 max_attempts <- 3
 ## Proportion of variant in the time frame used for estimation
@@ -19,7 +22,7 @@ window_prop_variant <- function(incid, date_start, date_end) {
     names(res)[names(res) == "prop_variant"] <- newname
 
     res$prop_variant <- out[, 1] / wt_plus_var
-    newname <- glue("proportion_{colnames(out)[1]}")
+    newname <- glue("proportion_{colnames(out)[1]}_{colnames(out)[col]}")
     names(res)[names(res) == "prop_variant"] <- newname
   }
   res
@@ -104,7 +107,7 @@ nonovl_estimates <- map2(
   incid_array, incidence, function(x, df) {
     t_max <- seq(
       from = t_min + 7,
-      to = dim(x)[1], by = 7
+      to = dim(x)[1], by = step_size
     )
     out <- map(
       t_max, function(tmax) {
@@ -135,11 +138,11 @@ nonovl_estimates <- map2(
           attempt <- attempt + 1
           if (attempt > max_attempts) {
             message("Aborting after 3 attempts")
-            ## return whatever you've got.
-            out2
           }
         }
-      })
+        out2
+      }
+    )
     names(out) <- df[[1]][["date"]][t_max]
     out
   }
@@ -195,7 +198,7 @@ estimates <- map2(
   incid_array, incidence, function(x, df) {
     t_max <- seq(
       from = t_min + 7,
-      to = dim(x)[1], by = 7
+      to = dim(x)[1], by = step_size
     )
     out <- map(
       t_max, function(tmax) {
@@ -226,10 +229,11 @@ estimates <- map2(
           attempt <- attempt + 1
           if (attempt > max_attempts) {
             message("Aborting after 3 attempts")
-            ## return whatever you've got.
-            out2
           }
         }
+        ## return whatever you've got.
+        out2
+
     })
     names(out) <- df[[1]][["date"]][t_max]
     out
