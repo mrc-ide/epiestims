@@ -162,17 +162,30 @@ eps_summary <- map(
 
 scenarios <- names(eps_summary)
 names(scenarios) <- scenarios
-
+## Append a fake column "qntl" to all metrics to
+## make plotting easier.
 together <- map(
   scenarios, function(x) {
     x1 <- error_summary[[x]]
+    x1$qntl <- 'fake'
     x2 <- sd_summary[[x]]
+    x2$qntl <- 'fake'
     x3 <- eps_summary[[x]]
+    ## This now has 50% coverage probability as well
+    x31 <- select(x3, rt_ref:upper, label:metric)
+    x32 <- select(
+      x3, rt_ref:tmax, n = n50, pt_est = pt_est50,
+      lower = lower50, upper = upper50, label:metric
+    )
+    x31$qntl <- '95%'
+    x32$qntl <- '50%'
+    x3 <- rbind(x31, x32)
     x3 <- rename(
       x3, low = lower, med = pt_est, high = upper
     )
     x3 <- x3[, colnames(x2)]
     x4 <- classified[[x]]
+    x4$qntl <- 1
     idx1 <- which(x4$true_label == "No transmission advantage" &
                   x4$est_class == "Unclear")
     idx2 <- which(x4$true_label == x4$est_class)
@@ -228,8 +241,10 @@ iwalk(
         high = c(max_bias, 1, max_sd)
       )
       dummy2 <- data.frame(
-        metric = c("Bias", "Coverage probability"),
-        y = c(0, 0.95)
+        metric = c("Bias", "Coverage probability",
+                   "Coverage probability"),
+        y = c(0, 0.95, 0.5),
+        qntl = c('fake', '95%', '50%')
       )
       dummy$metric <- factor(
         dummy$metric, levels = levels(y$metric)
@@ -239,13 +254,13 @@ iwalk(
       )
       p <- ggplot(y) +
         geom_point(
-          aes(true_eps, med, col = scenario_type),
+          aes(true_eps, med, col = scenario_type, group = qntl),
           position = position_dodge(width = dodge_width),
           size = 1.2
         ) +
         geom_linerange(
           aes(true_eps, ymin = low, ymax = high,
-              col = scenario_type),
+              col = scenario_type, group = qntl),
           position = position_dodge(width = dodge_width)
         ) +
         geom_blank(
@@ -255,7 +270,7 @@ iwalk(
           data = dummy, aes(y = high)
         ) +
         geom_hline(
-          data = dummy2, aes(yintercept = y),
+          data = dummy2, aes(yintercept = y, group = qntl),
           linetype = "dashed"
         ) +
         facet_wrap(~metric, scales = "free_y", ncol = 2) +

@@ -85,10 +85,10 @@ summarise_sims <- function(df) {
     lower = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 2],
     upper = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 3],
     n50 = sum(true_eps >= `25%` & true_eps <= `75%`),
-    total50 = n(),
-    pt_est50 = Hmisc::binconf(x = n50, n = total50, alpha = 0.05)[1, 1],
-    lower50 = Hmisc::binconf(x = n50, n = total50, alpha = 0.05)[1, 2],
-    upper50 = Hmisc::binconf(x = n50, n = total50, alpha = 0.05)[1, 3]
+    ##total50 = n(),
+    pt_est50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 1],
+    lower50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 2],
+    upper50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 3]
   )
 }
 
