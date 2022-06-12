@@ -3,6 +3,10 @@ source("R/fig_utils.R")
 dir.create("figures")
 mypercent <- function(x) scales::percent(x)
 
+whole_cnty_time <- readRDS("epsilon_qntls_whole_country.rds")
+x <- whole_cnty_time[["french"]]
+whole_cnty_time[["french_betagamma"]] <- x[x$variant == "beta-gamma_vs_wild", ]
+whole_cnty_time[["french"]] <- x[x$variant != "beta-gamma_vs_wild", ]
 ## Read all data first to get consistent ylimits
 incidence <- readRDS("cuml_incid_all_variants.rds")
 ## Repeat Frnech data once to get betagamma as well.
@@ -60,6 +64,7 @@ plots2axis <- pmap(
   list(
     x = nonovl_est,
     y = nonovl_prop,
+    w = whole_cnty_time,
     ## column = c("proportion_alpha", "proportion_alpha",
     ##             "proportion_delta", "proportion_betagamma"),
     y2label =  c("Cumulative proportion of Alpha",
@@ -69,10 +74,11 @@ plots2axis <- pmap(
     xmin = xaxis_breaks,
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
-  function(x, y, y2label, xmin, col) {
+  function(x, y, w, y2label, xmin, col) {
     message(y2label)
     x$date <- as.Date(x$date)
     z <- left_join(x, y, by = "date")
+    w$date <- max(x$date) + 5 ## slightly to the right to avoid overlap
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
@@ -107,6 +113,16 @@ plots2axis <- pmap(
         date_labels = date_labels,
         limits = c(min(xmin), NA)
       ) +
+      ## Add estimate for the entire country over the whole time period
+      geom_point(
+        data = w, aes(x = date, y = `50%`), fill = col, size = 3,
+        shape = 23, col = "black"
+      ) +
+      geom_linerange(
+        data = w, aes(x = date, ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1, colour = col
+      ) +
+      #########
       coord_cartesian(clip = "off") +
       ylab("Effective transmission advantage") +
       xlab("") +
