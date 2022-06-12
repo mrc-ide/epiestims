@@ -116,7 +116,7 @@ plots2axis <- pmap(
       ## Add estimate for the entire country over the whole time period
       geom_point(
         data = w, aes(x = date, y = `50%`), fill = col, size = 3,
-        shape = 23, col = "black"
+        shape = 23, col = "black", stroke = 2
       ) +
       geom_linerange(
         data = w, aes(x = date, ymin = `2.5%`, ymax = `97.5%`),
