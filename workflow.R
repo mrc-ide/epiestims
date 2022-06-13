@@ -23,8 +23,8 @@ orderly_commit(a)
 
 
 
+a <- orderly_run("produce_summary_figures2")
 a <- orderly_run("produce_summary_figures")
-
 ## Real data
 
 a <- orderly_run("clean_french_england_data")

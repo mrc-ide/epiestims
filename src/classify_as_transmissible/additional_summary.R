@@ -91,7 +91,7 @@ eps1 <- classified[classified$true_label == "No transmission advantage", ]
 eps1$scenario[eps1$si_mu_variant == 5.4 & eps1$scenario == "vary_si"] <- "baseline"
 x <- count(eps1, scenario, tmax, est_class, wt = n)
 x <- spread(x, est_class, n)
-write_csv(x, "classification_by_scenario_by_tamx_eps1.csv")
+write_csv(x, "classification_by_scenario_by_tmax_eps1.csv")
 
 x <- count(eps1, scenario, est_class, wt = n)
 write_csv(
