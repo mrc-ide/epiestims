@@ -252,16 +252,18 @@ iwalk(
       dummy2$metric <- factor(
         dummy2$metric, levels = levels(y$metric)
       )
+      ## Different shapes for 95% and 50% coverage probability
+      y$shape <- 19 ## everything is a circle
+      y$shape[y$qntl == "50%"] <- 18 ## Except 50% coverage probability
+
       p <- ggplot(y) +
         geom_point(
-          aes(true_eps, med, col = scenario_type, group = qntl),
-          position = position_dodge(width = dodge_width),
-          size = 1.2
+          aes(true_eps, med, col = scenario_type, group = qntl, shape = shape),
+          size = 1.5, position = position_dodge2(width = dodge_width)
         ) +
         geom_linerange(
           aes(true_eps, ymin = low, ymax = high,
-              col = scenario_type, group = qntl),
-          position = position_dodge(width = dodge_width)
+              col = scenario_type, group = qntl), position = position_dodge2(width = dodge_width)
         ) +
         geom_blank(
           data = dummy, aes(y = low)
@@ -274,6 +276,7 @@ iwalk(
           linetype = "dashed"
         ) +
         facet_wrap(~metric, scales = "free_y", ncol = 2) +
+        scale_shape_identity() +
         theme_manuscript() +
         scale_color_manual(
           values = values,
