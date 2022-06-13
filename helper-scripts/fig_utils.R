@@ -68,3 +68,73 @@ pretty_ci <- function(val, low, high, round_to = 2) {
   }
   glue("{f(val)} \n ({f(low)}, {f(high)})")
 }
+
+mypercent <- function(x) scales::percent(x)
+palette <- c(
+  wildtype = "#0f0e0e",
+  alpha = "#E69F00",
+  betagamma = "#CC79A7",
+  `beta/gamma` = "#CC79A7",
+  delta = "#009E73",
+  England = "#cc0000",
+  France = "#0000ff"
+)
+
+date_breaks <- "6 weeks"
+date_labels <- "%d-%b"
+
+
+variant_nicenames <- c(
+  wildtype = "Wildtype", alpha = "Alpha",
+  delta = "Delta", betagamma = "Beta/Gamma",
+  `beta/gamma` = "Beta/Gamma"
+)
+
+## Region short names
+region_short_names <- function(region) {
+  short_name <- case_when(
+    region == "Auvergne-Rhône-Alpes" ~ "ARA",
+    region ==  "Bourgogne-Franche-Comté" ~ "BFC",
+    region ==  "Bretagne"  ~ "BRE",
+    region ==  "Centre-Val de Loire" ~ "CVL",
+    region ==  "Corse" ~ "20R",
+    region ==  "Grand Est" ~ "GES",
+    region ==  "Guadeloupe" ~ "GP",
+    region ==  "Guyane"  ~ "GF",
+    region ==  "Hauts-de-France" ~ "HDF",
+    region ==    "Île-de-France" ~ "IDF",
+    region ==     "La Réunion" ~ "RE",
+    region ==    "Martinique" ~ "MQ",
+    region ==    "Mayotte" ~ "YT",
+    region ==    "Normandie" ~ "NOR",
+    region ==    "Nouvelle-Aquitaine" ~ "NAQ",
+    region ==    "Occitanie" ~ "OCC",
+    region ==    "Pays de la Loire" ~ "PDL",
+    region ==    "Provence-Alpes-Côte d'Azur" ~ "PAC",
+    region ==    "East of England" ~ "EE",
+    region ==    "London" ~ "LON",
+    region ==    "Midlands" ~ "MID",
+    region ==    "North East and Yorkshire" ~ "NE",
+    region ==    "North West" ~ "NW",
+    region ==    "South East" ~ "SE",
+    region ==    "South West" ~ "SW",
+    region ==    "England" ~ "ENG",
+    region ==    "France" ~ "FR"
+  )
+  short_name
+}
+
+
+xaxis_breaks <- list(
+  french = as.Date(c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")),
+  uk_alpha_wild = as.Date(
+    c("2020-09-01", "2020-10-01", "2020-11-01", "2020-12-01", "2021-01-01",
+      "2021-02-01", "2021-03-01"
+      )),
+  uk_delta_alpha = as.Date(
+    c("2021-03-15", "2021-04-15", "2021-05-15", "2021-06-15")
+  ),
+  french_betagamma = as.Date(
+    c("2021-02-15", "2021-03-15", "2021-04-15", "2021-05-15")
+  )
+)

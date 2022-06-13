@@ -1,0 +1,39 @@
+script: script.R
+
+packages:
+- cowplot
+- dplyr
+- ggh4x
+- ggplot2
+- ggpubr
+- glue
+- lubridate
+- purrr
+- RColorBrewer
+- scales
+- snakecase
+- tidyr
+
+artefacts:
+  staticgraph:
+    description: Figures from real data
+    filenames:
+      - figures/french_betagamma_regional.pdf
+      - figures/french_betagamma_regional.png      
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+depends:
+  - clean_french_england_data:
+      id: latest
+      use:
+         I_fr.rds: I_fr.rds
+         I_UK1.rds: I_UK1.rds
+         I_UK2.rds: I_UK2.rds
+  - mv_epiestim_regional_estimates:
+      id: latest
+      use:
+        epsilon_qntls_per_region.rds: epsilon_qntls_per_region.rds
+        nonovl_weekly_regional_epsilon_qntls.rds: nonoverlapping_weekly_regional_epsilon_qntls.rds
+        epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
