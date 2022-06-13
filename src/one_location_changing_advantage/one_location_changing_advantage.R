@@ -26,6 +26,64 @@ max_attempts <- 3
 ## Estimate epsilon with reference SI
 si_for_est <- cbind(si_distr_ref, si_distr_ref)
 # plan(multicore) # mask this so that we can run on cluster
+
+if (estimation_window == "standard") {
+  
+  iwalk(
+    simulated_incid,
+    function(incid, index) {
+      res <- map(
+        tmax_all, function(tmax) {
+          ## Loop over the first dimension which is
+          ## the set of simulations
+          message("tmax = ", tmax)
+          future_imap(incid, function(x, i) {
+            message("sim = ", i)
+            t_min <- EpiEstim::compute_t_min(x, si_for_est)
+            t_max <- as.integer(t_min + tmax)
+            t_max <- min(t_max, nrow(x))
+            out <- estimate_advantage(
+              x, si_for_est, priors, seed = 1,
+              t_min = t_min,
+              t_max = t_max,
+              mcmc_control = mcmc_controls
+            )
+            attempt <- 1
+            ## if convergence is achieved, out[["convergence"]] is TRUE
+            while (! out[["convergence"]]) {
+              message("Attempt ", attempt)
+              message("Not yet converged")
+              mcmc_controls <- lapply(
+                mcmc_controls, function(x) x * 2L
+              )
+              out <- estimate_advantage(
+                x, si_for_est, priors, seed = 1,
+                t_min = t_min,
+                t_max = t_max,
+                mcmc_control = mcmc_controls
+              )
+              attempt <- attempt + 1
+              ## so that we don't end in an infinite loop
+              if (attempt > max_attempts) {
+                message("Aborting after 3 attempts")
+                ## return whatever you've got.
+                return(list(out, out[["convergence"]]))
+              }
+            }
+            list(out, out[["convergence"]])
+          }, .options = furrr_options(seed = TRUE, stdout = TRUE),
+          .progress = TRUE
+          )
+        }
+      )
+      saveRDS(
+        res, glue("outputs/estimate_joint_{index}.rds")
+      )
+    }
+  )
+  
+} else {
+
 iwalk(
   simulated_incid,
   function(incid, index) {
@@ -85,6 +143,8 @@ iwalk(
     )
   }
 )
+  
+}
 
 files2zip <- dir('outputs', full.names = TRUE)
 zip(zipfile = "estimate_joint_output.zip", files = files2zip)

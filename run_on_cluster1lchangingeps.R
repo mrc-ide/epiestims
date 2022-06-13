@@ -43,9 +43,15 @@ bundle3 <- orderly::orderly_bundle_pack(path_bundles,
                                         parameters = list(short_run = FALSE,
                                                           estimation_window = 1))
 
+bundle4 <- orderly::orderly_bundle_pack(path_bundles,
+                                        "one_location_changing_advantage",
+                                        parameters = list(short_run = FALSE,
+                                                          estimation_window = "standard"))
+
 bundle1$path # bundle path name to include in orderly_bundle_run
 bundle2$path
 bundle3$path
+bundle4$path
 # "Q:\\cluster\\20220421-151815-d44aa9ea.zip
 # Full run (all tmax values - files above are a test of two tmax)
 # "Q:\\cluster\\20220421-163105-d5cdead9.zip"
@@ -63,20 +69,25 @@ obj$install_packages('mrc-ide/EpiEstim')
 # orderly_bundle_run arguments
 # 1) where bundle_pack was saved (find with bundle$path)
 # 2) where bundle_run outputs should go (seem to need to specify full file path)
-res1 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220511-163056-e07ffa62.zip",
+res1 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220610-160549-aa6c896d.zip",
                                                 "Z:\\jwardle\\epiestims\\cluster-runs"))
 
-res2 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220511-163103-4a6574e3.zip",
+res2 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220610-160556-dbc63195.zip",
                                                 "Z:\\jwardle\\epiestims\\cluster-runs"))
 
-res3 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220511-163109-25ecc384.zip",
+res3 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220610-160602-42a25409.zip",
+                                                "Z:\\jwardle\\epiestims\\cluster-runs"))
+
+res4 <- obj$enqueue(orderly::orderly_bundle_run("Q:\\cluster\\20220610-160607-faf12c2e.zip",
                                                 "Z:\\jwardle\\epiestims\\cluster-runs"))
 
 # task id: "62f5492dc4abd0def05a2cc780812396"
 
 
-orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220511-163056-e07ffa62.zip")
+orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220610-160549-aa6c896d.zip")
 
-orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220511-163103-4a6574e3.zip")
+orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220610-160556-dbc63195.zip")
 
-orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220511-163109-25ecc384.zip")
+orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220610-160602-42a25409.zip")
+
+orderly::orderly_bundle_import("Z:\\jwardle\\epiestims\\cluster-runs\\20220610-160607-faf12c2e.zip")

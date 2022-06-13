@@ -19,7 +19,7 @@ si_no_zero_ref <- si_distr_ref[-1]
 ## This is to prevent simulating unrealistically
 ## large numbers
 sim_params <- expand.grid(
-  rt_ref = 2,
+  rt_ref = 1.1, # previously used 2 but incidence grows v quickly
   epsilon_init = 1.1,
   epsilon_final = 1.5,
   epsilon_change = 30,
