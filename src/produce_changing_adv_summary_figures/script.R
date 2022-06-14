@@ -25,7 +25,7 @@ format_median_err <- function(df) {
 dir.create("figures")
 dodge_width <- 0.5
 ## common stuff
-ms_tmax <- "50"
+#ms_tmax <- "50"
 si_mu_ref <- 5.4
 si_std_ref <- 1.5
 round_to <- 3 ## Number of digits to round to

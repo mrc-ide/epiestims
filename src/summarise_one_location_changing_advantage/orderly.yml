@@ -5,26 +5,23 @@ packages:
   - EpiEstim
   - Hmisc
   - purrr
-  - ggforce
-  - ggplot2
   - glue
+  - zip
+
+parameters:
+  - estimation_window
   
 artefacts:
   data:
-    description: 1 location, 2 variants, gradual change in epsilon, summary objects
+    description: 1 location, 2 variants, summary objects
     filenames:
-      - eps_err_summary.rds
       - eps_summary_df.rds
       - incid_summary.rds
-      - eps_summary_by_all_vars.rds
-      - eps_summary_by_eps.rds
-      - eps_summary_by_eps_with_rt_change.rds
-      - err_summary_by_all_vars.rds
-      - err_summary_df.rds
-      - err_sd_summary_by_all_vars.rds
+      - eps_err_summary_df.rds
       
 global_resources:
   R/utils.R: summary_utils.R
+  R/summarise_sims.R: summarise_sims.R
 
 depends:
   sims_one_location_changing_advantage:
@@ -33,6 +30,6 @@ depends:
       param_grid.rds: param_grid.rds
       incid.rds: incid.rds
   one_location_changing_advantage:
-    id: latest
+    id: latest(parameter:estimation_window == estimation_window)
     use:
       output.zip: estimate_joint_output.zip
