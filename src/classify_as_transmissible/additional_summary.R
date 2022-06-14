@@ -23,10 +23,28 @@ true_class <- function(df) {
 ## Summarise classification performance as a
 ## function of tmax and true advantage.
 summary_tmax_eps <- function(x) {
-  out <- group_by(x, across(-sim)) %>%
-    count(est_class) %>% ungroup()
-  ci_95 <- binconf(out$n, 100) %>%
+  ## This method has the advantage
+  ## that numbers across the three
+  ## estimated class will add to the
+  ## total number of simulations
+  out <- group_by(x, across(!sim & !est_class)) %>%
+    summarise(
+      Unclear = sum(est_class == 'Unclear'),
+      `Variant more transmissible` = sum(est_class == "Variant more transmissible"),
+      `Variant less transmissible` = sum(est_class == "Variant less transmissible")
+    ) %>% ungroup()
+  ## This will of course be the number of sims
+  out$nsims <- out$Unclear +
+    out$`Variant more transmissible` +
+    out$`Variant less transmissible`
+
+  out <- gather(
+    out, est_class, n, Unclear:`Variant less transmissible`
+  )
+
+  ci_95 <- binconf(out$n, out$nsims) %>%
     tidy()
+
   cbind(out, ci_95[['x']])
 }
 
@@ -54,12 +72,28 @@ classified <- map(
   eps_summary, function(x) {
     x$true_label <- true_class(x)
     classified <- classify_epsilon(x)
-    x <- select(classified, tmax, sim, rt_ref:est_class)
+    x <- select(
+      classified, tmax, sim, rt_ref:est_class
+    )
     summary_tmax_eps(x)
   }
 )
 
-saveRDS(classified, "classification_by_scenario.rds")
+saveRDS(
+  classified, "classification_by_scenario.rds"
+)
 
 classified <- bind_rows(classified, .id = "scenario")
-readr::write_csv(classified, "classification_by_scenario.csv")
+write_csv(classified, "classification_by_scenario.csv")
+
+eps1 <- classified[classified$true_label == "No transmission advantage", ]
+## Distinguish baseline scenario
+eps1$scenario[eps1$si_mu_variant == 5.4 & eps1$scenario == "vary_si"] <- "baseline"
+x <- count(eps1, scenario, tmax, est_class, wt = n)
+x <- spread(x, est_class, n)
+write_csv(x, "classification_by_scenario_by_tmax_eps1.csv")
+
+x <- count(eps1, scenario, est_class, wt = n)
+write_csv(
+  x, "classification_by_scenario_eps1.csv"
+)
