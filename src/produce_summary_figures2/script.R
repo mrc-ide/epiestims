@@ -185,7 +185,7 @@ together <- map(
     )
     x3 <- x3[, colnames(x2)]
     x4 <- classified[[x]]
-    x4$qntl <- 1
+    x4$qntl <- 'fake'
     idx1 <- which(x4$true_label == "No transmission advantage" &
                   x4$est_class == "Unclear")
     idx2 <- which(x4$true_label == x4$est_class)
@@ -201,12 +201,9 @@ together <- map(
 ## Change of metrics over time
 baseline <- together[["same_si"]]
 baseline <- rename(
-  baseline, `2.5%` = low, `50%` = med,
-  `97.5%` = high
+  baseline, `2.5%` = low, `50%` = med, `97.5%` = high
 )
-baseline <- gather(
-  baseline, var, val, `2.5%`:`97.5%`
-)
+baseline <- gather(baseline, var, val, `2.5%`:`97.5%`)
 baseline$metric <- factor(
   baseline$metric, levels = c("Bias", "Uncertainty",
                               "Coverage probability",
@@ -228,13 +225,12 @@ dummy2 <- data.frame(
   y = c(0, 0.95),
   qntl = c('fake', '95%')
 )
-dummy$metric <- factor(
-  dummy$metric, levels = levels(baseline$metric)
-)
+dummy$metric <- factor(dummy$metric, levels = levels(baseline$metric))
 dummy2$metric <- factor(
   dummy2$metric, levels = levels(baseline$metric)
 )
 baseline <- baseline[baseline$qntl %in% c('fake', '95%'), ]
+
 p <- ggplot(baseline) +
   geom_boxplot(aes(tmax, val, fill = var), alpha = 0.5) +
   facet_wrap(~metric, scales = "free_y") +
@@ -253,6 +249,7 @@ p <- ggplot(baseline) +
   theme(legend.title = element_blank()) +
   xlab("Days used for estimation") +
   ylab("")
+
 save_multiple(p, "figures/baseline_metrics_over_time")
 
 iwalk(
