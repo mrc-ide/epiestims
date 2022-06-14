@@ -26,6 +26,6 @@ priors <- list(
 )
 
 mcmc_controls <- list(
-  n_iter = 20000L, burnin = 5000L,
+  n_iter = 30000L, burnin = 7500L,
   thin = 10L
 )
