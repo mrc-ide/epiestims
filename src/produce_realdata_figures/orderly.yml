@@ -32,7 +32,7 @@ depends:
   - mv_epiestim_weekly_estimates:
       id: latest
       use:
-        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
         nonoverlapping_prop_variant.rds: nonoverlapping_prop_variant.rds
         nonoverlapping_epsilon_qntls.rds: nonoverlapping_epsilon_qntls.rds
-        epsilon_estimates_with_variant_proportion.rds: epsilon_estimates_with_variant_proportion.rds
+        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds
+        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds        
