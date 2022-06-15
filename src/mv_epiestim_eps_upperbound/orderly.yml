@@ -1,0 +1,26 @@
+script: script.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+packages:
+- dplyr
+- ggplot2
+- purrr
+- tidyr
+
+artefacts:
+  staticgraph:
+    description: Theoretical relationship
+    filenames:
+      - eps_upperbound.png
+      - eps_upperbound.pdf
+
+depends:
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        cuml_incid_all_variants.rds: cuml_incid_all_variants.rds
+        nonoverlapping_prop_variant.rds: nonoverlapping_prop_variant.rds
+        nonoverlapping_epsilon_estimates.rds: nonoverlapping_epsilon_estimates.rds
+

@@ -162,42 +162,56 @@ volzetal <- data.frame(
 )
 
 ##eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
-eps_over_time <- readRDS("nonoverlapping_epsilon_qntls.rds")
+eps_over_time <- readRDS("epsilon_qntls_over_time.rds")
 eps_over_time[["french_betagamma"]] <-
   eps_over_time[["french"]][eps_over_time[["french"]]$variant != "alpha_vs_wild", ]
 eps_over_time[["french"]] <-
   eps_over_time[["french"]][eps_over_time[["french"]]$variant == "alpha_vs_wild", ]
 
 
-eps_over_time_with_prop <- readRDS("epsilon_estimates_with_variant_proportion.rds")
-eps_over_time_with_prop[["french_betagamma"]] <-
-  eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant != "alpha_vs_wild", ]
-eps_over_time_with_prop[["french"]] <-
-  eps_over_time_with_prop[["french"]][eps_over_time_with_prop[["french"]]$variant == "alpha_vs_wild", ]
+rolling_window_prop <- readRDS("cuml_incid_all_variants.rds")
+## Has all the columns we need.
+cols <- c("date", "wildtype", "betagamma",
+          "cumulative_betagamma", "cumulative_wildtype",
+          "proportion_betagamma")
 
-both_together <- pmap(
+rolling_window_prop[["french_betagamma"]] <-
+  rolling_window_prop[["french"]][, cols]
+
+
+cols <- c("date", "wildtype", "alpha",
+          "cumulative_alpha", "cumulative_wildtype",
+          "proportion_alpha")
+
+rolling_window_prop[["french"]] <-
+  rolling_window_prop[["french"]][, cols]
+
+
+
+rolling_window_prop <- map2(
+  rolling_window_prop,
   list(
-    default = eps_over_time_with_prop,
-    ##custom = custom_eps_over_time,
-    column = c(
-      "proportion_alpha", "proportion_alpha", "proportion_delta",
-      "proportion_betagamma")
-  ), function(default, custom, column) {
-    ##default$prior <- "Default prior"
-    ##custom$prior <- "Informative prior"
-    ##x <- rbind(default[, colnames(custom)], custom)
-    x <- default
-    x$proportion <- x[[column]]
-    x
+    french = c("wildtype", "alpha"),
+    uk_alpha_wild = c("cumulative_wildtype", "cumulative_alpha"),
+    uk_delta_alpha = c("cumulative_alpha", "cumulative_delta"),
+    french_betagamma = c("cumulative_wildtype", "cumulative_betagamma")
+  ),
+  function(x, cols) {
+    out <- binconf(x[[cols[2]]], (x[[cols[1]]] + x[[cols[2]]]))
+    cbind(x, data.frame(out))
   }
 )
+
+
 
 ######################################################################
 ## Plot with 2 y-axis
 plots2axis <- pmap(
   list(
     x = eps_over_time,
-    y = both_together,
+    y = rolling_window_prop,
+    ## column = c("proportion_alpha", "proportion_alpha",
+    ##             "proportion_delta", "proportion_betagamma"),
     y2label =  c("Cumulative proportion of Alpha",
                  "Cumulative proportion of Alpha",
                  "Cumulative proportion of Delta",
@@ -206,16 +220,18 @@ plots2axis <- pmap(
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
   function(x, y, y2label, xmin, col) {
-    y <- select(y, date, proportion)
+    message(y2label)
     x$date <- as.Date(x$date)
+    ##y <- select(y, date, PointEst:Upper)
     z <- left_join(x, y, by = "date")
     ## coeff <-  max(z$`97.5%`) / max(z$proportion)
     coeff <- 1.8 ## For everyhing except delta
     if (x$variant[1] == "delta_vs_alpha") coeff <- 2.5
-
-    z$proportion_scaled <- z$proportion * coeff
-    message("Max z$`97.5%`", max(z$`97.5%`))
-    message("Range of proportion", range(z$proportion))
+    z$proportion_scaled <- z$`PointEst` * coeff
+    z$low_scaled <- z$`Lower` * coeff
+    z$high_scaled <- z$`Upper` * coeff
+    message("Max z$`97.5%` ", max(z$`97.5%`))
+    message("Range of proportion ", range(z$proportion))
     message("Coeff = ", coeff)
     ggplot(z, aes(x = date)) +
       geom_point(
@@ -228,7 +244,9 @@ plots2axis <- pmap(
       geom_hline(
         yintercept = 1, linetype = "dashed", color = "red", size = 1.2
       ) +
-      geom_line(aes(y = proportion_scaled), color = "blue") +
+      geom_point(aes(y = proportion_scaled), color = "blue") +
+      geom_linerange(aes(ymin = low_scaled, ymax = high_scaled), color = "blue") +
+      geom_line(aes(y = proportion_scaled), color = "blue", alpha = 0.5) +
       scale_y_continuous(
         sec.axis = sec_axis(~./coeff, name = y2label, labels = mypercent),
         limits = c(0, coeff),
@@ -251,9 +269,10 @@ plots2axis <- pmap(
         axis.title.y.right = element_text(color = "blue"),
         axis.text.y.right = element_text(color = "blue")
       )
-
   }
 )
+
+
 
 iwalk(
   plots2axis, function(p, name) {
