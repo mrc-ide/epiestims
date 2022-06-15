@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start()
+## orderly::orderly_develop_start(use_draft = "newer")
 ## Aesthetics
 ## df is a grouped dataframe with column med which is the
 ## median error
@@ -30,10 +30,60 @@ si_mu_ref <- 5.4
 si_std_ref <- 1.5
 round_to <- 3 ## Number of digits to round to
 
-######################################################################
-######################################################################
-################## ONE LOCATION STEPWISE #############################
-######################################################################
+
+infiles <- list(
+  "10" = "err_summary_10.rds",
+  "7" = "err_summary_7.rds",
+  "standard" = "err_summary_standard.rds"
+)
+
+error_summary <- map(infiles, readRDS)
+
+error_summary <- readRDS("one_loc_changing_adv_err_summary_df.rds")
+error_summary$metric <- "Bias"
+
+sd_summary <- readRDS("one_loc_changing_adv_err_sd_summary_df.rds")
+sd_summary$metric <- "Uncertainty"
+
+classified <- readRDS("classified.rds")
+classified$metric <- "Classification"
+
+eps_summary <- readRDS("one_loc_changing_adv_eps_summary_by_all_vars.rds")
+eps_summary$metric <- "Coverage probability"
+
+
+x1 <- error_summary
+x1$qntl <- 'fake'
+x2 <- sd_summary
+x2$qntl <- 'fake'
+x3 <- eps_summary
+## This now has 50% coverage probability as well
+x31 <- select(x3, tmax:upper, label:metric)
+x32 <- select(
+  x3, tmax, n = n50, pt_est = pt_est50,
+  lower = lower50, upper = upper50, label:metric
+)
+x31$qntl <- '95%'
+x32$qntl <- '50%'
+x3 <- rbind(x31, x32)
+x3 <- rename(
+  x3, low = lower, med = pt_est, high = upper
+)
+x3 <- x3[, colnames(x2)]
+x4 <- classified[[x]]
+x4$qntl <- 1
+idx1 <- which(x4$true_label == "No transmission advantage" &
+                x4$est_class == "Unclear")
+idx2 <- which(x4$true_label == x4$est_class)
+x4 <- x4[c(idx1, idx2), ]
+x4 <- rename(
+  x4, med = PointEst, low = Lower, high = Upper
+)
+x4 <- x4[, colnames(x2)]
+rbind(x1, x2, x3, x4)
+
+
+
 one_loc_step_err <- readRDS("one_loc_step_err_summary_by_all_vars.rds")
 eps_vals <- unique(one_loc_step_err$true_eps)
 
