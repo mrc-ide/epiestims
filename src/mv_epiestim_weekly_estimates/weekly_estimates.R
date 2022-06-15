@@ -4,29 +4,8 @@ short_run <- FALSE
 step_size <- ifelse(short_run, 28L, 7L)
 source("mv_epiestim_params.R")
 max_attempts <- 3
-## Proportion of variant in the time frame used for estimation
-window_prop_variant <- function(incid, date_start, date_end) {
-  x <- incid[incid$date >= date_start, ]
-  x <- x[x$date <= date_end, ]
-  out <- apply(x[, -1], 2, cumsum)
-  res <- cbind(x, out)
-  names(res) <- c(
-    names(x), glue("cumulative_{names(x[, -1])}")
-  )
-  for (col in seq(2, ncol(out))) {
-    ## Assume wildtype (or alpha, when estimating for delta)
-    ## is always the first column.
-    wt_plus_var <- out[, 1] + out[, col]
-    res$prop_variant <- out[, col] / wt_plus_var
-    newname <- glue("proportion_{colnames(out)[col]}")
-    names(res)[names(res) == "prop_variant"] <- newname
 
-    res$prop_variant <- out[, 1] / wt_plus_var
-    newname <- glue("proportion_{colnames(out)[1]}_{colnames(out)[col]}")
-    names(res)[names(res) == "prop_variant"] <- newname
-  }
-  res
-}
+
 
 epi_params <- readRDS('Epi_param.rds')
 

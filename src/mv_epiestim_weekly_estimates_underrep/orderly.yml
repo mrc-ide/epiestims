@@ -8,7 +8,9 @@ packages:
 - EpiEstim
 - epitrix
 - glue
+- lubridate
 - purrr
+- tibble
 - tidyr
 
 artefacts:
@@ -19,7 +21,10 @@ artefacts:
       - epsilon_estimates_over_time.rds
       - epsilon_qntls_over_time.rds      
       - cuml_incid_all_variants.rds
-      - epsilon_estimates_with_variant_proportion.rds      
+      - epsilon_estimates_with_variant_proportion.rds
+      - nonoverlapping_epsilon_qntls.rds
+      - nonoverlapping_epsilon_estimates.rds
+      - nonoverlapping_prop_variant.rds
       
 depends:
   - clean_french_england_data:
@@ -29,3 +34,4 @@ depends:
          I_fr.rds: I_fr.rds
          I_UK1.rds: I_UK1.rds
          I_UK2.rds: I_UK2.rds
+         england_na_not_adjusted.rds: england_na_not_adjusted.rds
