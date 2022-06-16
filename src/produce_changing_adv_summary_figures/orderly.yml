@@ -18,43 +18,43 @@ artefacts:
   staticgraph:
     description: Various summary figures
     filenames:
-      - figures/two_loc_step_diff_error_by_tmax.pdf
-      - figures/two_loc_step_diff_classification.pdf
+      - figures/one_loc_changing_adv.pdf
+      - figures/one_loc_changing_adv.png
 
 depends:
-  classify_as_transmissible_changing_advantage:
-    id: latest(parameter:estimation_window == 10)
-    use:
-      classified_10.rds: classification_by_scenario.rds
-  classify_as_transmissible_changing_advantage:
-    id: latest(parameter:estimation_window == 7)
-    use:
-      classified_7.rds: classification_by_scenario.rds
-  classify_as_transmissible_changing_advantage:
-    id: latest(parameter:estimation_window == "standard")
-    use:
-      classified_standard.rds: classification_by_scenario.rds
-  summarise_one_location_changing_advantage:
-    id: latest(parameter:estimation_window == 10)
-    use:
-      eps_summary_df_10.rds: eps_summary_df.rds
-      eps_summary_by_all_vars_10.rds: eps_summary_by_all_vars.rds
-      err_sd_summary_10.rds: err_sd_summary_by_all_vars.rds
-      err_summary_10.rds: err_summary_by_all_vars.rds
-      incid_summary_10.rds: incid_summary.rds
-  summarise_one_location_changing_advantage:
-    id: latest(parameter:estimation_window == 7)
-    use:
-      eps_summary_df_7.rds: eps_summary_df.rds
-      eps_summary_by_all_vars_7.rds: eps_summary_by_all_vars.rds
-      err_sd_summary_7.rds: err_sd_summary_by_all_vars.rds
-      err_summary_7.rds: err_summary_by_all_vars.rds
-      incid_summary_7.rds: incid_summary.rds
-  summarise_one_location_changing_advantage:
-    id: latest(parameter:estimation_window == "standard"")
-    use:
-      eps_summary_df_standard.rds: eps_summary_df.rds
-      eps_summary_by_all_vars_standard.rds: eps_summary_by_all_vars.rds
-      err_sd_summary_standard.rds: err_sd_summary_by_all_vars.rds
-      err_summary_standard.rds: err_summary_by_all_vars.rds
-      incid_summary_standard.rds: incid_summary.rds
+  - classify_as_transmissible_changing_advantage:
+      id: latest(parameter:estimation_window == "10")
+      use:
+        classified_10.rds: classification_by_scenario.rds
+  - classify_as_transmissible_changing_advantage:
+      id: latest(parameter:estimation_window == "7")
+      use:
+        classified_7.rds: classification_by_scenario.rds
+  - classify_as_transmissible_changing_advantage:
+      id: latest(parameter:estimation_window == "standard")
+      use:
+        classified_standard.rds: classification_by_scenario.rds
+  - summarise_one_location_changing_advantage:
+      id: latest(parameter:estimation_window == "10")
+      use:
+        eps_summary_df_10.rds: eps_summary_df.rds
+        eps_summary_by_all_vars_10.rds: eps_summary_by_all_vars.rds
+        err_sd_summary_10.rds: err_sd_summary_by_all_vars.rds
+        err_summary_10.rds: err_summary_by_all_vars.rds
+        incid_summary_10.rds: incid_summary.rds
+  - summarise_one_location_changing_advantage:
+      id: latest(parameter:estimation_window == "7")
+      use:
+        eps_summary_df_7.rds: eps_summary_df.rds
+        eps_summary_by_all_vars_7.rds: eps_summary_by_all_vars.rds
+        err_sd_summary_7.rds: err_sd_summary_by_all_vars.rds
+        err_summary_7.rds: err_summary_by_all_vars.rds
+        incid_summary_7.rds: incid_summary.rds
+  - summarise_one_location_changing_advantage:
+      id: latest(parameter:estimation_window == "standard")
+      use:
+        eps_summary_df_standard.rds: eps_summary_df.rds
+        eps_summary_by_all_vars_standard.rds: eps_summary_by_all_vars.rds
+        err_sd_summary_standard.rds: err_sd_summary_by_all_vars.rds
+        err_summary_standard.rds: err_summary_by_all_vars.rds
+        incid_summary_standard.rds: incid_summary.rds
