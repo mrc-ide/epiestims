@@ -228,4 +228,79 @@ p
 
 save_multiple(p, "figures/one_loc_changing_adv")
 
+
+## Create figure showing how the estimated epsilon varies over the scenario
+
+infiles <- list(
+  "10" = "eps_summary_df_10.rds",
+  "7" = "eps_summary_df_7.rds",
+  "standard" = "eps_summary_df_standard.rds"
+)
+
+eps_summary_df <- map(infiles, readRDS)
+eps_summary_df <- map_dfr(
+  eps_summary_df, function(x) {
+    x$estimation_window <- as.character(x$estimation_window)
+    x
+  })
+
+eps_summary_df$tmax <- as.numeric(eps_summary_df$tmax)
+eps_summary_df <- arrange(eps_summary_df, tmax) %>% 
+  filter(tmax < 90)
+
+levels <- c("standard", "10", "7")
+labels <- c("All data", "10 days", "7 days")
+eps_summary_df$estimation_window <- factor(eps_summary_df$estimation_window,
+                                           levels = levels, labels = labels)
+
+# summarise across all sims for each tmax and window value
+eps_summary_df <- group_by(eps_summary_df, estimation_window, tmax, true_eps) %>%
+  summarise(
+    low = mean(mu) - sd(mu), med = median(mu),
+    high = mean(mu) + sd(mu)
+  )
+
+# recreate the epsilon values used in the simulations
+sim_params <- expand.grid(
+  rt_ref = 2,
+  epsilon_init = 1.1,
+  epsilon_final = 1.5,
+  epsilon_change = 30,
+  si_mu_variant = 1 * si_mu_ref,
+  si_std_variant = si_std_ref
+)
+ndays <- 100
+epsilon_all <- c(rep(sim_params$epsilon_init, sim_params$epsilon_change),
+                 seq(sim_params$epsilon_init, sim_params$epsilon_final, length.out = 30),
+                 rep(sim_params$epsilon_final, ndays - 30 - sim_params$epsilon_change))
+
+epsilon_all <- data.frame(time = c(1:9, (19:100) - 9),
+                          epsilon = c(rep(1.1, 9), epsilon_all[19:100]))
+
+# create plot
+p <- ggplot(eps_summary_df) +
+  geom_line(data = epsilon_all,
+            aes(x = time, y = epsilon), linetype = "dashed") +
+  geom_point(aes(x = tmax, y = med, colour = estimation_window),
+             size = 1.5,
+             position = position_dodge(width = 3)) +
+  geom_linerange(aes(x = tmax, ymax = high, ymin = low, colour = estimation_window),
+                 size = 1,
+                 position = position_dodge(width = 3)) +
+  geom_point(aes(x = tmax, y = true_eps),
+             size = 1.5, shape = 0) +
+  scale_y_continuous(limits = c(0, 1.8)) +
+  scale_color_manual(name = "Window length",
+                     values = values,
+                     breaks = c("All data", "10 days", "7 days")) +
+  xlab("Time (days)") +
+  ylab("Effective transmission advantage") +
+  theme_manuscript() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5))
+
+p
+
+save_multiple(p, "figures/one_loc_changing_adv_epsilon_est")
+
 if (! is.null(dev.list())) dev.off()
