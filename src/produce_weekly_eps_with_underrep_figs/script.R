@@ -67,10 +67,10 @@ plots2axis <- pmap(
     w = whole_cnty_time,
     ## column = c("proportion_alpha", "proportion_alpha",
     ##             "proportion_delta", "proportion_betagamma"),
-    y2label =  c("Weekly proportion of Alpha",
-                 "Weekly proportion of Alpha",
-                 "Weekly proportion of Delta",
-                 "Weekly proportion of Beta/Gamma"),
+    y2label =  c("Cumulative proportion of Alpha",
+                 "Cumulative proportion of Alpha",
+                 "Cumulative proportion of Delta",
+                 "Cumulative proportion of Beta/Gamma"),
     xmin = xaxis_breaks,
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
@@ -139,7 +139,7 @@ plots2axis <- pmap(
 
 iwalk(
   plots2axis, function(p, name) {
-    save_multiple(p, glue("figures/nonovl_{name}_2axis"))
+    save_multiple(p, glue("figures/underrep_nonovl_{name}_2axis"))
   }
 )
 
@@ -290,7 +290,7 @@ iwalk(
           position = position_nudge(x = 2)
       )
     }
-    save_multiple(p, glue("figures/{name}_2axis"))
+    save_multiple(p, glue("figures/underrep_{name}_2axis"))
   }
 )
 
