@@ -256,7 +256,7 @@ eps_summary_df$estimation_window <- factor(eps_summary_df$estimation_window,
 # summarise across all sims for each tmax and window value
 eps_summary_df <- group_by(eps_summary_df, estimation_window, tmax, true_eps) %>%
   summarise(
-    low = mean(mu) - sd(mu), med = median(mu),
+    low = mean(mu) - sd(mu), med = mean(mu),
     high = mean(mu) + sd(mu)
   )
 

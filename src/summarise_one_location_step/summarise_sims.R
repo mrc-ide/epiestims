@@ -106,6 +106,31 @@ by_eps <- split(eps_summary_df, eps_summary_df$true_eps) %>%
 saveRDS(by_eps, "eps_summary_by_eps.rds")
 
 ## 6. by rt_ref and epsilon
+
+## alternative summary function to generate 50% coverage
+## df is grouped df, output of group_by
+summarise_sims <- function(df) {
+  summarise(
+    df,
+    n = sum(true_eps >= `2.5%` & true_eps <= `97.5%`),
+    total = n(),
+    pt_est = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 1],
+    lower = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 2],
+    upper = Hmisc::binconf(x = n, n = total, alpha = 0.05)[1, 3],
+    n50 = sum(true_eps >= `25%` & true_eps <= `75%`),
+    ##total50 = n(),
+    pt_est50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 1],
+    lower50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 2],
+    upper50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 3]
+  )
+}
+###CONTINUE HERE: test if next bit of code will work with new function above.
+by_all_vars <-  eps_summary_df %>%
+  mutate(true_eps = replace_na(true_eps, 1.5)) %>% 
+  group_by(tmax) %>%
+  summarise_sims
+
+
 by_eps_with_rt_change <- split(
   eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref),
   sep = "_"
