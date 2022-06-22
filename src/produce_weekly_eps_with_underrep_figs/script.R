@@ -1,8 +1,6 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("R/fig_utils.R")
 dir.create("figures")
-mypercent <- function(x) scales::percent(x)
-
 whole_cnty_time <- readRDS("epsilon_qntls_whole_country.rds")
 x <- whole_cnty_time[["french"]]
 whole_cnty_time[["french_betagamma"]] <- x[x$variant == "beta-gamma_vs_wild", ]
@@ -15,13 +13,31 @@ incidence[["french_betagamma"]] <- incidence[["french"]]
 
 ## Epsilon estimates with non-overlapping weekly windows.
 ## Axis 2. Proportion of variant in the window used for estimation
-nonovl_est <- readRDS("nonoverlapping_epsilon_qntls.rds")
+nonovl_est <- readRDS("nonovl_epsilon_qntls.rds")
 nonovl_est[["french_betagamma"]] <-
   nonovl_est[["french"]][nonovl_est[["french"]]$variant != "alpha_vs_wild", ]
 nonovl_est[["french"]] <-
   nonovl_est[["french"]][nonovl_est[["french"]]$variant == "alpha_vs_wild", ]
 
-nonovl_prop <- readRDS("nonoverlapping_prop_variant.rds")
+
+## Epsilon estimates with non-overlapping weekly windows.
+## and underreporting
+nonovl_est_underrep <- readRDS("nonovl_epsilon_qntls_underrep.rds")
+nonovl_est_underrep[["french_betagamma"]] <-
+  nonovl_est_underrep[["french"]][nonovl_est[["french"]]$variant != "alpha_vs_wild", ]
+nonovl_est_underrep[["french"]] <-
+  nonovl_est_underrep[["french"]][nonovl_est_underrep[["french"]]$variant == "alpha_vs_wild", ]
+
+## Put them together
+nonovl_est <- map2(
+  nonovl_est, nonovl_est_underrep, function(x, y) {
+    bind_rows(None = x, `50%` = y, .id = "Underreporting")
+  }
+)
+
+
+
+nonovl_prop <- readRDS("nonovl_prop_variant.rds")
 ## Has all the columns we need.
 cols <- c("date", "wildtype", "betagamma",
           "cumulative_betagamma", "cumulative_wildtype",
@@ -67,10 +83,10 @@ plots2axis <- pmap(
     w = whole_cnty_time,
     ## column = c("proportion_alpha", "proportion_alpha",
     ##             "proportion_delta", "proportion_betagamma"),
-    y2label =  c("Cumulative proportion of Alpha",
-                 "Cumulative proportion of Alpha",
-                 "Cumulative proportion of Delta",
-                 "Cumulative proportion of Beta/Gamma"),
+    y2label = c("Cumulative proportion of Alpha",
+                "Cumulative proportion of Alpha",
+                "Cumulative proportion of Delta",
+                "Cumulative proportion of Beta/Gamma"),
     xmin = xaxis_breaks,
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
@@ -90,14 +106,16 @@ plots2axis <- pmap(
     message("Coeff = ", coeff)
     ggplot(z, aes(x = date)) +
       geom_point(
-        aes(y = `50%`), colour = col, size = 3
+        aes(y = `50%`, shape = Underreporting), colour = col, size = 2,
+        position = position_dodge(width = 2.5)
       ) +
       geom_linerange(
-        aes(ymin = `2.5%`, ymax = `97.5%`),
+        aes(ymin = `2.5%`, ymax = `97.5%`, linetype = Underreporting),
+        position = position_dodge(width = 2.5),
         size = 1.1, colour = col
       ) +
       geom_hline(
-        yintercept = 1, linetype = "dashed", color = "red", size = 1.2
+        yintercept = 1, linetype = "dashed", color = "red", size = 1.1
       ) +
       geom_point(aes(y = proportion_scaled), color = "blue") +
       geom_linerange(aes(ymin = low_scaled, ymax = high_scaled), color = "blue") +
