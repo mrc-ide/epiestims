@@ -82,6 +82,48 @@ classification_fig <- function(df) {
 
 panel_fig <- function(joined_data, panel_name) {
   
+  together <- joined_data
+  x1 <- together[[1]]
+  x1$qntl <- 'fake'
+  x2 <- together[[2]]
+  x2$qntl <- 'fake'
+  x3 <- together[[3]]
+  ## This now has 50% coverage probability as well
+  x31 <- select(x3, rt_ref:upper, rt_change:metric)
+  x32 <- select(
+    x3, rt_ref:true_eps, n = n50, total = total, pt_est = pt_est50,
+    lower = lower50, upper = upper50, rt_change:metric
+  )
+  x31$qntl <- '95%'
+  x32$qntl <- '50%'
+  x3 <- rbind(x31, x32)
+  x3 <- rename(
+    x3, low = lower, med = pt_est, high = upper
+  )
+  x3$si_mu_variant <- 5.4
+  x3$label <- "X 1"
+  x3 <- x3[, colnames(x2)]
+  x4 <- together[[4]]
+  x4$qntl <- '1'
+  idx1 <- which(x4$true_label == "No transmission advantage" &
+                  x4$est_class == "Unclear")
+  idx2 <- which(x4$true_label == x4$est_class)
+  # browser()
+  x4 <- x4[c(idx1, idx2), ]
+  x4$label <- "X 1"
+  # x4 <- rename(
+  #   x4, med = PointEst, low = Lower, high = Upper
+  # )
+  x4 <- x4[, colnames(x2)]
+  out <- rbind(x1, x2, x3, x4)
+  
+  out$metric <- factor(
+    out$metric, levels = c("Bias", "Uncertainty",
+                                "Coverage probability",
+                                "Classification"),
+    ordered = TRUE
+  )
+  
   ## Construct dummy data.frame to control facet scales
   ## Coverage probability to go from 0 to 1
   min_bias <- -1.5
@@ -95,8 +137,10 @@ panel_fig <- function(joined_data, panel_name) {
     high = c(max_bias, 1, max_sd, 1)
   )
   dummy2 <- data.frame(
-    metric = c("Bias", "Coverage probability"),
-    y = c(0, 0.95)
+    metric = c("Bias", "Coverage probability",
+               "Coverage probability"),
+    y = c(0, 0.95, 0.5),
+    qntl = c('fake', '95%', '50%')
   )
   
   dummy$metric <- factor(
@@ -106,6 +150,9 @@ panel_fig <- function(joined_data, panel_name) {
     dummy2$metric, levels = levels(joined_data$metric)
   )
   
+  ## Different shapes for 95% and 50% coverage probability
+  joined_data$shape <- 19 ## everything is a circle
+  joined_data$shape[joined_data$qntl == "50%"] <- 18 ## Except 50% coverage probability
   
   
   y <- split(joined_data, list(joined_data$tmax, joined_data$rt_change))
@@ -113,14 +160,14 @@ panel_fig <- function(joined_data, panel_name) {
     
     p <- ggplot(z) +
       geom_point(
-        aes(true_eps, med), col = "black",
-        position = position_dodge(width = dodge_width),
+        aes(true_eps, med, group = qntl, shape = shape), col = "black",
+        position = position_dodge2(width = dodge_width),
         size = 1.2
       ) +
       geom_linerange(
-        aes(true_eps, ymin = low, ymax = high),
+        aes(true_eps, ymin = low, ymax = high, group = qntl),
         col = "black",
-        position = position_dodge(width = dodge_width)
+        position = position_dodge2(width = dodge_width)
       ) +
       geom_blank(
         data = dummy, aes(y = low)
@@ -129,10 +176,11 @@ panel_fig <- function(joined_data, panel_name) {
         data = dummy, aes(y = high)
       ) +
       geom_hline(
-        data = dummy2, aes(yintercept = y),
+        data = dummy2, aes(yintercept = y, group = qntl),
         linetype = "dashed"
       ) +
       facet_wrap(~metric, scales = "free_y", ncol = 2) +
+      scale_shape_identity() +
       theme_manuscript() +
       xlab("Transmission Advantage") +
       ylab("")

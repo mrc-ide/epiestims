@@ -124,12 +124,6 @@ summarise_sims <- function(df) {
     upper50 = Hmisc::binconf(x = n50, n = total, alpha = 0.05)[1, 3]
   )
 }
-###CONTINUE HERE: test if next bit of code will work with new function above.
-by_all_vars <-  eps_summary_df %>%
-  mutate(true_eps = replace_na(true_eps, 1.5)) %>% 
-  group_by(tmax) %>%
-  summarise_sims
-
 
 by_eps_with_rt_change <- split(
   eps_summary_df, list(eps_summary_df$true_eps, eps_summary_df$rt_ref),

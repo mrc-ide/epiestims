@@ -126,14 +126,14 @@ one_loc_step_coverage$true_eps <- factor(
   one_loc_step_coverage$true_eps, levels = eps_vals, ordered = TRUE
 )
 one_loc_step_coverage$metric <- "Coverage probability"
-one_loc_step_coverage <- rename(one_loc_step_coverage,
-                                med = pt_est, low = lower, high = upper)
+# one_loc_step_coverage <- rename(one_loc_step_coverage,
+                                # med = pt_est, low = lower, high = upper)
 
 one_loc_step_coverage$rt_ref <- as.numeric(one_loc_step_coverage$rt_ref)
 one_loc_step_coverage$rt_post_step <- as.numeric(one_loc_step_coverage$rt_post_step)
 
-together <- rbind(one_loc_step_err, one_loc_step_sd,
-                  one_loc_step_coverage, one_loc_step_classified)
+together <- list(error_summary = one_loc_step_err, sd_summary = one_loc_step_sd,
+                 eps_summary = one_loc_step_coverage, classified = one_loc_step_classified)
 
 together$metric <- factor(
   together$metric, levels = c("Bias", "Uncertainty",
@@ -252,15 +252,109 @@ two_loc_step_coverage$rt_post_step_l2 <- as.numeric(two_loc_step_coverage$rt_pos
 two_loc_step_coverage$step_time_l1 <- as.numeric(two_loc_step_coverage$step_time_l1)
 two_loc_step_coverage$step_time_l2 <- as.numeric(two_loc_step_coverage$step_time_l2)
 
-together <- bind_rows(two_loc_step_err, two_loc_step_sd,
-                  two_loc_step_coverage, two_loc_step_classified)
+together <- list(error_summary = two_loc_step_err, sd_summary = two_loc_step_sd,
+                 eps_summary = two_loc_step_coverage, classified = two_loc_step_classified)
 
-together$metric <- factor(
-  together$metric, levels = c("Bias", "Uncertainty",
-                              "Coverage probability",
-                              "Classification"),
+
+x1 <- together[[1]]
+x1$qntl <- 'fake'
+x2 <- together[[2]]
+x2$qntl <- 'fake'
+x3 <- together[[3]]
+## This now has 50% coverage probability as well
+x31 <- select(x3, rt_ref_l1:high, rt_change:metric)
+x32 <- select(
+  x3, rt_ref_l1:tmax, n = n50, total = total, med = pt_est50,
+  low = lower50, high = upper50, rt_change:metric
+)
+x31$qntl <- '95%'
+x32$qntl <- '50%'
+x3 <- rbind(x31, x32)
+x3$si_mu_variant <- 5.4
+x3$label <- "X 1"
+x3 <- x3[, colnames(x2)]
+x4 <- together[[4]]
+x4$qntl <- '1'
+idx1 <- which(x4$true_label == "No transmission advantage" &
+                x4$est_class == "Unclear")
+idx2 <- which(x4$true_label == x4$est_class)
+x4 <- x4[c(idx1, idx2), ]
+x4$label <- "X 1"
+x4 <- x4[, colnames(x2)]
+out <- rbind(x1, x2, x3, x4)
+
+out$metric <- factor(
+  out$metric, levels = c("Bias", "Uncertainty",
+                         "Coverage probability",
+                         "Classification"),
   ordered = TRUE
 )
+
+## Construct dummy data.frame to control facet scales
+## Coverage probability to go from 0 to 1
+min_bias <- -1.5
+max_bias <- 1.5
+min_sd <- -0.1
+max_sd <- 0.75
+dummy <- data.frame(
+  metric = c("Bias", "Coverage probability", "Uncertainty", "Classification"),
+  ##true_eps = levels(y$true_eps),
+  low = c(min_bias, 0, min_sd, 0),
+  high = c(max_bias, 1, max_sd, 1)
+)
+dummy2 <- data.frame(
+  metric = c("Bias", "Coverage probability",
+             "Coverage probability"),
+  y = c(0, 0.95, 0.5),
+  qntl = c('fake', '95%', '50%')
+)
+
+dummy$metric <- factor(
+  dummy$metric, levels = levels(joined_data$metric)
+)
+dummy2$metric <- factor(
+  dummy2$metric, levels = levels(joined_data$metric)
+)
+
+## Different shapes for 95% and 50% coverage probability
+joined_data$shape <- 19 ## everything is a circle
+joined_data$shape[joined_data$qntl == "50%"] <- 18 ## Except 50% coverage probability
+
+
+y <- split(joined_data, list(joined_data$tmax, joined_data$rt_change))
+iwalk(y, function(z, index) {
+  
+  p <- ggplot(z) +
+    geom_point(
+      aes(true_eps, med, group = qntl, shape = shape), col = "black",
+      position = position_dodge2(width = dodge_width),
+      size = 1.2
+    ) +
+    geom_linerange(
+      aes(true_eps, ymin = low, ymax = high, group = qntl),
+      col = "black",
+      position = position_dodge2(width = dodge_width)
+    ) +
+    geom_blank(
+      data = dummy, aes(y = low)
+    ) +
+    geom_blank(
+      data = dummy, aes(y = high)
+    ) +
+    geom_hline(
+      data = dummy2, aes(yintercept = y, group = qntl),
+      linetype = "dashed"
+    ) +
+    facet_wrap(~metric, scales = "free_y", ncol = 2) +
+    scale_shape_identity() +
+    theme_manuscript() +
+    xlab("Transmission Advantage") +
+    ylab("")
+  
+  save_multiple(
+    p, glue("figures/two_loc_step_panel_{index}")
+  )
+})
 
 panel_fig(together, "two_loc_step")
 
