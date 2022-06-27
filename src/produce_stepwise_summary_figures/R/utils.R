@@ -144,18 +144,18 @@ panel_fig <- function(joined_data, panel_name) {
   )
   
   dummy$metric <- factor(
-    dummy$metric, levels = levels(joined_data$metric)
+    dummy$metric, levels = levels(out$metric)
   )
   dummy2$metric <- factor(
-    dummy2$metric, levels = levels(joined_data$metric)
+    dummy2$metric, levels = levels(out$metric)
   )
   
   ## Different shapes for 95% and 50% coverage probability
-  joined_data$shape <- 19 ## everything is a circle
-  joined_data$shape[joined_data$qntl == "50%"] <- 18 ## Except 50% coverage probability
+  out$shape <- 19 ## everything is a circle
+  out$shape[out$qntl == "50%"] <- 18 ## Except 50% coverage probability
   
   
-  y <- split(joined_data, list(joined_data$tmax, joined_data$rt_change))
+  y <- split(out, list(out$tmax, out$rt_change))
   iwalk(y, function(z, index) {
     
     p <- ggplot(z) +
