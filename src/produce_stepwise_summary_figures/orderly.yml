@@ -1,0 +1,67 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- stargazer
+- tidyr
+- purrr
+
+sources: R/utils.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/two_loc_step_diff_error_by_tmax.pdf
+      - figures/two_loc_step_diff_classification.pdf
+
+depends:
+  classify_as_transmissible_step:
+    id: latest
+    use:
+      one_loc_step_classified.rds: one_loc_step_classified.rds
+      two_loc_step_classified.rds: two_loc_step_classified.rds      
+      two_loc_step_diff_classified.rds: two_loc_step_diff_classified.rds
+  summarise_one_location_step:
+    id: latest
+    use:
+      one_loc_step_eps_summary_df.rds: eps_summary_df.rds
+      one_loc_step_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      one_loc_step_eps_summary_by_eps.rds: eps_summary_by_eps.rds
+      one_loc_step_eps_summary_by_eps_with_rt_change.rds: eps_summary_by_eps_with_rt_change.rds
+      one_loc_step_incid_summary.rds: incid_summary.rds
+      one_loc_step_eps_err_summary_df.rds: eps_err_summary.rds
+      one_loc_step_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      one_loc_step_err_summary_df.rds: err_summary_df.rds
+      one_loc_step_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+  summarise_two_location_step:
+    id: latest
+    use:
+      two_loc_step_eps_summary_df.rds: eps_summary_df.rds
+      two_loc_step_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      two_loc_step_eps_summary_by_eps.rds: eps_summary_by_eps.rds
+      two_loc_step_eps_summary_by_eps_with_rt_change.rds: eps_summary_by_eps_with_rt_change.rds
+      two_loc_step_incid_summary.rds: incid_summary.rds
+      two_loc_step_eps_err_summary_df.rds: eps_err_summary.rds
+      two_loc_step_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      two_loc_step_err_summary_df.rds: err_summary_df.rds
+      two_loc_step_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+  summarise_two_location_step_diff:
+    id: latest
+    use:
+      two_loc_step_diff_eps_summary_df.rds: eps_summary_df.rds
+      two_loc_step_diff_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+      two_loc_step_diff_eps_summary_by_eps.rds: eps_summary_by_eps.rds
+      two_loc_step_diff_eps_summary_by_eps_with_rt_change.rds: eps_summary_by_eps_with_rt_change.rds
+      two_loc_step_diff_incid_summary.rds: incid_summary.rds
+      two_loc_step_diff_eps_err_summary_df.rds: eps_err_summary.rds
+      two_loc_step_diff_err_summary_by_all_vars.rds: err_summary_by_all_vars.rds
+      two_loc_step_diff_err_summary_df.rds: err_summary_df.rds
+      two_loc_step_diff_err_sd_summary_by_all_vars.rds: err_sd_summary_by_all_vars.rds
+      

@@ -1,0 +1,30 @@
+script: additional_summary.R
+packages:
+- broom
+- dplyr
+- ggplot2
+- Hmisc
+- janitor
+- purrr
+- readr
+- tidyr
+- stargazer
+
+parameters:
+  - estimation_window
+
+artefacts:
+  data:
+    description: Classified for cases where 95% CrI does not contain true value
+    filenames:
+      - classification_by_scenario.rds
+      - classification_by_scenario.csv
+
+global_resources:
+  R/utils.R: classify_utils.R
+
+depends:
+  summarise_one_location_changing_advantage:
+    id: latest(parameter:estimation_window == estimation_window)
+    use:
+      one_loc_changing_adv_eps_summary_df.rds: eps_summary_df.rds

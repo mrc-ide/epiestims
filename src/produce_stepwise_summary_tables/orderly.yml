@@ -1,0 +1,38 @@
+script: script.R
+
+packages:
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- purrr
+- stargazer
+- tidyr
+
+sources: R/utils.R
+
+global_resources:
+  R/fig_utils.R: fig_utils.R
+artefacts:
+  staticgraph:
+    description: Various summary figures
+    filenames:
+      - figures/one_location_step_prop_in_95_1.png
+      
+
+depends:
+  summarise_one_location_step:
+    id: latest
+    use:
+      one_location_step_eps_summary_df.rds: eps_summary_df.rds
+      one_location_step_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds
+  summarise_two_location_step:
+    id: latest
+    use:
+      two_location_step_eps_summary_df.rds: eps_summary_df.rds
+      two_location_step_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds      
+  summarise_two_location_step_diff:
+    id: latest
+    use:
+      two_location_step_diff_eps_summary_df.rds: eps_summary_df.rds
+      two_location_step_diff_eps_summary_by_all_vars.rds: eps_summary_by_all_vars.rds

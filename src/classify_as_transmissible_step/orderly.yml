@@ -1,0 +1,36 @@
+script: additional_summary.R
+packages:
+- broom
+- dplyr
+- ggplot2
+- Hmisc
+- janitor
+- purrr
+- readr
+- tidyr
+- stargazer
+
+artefacts:
+  data:
+    description: Classified for cases where 95% CrI does not contain true value
+    filenames:
+      - one_loc_step_classified.rds
+      - two_loc_step_classified.rds      
+      - two_loc_step_diff_classified.rds      
+
+global_resources:
+  R/utils.R: classify_utils.R
+
+depends:
+  summarise_one_location_step:
+    id: latest
+    use:
+      one_loc_step_eps_summary_df.rds: eps_summary_df.rds
+  summarise_two_location_step:
+    id: latest
+    use:
+      two_loc_step_eps_summary_df.rds: eps_summary_df.rds
+  summarise_two_location_step_diff:
+    id: latest
+    use:
+      two_loc_step_diff_eps_summary_df.rds: eps_summary_df.rds

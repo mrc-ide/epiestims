@@ -1,0 +1,29 @@
+script: one_location_changing_advantage.R
+packages:
+- dplyr
+- EpiEstim
+- furrr
+- glue
+- incidence
+- projections
+- purrr
+- utils
+
+parameters:
+- short_run
+- estimation_window
+
+global_resources:
+  R/sim_utils.R: sim_utils.R
+
+artefacts:
+  data:
+    description: Results from estimate_joint
+    filenames:
+      - estimate_joint_output.zip
+
+depends:
+  sims_one_location_changing_advantage:
+    id: latest(parameter:short_run == short_run)
+    use:
+      incid.rds: incid.rds
