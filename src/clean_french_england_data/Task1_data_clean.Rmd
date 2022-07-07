@@ -1,0 +1,271 @@
+---
+title: "multi - french"
+author: "Imperial College"
+---
+
+
+```{r echo = FALSE}
+opts_chunk$set(fig.path='figs/task1/', fig.keep='high',
+               dev=c('png'), fig.width=8, fig.height=5, cache=FALSE,
+               tidy=FALSE, warning=FALSE, fig.show="asis"
+ 	       )
+
+
+###########################################################################
+###########################################################################
+# get list of matrix, 1 for each variant with 1 column for dates and 'n' columns for each location
+
+format_I <- function(dat,variants){
+  
+  I <- list()
+  for(i in 1:length(variants)){
+    temp <- as.data.frame(dat[,c(which(names(dat) %in% 'region'),
+                                 which(names(dat) %in% variants[i]),
+                                 which(names(dat) %in% 'date'))] )# 
+    names(temp) <- c('region','I','date')
+    temp$I <- temp$I/7
+    I[[variants[i]]] <- tidyr::spread(data = temp, region,  I)
+  }
+  return(I)
+}
+
+###########################################################################
+###########################################################################
+
+```
+
+
+# Epi data
+
+
+```{r,Epi_param}
+
+#for Rt
+mean_prior_Rt <- 1
+std_prior_Rt <- 1
+
+# serial interval
+mean_SI <- 5.4 # mean 5.4 days and standard deviation of 1.5 days (Rai, Shukla, and Dwivedi 2021). see spi-M neil's report
+std_SI <- 1.5
+## 6.10.2021 SB sensitivity. use estimates from Bi et al
+## mean_SI <- 6.4
+## std_SI <- 0.66 * 6.4
+SI <- EpiEstim::discr_si(seq(0, 20), mean_SI, std_SI)
+
+#EpiEstim
+t_window <- 7
+n_sample_R <- 1e2
+
+# epsilon for joint
+mean_prior_epsi <- 1
+std_prior_epsi <- 1
+
+# MCMC
+mcmc_control <- list(n_iter = 1e4L, burnin = 1e2L, thin = 10L)
+
+Epi_param <- list(mean_prior_Rt = mean_prior_Rt, std_prior_Rt = std_prior_Rt,
+                  mean_SI = mean_SI, std_SI = std_SI, SI = SI,
+                  t_window = t_window, n_sample_R = n_sample_R,
+                  mean_prior_epsi = mean_prior_epsi, std_prior_epsi = std_prior_epsi,
+                  threshold_Rt_95width = 0.5,
+                  threshold_SI_initial_incidence = 0.99,
+                  mcmc_control = mcmc_control)
+
+
+
+
+```
+
+
+# french data
+
+## load data and initial cleaning
+
+```{r}
+# names of variants
+variants <- c('wild','alpha','beta/gamma')
+
+# from https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-variants/
+d <- read.csv(file = 'Rdata/sp-variant-7j-reg-2021-06-02-21h05.csv',sep=';')
+
+# focus on all pop
+d$cl_age90 <- as.character(d$cl_age90)
+unique(d$cl_age90)
+d <- d[which(d$cl_age90 == '0'),]
+
+# date - take end of the week
+d$date <- as.Date(substr(d$semaine, 1, 10),format = '%Y-%m-%d')+6
+
+#  remove 3 regions - COM
+f <- which(d$reg %in% c('5','7','8'))
+d <- d[-f,]
+
+# regions
+d$region <- as.character(d$reg)
+# rename regions 
+d_region <- read.csv(file = 'Rdata/regions-france.csv',encoding = "UTF-8")
+d$region <- as.character(d_region$nom_region[match(d$region,d_region$code_region)])
+# unique(d$region)
+# unique(d_region$code_region)
+
+# rename variants
+variants0 <- c('Nb_susp_ABS','Nb_susp_501Y_V1','Nb_susp_501Y_V2_3')
+# match(variants,names(d))
+
+
+names(d) [match(variants0,names(d))] <- variants
+d <- list(fr = d)
+```
+
+## format data for later
+
+```{r}
+
+I_fr <- format_I(dat = d$fr , variants = variants)
+
+
+
+```
+
+
+# UK data 
+
+## load and initial clean
+
+```{r}
+
+###################
+variants <- list()
+variants[[1]]<- c('wild','alpha')
+variants[[2]]<- c('alpha','delta')
+
+dataset <- length(variants)
+
+## read in england data
+england <- readRDS("Rdata/s_by_region_over25_pillar2_pcr.rds")
+england <- england %>%
+  select(specimen_date, nhser_name,
+         s_positive_adj1, s_negative_adj1, s_na_adj1) %>%
+  group_by(specimen_date, nhser_name) %>%
+  summarise(s_positive_adj1 = sum(s_positive_adj1),
+            s_negative_adj1 = sum(s_negative_adj1),
+            s_na_adj1 = sum(s_na_adj1)) %>%
+  mutate(region = tolower(gsub(" ", "_", nhser_name))) %>%
+  rename(date = specimen_date)
+
+
+# clean names
+unique(england$region)
+england$region[which(england$region %in% 'london')] <- 'London'
+england$region[which(england$region %in% 'midlands')] <- 'Midlands'
+england$region[which(england$region %in% 'south_east')] <- 'South East'
+england$region[which(england$region %in% 'south_west')] <- 'South West'
+england$region[which(england$region %in% 'east_of_england')] <- 'East of England'
+england$region[which(england$region %in% 'north_west')] <- 'North West'
+england$region[which(england$region %in% 'north_east_and_yorkshire')] <- 'North East and Yorkshire'
+
+## Save data without adjusting for NAs,
+## so that we can estimate alpha proportion
+## from this unadjusted data
+eng_noadj <- group_by(england, date) %>%
+  summarise_if(is.numeric, sum) %>%
+  ungroup()
+
+eng_noadj <- list(
+  alpha = eng_noadj[which((eng_noadj$date >= as.Date('01/09/2020', 
+                                                     format = '%d/%m/%Y')) &
+                          (eng_noadj$date < as.Date('15/03/2021', 
+                                                    format = '%d/%m/%Y'))),],
+  delta = eng_noadj[which(eng_noadj$date >= as.Date('15/03/2021',format = '%d/%m/%Y')),])
+## For Alpha S-gene is negative                                                    
+## For Delta and Wildtype it is positive
+colnames(eng_noadj[["alpha"]]) <- c("date", "wildtype", "alpha", "unknown")
+colnames(eng_noadj[["delta"]]) <- c("date", "delta", "alpha", "unknown")
+saveRDS(eng_noadj, "england_na_not_adjusted.rds")
+
+## there are some samples not identified as negative or positive, we split those
+## according to the ratio of the two. In the hopefully rare case that none are
+## identified as negative or positive, these are split 50/50 - probably another
+## way could be better?
+na_positive_prop <- england$s_positive_adj1 /
+  (england$s_positive_adj1 + england$s_negative_adj1)
+na_positive_prop <- ifelse(is.na(na_positive_prop), 0.5, na_positive_prop)
+s_positive_adj1_extra <- round(na_positive_prop * england$s_na_adj1)
+s_negative_adj1_extra <- england$s_na_adj1 - s_positive_adj1_extra
+england$s_positive_adj1 <- england$s_positive_adj1 + s_positive_adj1_extra
+england$s_negative_adj1 <- england$s_negative_adj1 + s_negative_adj1_extra
+
+d <- list( alpha = england[which((england$date >= as.Date('01/09/2020', 
+                                                          format = '%d/%m/%Y')) &
+                                   (england$date < as.Date('15/03/2021', 
+                                                           format = '%d/%m/%Y'))),],
+           delta = england[which(england$date >= as.Date('15/03/2021', 
+                                                         format = '%d/%m/%Y')),])
+
+
+names(d[[1]])[3:4] <- c('wild','alpha')
+names(d[[2]])[3:4] <- c('delta','alpha')
+
+```
+
+## format data for later
+
+```{r}
+
+I_UK1 <- format_I(dat = d$alpha , variants = variants[[1]])
+I_UK2 <- format_I(dat = d$delta , variants = variants[[2]])
+## Delta incidence is incomplete. Truncate last 4 days
+I_UK2 <- map(I_UK2, function(x) x[seq(1, nrow(x) - 4), ])
+
+```
+
+
+# time periods
+
+```{r}
+n_period <- 4
+
+range(I_fr$wild$date)
+range(I_UK1$wild$date)
+range(I_UK2$alpha$date)
+
+diff(range(I_fr$wild$date))
+diff(range(I_UK1$wild$date))
+diff(range(I_UK2$alpha$date))
+
+trim_time <- which(cumsum(Epi_param$SI) >= Epi_param$threshold_SI_initial_incidence)[1]
+
+periods_fr <- list(intervals = c(1,round(seq(trim_time, nrow(I_fr$wild),length.out = n_period+1))))
+periods_fr$periods <- rep(c(NA,1:n_period), diff(periods_fr$intervals)+ c(rep(0,n_period),1) ) 
+
+periods_UK1 <- list(intervals = c(1,round(seq(trim_time, nrow(I_UK1$wild),length.out = n_period+1))) )
+periods_UK1$periods <- rep(c(NA,1:n_period), diff(periods_UK1$intervals)+ c(rep(0,n_period),1) ) 
+
+periods_UK2 <- list(intervals =c(1,round(seq(trim_time, nrow(I_UK2$alpha),length.out = n_period+1))) )
+periods_UK2$periods <- rep(c(NA,1:n_period), diff(periods_UK2$intervals)+ c(rep(0,n_period),1) )
+
+temp <- I_fr$wild$date[periods_fr$intervals]
+temp
+diff(temp)
+temp <- I_UK1$wild$date[periods_UK1$intervals]
+temp
+diff(temp)
+temp <- I_UK2$alpha$date[periods_UK2$intervals]
+temp
+diff(temp)
+
+```
+
+# saving
+
+```{r}
+
+saveRDS(object = Epi_param, file = 'Epi_param.rds')
+saveRDS(object = I_fr, file = 'I_fr.rds')
+saveRDS(object = I_UK1, file = 'I_UK1.rds')
+saveRDS(object = I_UK2, file = 'I_UK2.rds')
+
+saveRDS(list(periods_fr = periods_fr,
+             periods_UK1 = periods_UK1,
+             periods_UK2 = periods_UK2), file = 'periods.rds')
+```

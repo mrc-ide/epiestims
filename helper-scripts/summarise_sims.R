@@ -62,28 +62,9 @@ eps_summary <- map(
       }, .id = "tmax"
     )
     out <- estimate_uncertain(out)
+    out
   }
 )
-
-## Note Pierre's method is too strict.
-## From Pierre's method, we get something like this:
-## Obviously cases we don't want to classify as having
-## high uncertainty.
-## > tail(low)
-##       tmax sim  2.5%   25%   50%   75% 97.5%       mu        sd   param rt_ref
-## 51700   20 100 2.556 2.859 3.006 3.162 3.520 3.009315 0.2394802 epsilon    1.6
-## 51706   30   6 2.744 2.896 2.982 3.053 3.245 2.981690 0.1245929 epsilon    1.6
-## 51747   30  47 2.685 2.842 2.917 2.998 3.189 2.920902 0.1227537 epsilon    1.6
-## 51755   30  55 2.438 2.609 2.700 2.800 2.957 2.702453 0.1380378 epsilon    1.6
-## 51763   30  63 2.427 2.588 2.686 2.778 2.939 2.689514 0.1304141 epsilon    1.6
-## 51768   30  68 2.648 2.812 2.905 3.000 3.166 2.908238 0.1367992 epsilon    1.6
-##       true_eps si_mu_variant cri_width confidence                 true_label
-## 51700        3          10.8     0.964        Low Variant more transmissible
-## 51706        3          10.8     0.501        Low Variant more transmissible
-## 51747        3          10.8     0.504        Low Variant more transmissible
-## 51755        3          10.8     0.519        Low Variant more transmissible
-## 51763        3          10.8     0.512        Low Variant more transmissible
-## 51768        3          10.8     0.518        Low Variant more transmissible
 
 eps_err_summary <- map2(
   seq_len(nrow(sim_params)),
@@ -108,3 +89,59 @@ eps_err_summary <- map2(
     )
   }
 )
+
+
+for (i in 1:nrow(sim_params)) {
+  eps_summary[[i]] <- cbind(
+    eps_summary[[i]],
+    sim_params[i, ]
+  )
+}
+
+eps_summary_df <- do.call(
+  what = 'rbind', args = eps_summary
+)
+eps_summary_df <- rename(eps_summary_df, true_eps = "epsilon")
+message("eps_summary_df OK")
+saveRDS(eps_summary_df, "eps_summary_df.rds")
+
+
+for (i in 1:nrow(sim_params)) {
+  eps_err_summary[[i]] <- cbind(
+    eps_err_summary[[i]],
+    sim_params[i, ]
+  )
+}
+
+eps_err_summary_df <- do.call(what = 'rbind', args = eps_err_summary)
+eps_err_summary_df <- rename(eps_err_summary_df, true_eps = "epsilon")
+message("eps_err_summary_df OK")
+saveRDS(eps_err_summary_df, "eps_err_summary_df.rds")
+
+message("var = ", var)
+x <- group_by(eps_err_summary_df, rt_ref, .data[[var]], true_eps, tmax) %>%
+  summarise(
+    low = mean(mu) - sd(mu), med = mean(mu),
+    high = mean(mu) + sd(mu)
+  ) %>% ungroup()
+
+message("Summarising eps_err_summary_df by", var, "OK")
+saveRDS(x, "err_summary_by_all_vars.rds")
+
+
+x <- group_by(eps_err_summary_df, rt_ref, .data[[var]], true_eps, tmax) %>%
+  summarise(
+    low = mean(sd) - sd(sd), med = mean(sd),
+    high = mean(sd) + sd(sd)
+  ) %>% ungroup()
+
+message("Summarising eps_err_summary_df SD by", var, "OK")
+saveRDS(x, "err_sd_summary_by_all_vars.rds")
+
+
+by_all_vars <-  group_by(
+  eps_summary_df, rt_ref, .data[[var]], true_eps, tmax
+) %>% summarise_sims
+
+message("Summarising eps_summary_df by", var, "OK")
+saveRDS(by_all_vars, "eps_summary_by_all_vars.rds")

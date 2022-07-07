@@ -1,0 +1,199 @@
+---
+output: 
+pdf_document:
+citation_package: natbib
+keep_tex: false
+fig_caption: true
+latex_engine: pdflatex
+title: 
+author:
+- name: Sangeeta Bhatia
+affiliation: Imperial College London
+abstract: 
+keywords: 
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+spacing: double
+bibliography: 
+biblio-style: apsr
+endnote: no
+---
+
+## Same SI
+
+```{r summary-1}
+source("R/fig_utils.R")
+si_mu_ref <- 5.4
+si_std_ref <- 1.5
+pretty_ci <- function(val, low, high, round_to = 2) {
+  f <- function(x) {
+    format(round(x, round_to), nsmall = 2)
+  }
+  glue("{f(val)} ({f(low)}, {f(high)})")
+}
+
+x <- readRDS("vary_si_err_summary_by_all_vars.rds")
+x$label <- multiplier_label(x$si_mu_variant, 5.4)
+x <- x[x$label %in% c("X 0.5", "X 1", "X 1.5", "X 2"), ]
+same_si <- x[x$label == "X 1", ]
+mu_qntls <- quantile(same_si$mu, c(0.025, 0.5, 0.975))
+```
+When the SI of both is same and is correctly specified, the 5 point
+summary across all values of transmission advantage, reference Rt and SI mean
+is 
+
+```{r}
+summary(same_si$mu)
+```
+
+### Same SI, uncertainty
+
+```{r}
+summary(same_si$sd)
+```
+
+## Different SI, correctly specified
+
+```{r summary-2}
+diff_si <- x[x$label != "X 1", ]
+
+```
+When the SI of both is different and is correctly specified, the mean error
+across all values of transmission advantage, reference Rt and SI mean
+is 
+
+```{r}
+summary(diff_si$mu)
+```
+Uncertainty:
+
+```{r}
+summary(diff_si$sd)
+```
+
+## Different CV, correctly specified
+
+```{r summary-3}
+x <- readRDS("vary_cv_err_summary_by_all_vars.rds")
+x$label <- multiplier_label(x$si_cv_variant, si_std_ref / si_mu_ref)
+x <- x[x$label %in% c("X 0.5", "X 1.5", "X 2"), ]
+mu_qntls <- quantile(x$mu, c(0.025, 0.5, 0.975))
+```
+When the CV of the SI distribution of both is same and is correctly specified, the mean error
+across all values of transmission advantage, reference Rt and SI mean
+is `r pretty_ci(mu_qntls[2], mu_qntls[1], mu_qntls[3])`.
+
+
+## Superspreading
+
+```{r summary-4}
+x <- readRDS("vary_offs_err_summary_by_all_vars.rds")
+by_kappa <- split(x, x$kappa) %>%
+  map_dfr(function(y) broom::tidy(summary(y$mu)), .id = "kappa")
+```
+### Bias by kappa
+
+```{r}
+knitr::kable(by_kappa)
+```
+
+### Overall bias
+
+```{r}
+
+summary(x$mu) %>%
+  broom::tidy() %>%
+  knitr::kable()
+
+```
+### Uncertainty by kappa
+
+
+```{r}
+knitr::kable(by_kappa)
+```
+### Overall Uncertainty 
+
+```{r}
+
+summary(x$sd) %>%
+  broom::tidy() %>%
+  knitr::kable()
+
+```
+
+
+```{r}
+by_kappa <- split(x, x$kappa) %>%
+  map_dfr(function(y) broom::tidy(summary(y$sd)), .id = "kappa")
+```
+
+
+## Underreporting
+
+```{r summary-5}
+x <- readRDS("underrep_err_summary_by_all_vars.rds")
+by_preport <- split(x, x$p_report) %>%
+  map_dfr(function(y) broom::tidy(summary(y$mu)), .id = "p_report")
+
+```
+With 20% reporting probability, the mean error
+across all values of transmission advantage and reference Rts
+is 
+
+```{r}
+knitr::kable(by_preport)
+```
+
+### Uncertainty 
+
+```{r}
+summary(x$sd) %>%
+  broom::tidy() %>%
+  knitr::kable()
+
+```
+## Classification stats
+
+```{r summary-6}
+classified <- readRDS("classification_by_scenario.rds")
+
+```
+
+## Summary of SARS-CoV-2 Variants
+
+```{r}
+x <- readRDS("epsilon_qntls_over_time.rds")
+y <- readRDS("epsilon_qntls_per_region.rds")
+z <- readRDS("epsilon_qntls_whole_country.rds")
+```
+
+We estimated the effective transmission advantage of 
+- Alpha over wildtype in England to be 
+`r pretty_ci(z$uk_alpha_wild[[3]], z$uk_alpha_wild[[2]], z$uk_alpha_wild[[4]])`
+- Alpha over wildtype in France to be 
+`r pretty_ci(z$french[[3]], z$french[[2]], z$french[[4]])`
+
+
+### Regional differences in estimates using MV-EpiEstim
+
+#### UK - Alpha over Wild
+
+```{r}
+y$uk_alpha_wild <- arrange(y$uk_alpha_wild, y$uk_alpha_wild[["50%"]])
+regional_cis <- pretty_ci(y$uk_alpha_wild[[4]], y$uk_alpha_wild[[3]], y$uk_alpha_wild[[5]])
+```
+
+
+```{r}
+knitr::kable(data.frame(region = y$uk_alpha_wild$region, CI = regional_cis))
+```
+
+### Temporal differences in estimates using MV-EpiEstim
+
+The central estimate of the effective transmission advantage for Alpha
+increased from 
+- `r pretty_ci(x$uk_alpha_wild[[4]][1], x$uk_alpha_wild[[3]][1], x$uk_alpha_wild[[5]][1])` to
+- `r pretty_ci(x$uk_alpha_wild[[4]][26], x$uk_alpha_wild[[3]][26], x$uk_alpha_wild[[5]][26])`
