@@ -57,6 +57,12 @@ scenario_tasks <- function(scenario_name) {
   
 }
 
+# (NOTE: due to estimating the transmission advantage across 100
+# epidemic trajectories for each scenario and across a range of
+# parameter values, the estimation_task step can take a long
+# time to run. We reduced the run time of our analysis by using
+# parallel computing on a cluster.)
+
 
 ## Apply scenario_tasks function to scenarios featured in our analysis
 
