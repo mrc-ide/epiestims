@@ -12,6 +12,7 @@ packages:
 - purrr
 - RColorBrewer
 - scales
+- slider
 - snakecase
 - tidyr
 

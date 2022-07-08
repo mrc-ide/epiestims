@@ -67,6 +67,15 @@ infiles <- list(
 )
 
 eps_summary <- map(infiles, readRDS)
+eps_summary$wrong_si <-
+  eps_summary$wrong_si[eps_summary$wrong_si$si_mu_variant != 5.4, ]
+
+eps_summary$vary_cv <-
+  eps_summary$vary_cv[eps_summary$vary_cv$si_cv_variant != 1.5 / 5.4, ]
+
+eps_summary$wrong_cv <-
+  eps_summary$wrong_cv[eps_summary$wrong_cv$si_cv_variant != 1.5 / 5.4, ]
+
 
 classified <- map(
   eps_summary, function(x) {

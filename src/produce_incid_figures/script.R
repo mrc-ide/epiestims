@@ -104,7 +104,9 @@ regional_incid <- map(regional_incid, readRDS)
 regional_incid <- map(
   regional_incid, function(x) bind_rows(x, .id = "variant")
 )
-regional_incid[["england"]] <- regional_incid[["uk1"]]
+regional_incid[["england"]] <- rbind(
+  regional_incid[["uk1"]], regional_incid[["uk2"]]
+)
 
 
 walk(

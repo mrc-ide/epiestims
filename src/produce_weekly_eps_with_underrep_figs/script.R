@@ -18,8 +18,8 @@ ovl_est <- bind_rows(
 
 eng_noadj <- readRDS("england_na_not_adjusted.rds")[["alpha"]]
 ## Daily proportion is volatile, do weekly
-eng_noadj <- slider::slide_period_dfr(eng_noadj, eng_noadj$date, "week", function(x) {
-  out <- broom::tidy(apply(x[, -1], 2, sum))
+eng_noadj <- slide_period_dfr(eng_noadj, eng_noadj$date, "week", function(x) {
+  out <- tidy(apply(x[, -1], 2, sum))
   data.frame(
     date = x$date[1],
     out
@@ -44,15 +44,20 @@ z$high_scaled <- z$`Upper` * coeff
 
 
 dodge_width <- 5
-
+z$col[z$Underreporting == "None"] <- palette[["alpha"]]
+z$col[z$Underreporting != "None"] <- "#8a5f00"
+z$Underreporting <- factor(
+  z$Underreporting, levels = c("None", "50%"),
+  ordered = TRUE
+)
 p <- ggplot(z, aes(x = date)) +
   geom_point(
-    aes(y = `50%`, shape = Underreporting), colour = col, size = 2,
+    aes(y = `50%`, colour = col), size = 2,
     position = position_dodge(width = dodge_width)
   ) +
   geom_linerange(
-    aes(ymin = `2.5%`, ymax = `97.5%`, linetype = Underreporting),
-    size = 1.1, colour = col,
+    aes(ymin = `2.5%`, ymax = `97.5%`, colour = col),
+    size = 1.1,
     position = position_dodge(width = dodge_width)
   ) +
   geom_hline(
@@ -72,17 +77,11 @@ p <- ggplot(z, aes(x = date)) +
     date_labels = date_labels,
     limits = c(min(xmin), NA)
   ) +
-  scale_linetype_manual(
+  scale_color_identity(
     name = "Reporting",
-    breaks = c("None", "50%"),
+    breaks = c("#E69F00", "#8a5f00"),
     labels = c("100%", "50%"),
-    values = c(None = "solid", "50%" = "dashed")
-  ) +
-  scale_shape_manual(
-    name = "Reporting",
-    breaks = c("None", "50%"),
-    labels = c("100%", "50%"),
-    values = c(None = 19, "50%" = 1)
+    guide = "legend"
   ) +
   ## Add estimate for the entire country over the whole time period
   ## geom_point(
