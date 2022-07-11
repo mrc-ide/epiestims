@@ -14,3 +14,5 @@ orderly.sqlite
 *.tex
 
 *.R#
+
+src/produce_incid_figures/.RDataTmp
