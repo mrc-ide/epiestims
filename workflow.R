@@ -3,27 +3,69 @@ library(purrr)
 
 
 ###########################
-## ANALYSIS OF REAL DATA ##
+## Estimating the effective transmission advantage
+## of VOCs over the co-circulating variants using incidence
+## from England and France.
+## Note that this script describes a interconnected series of 'tasks' or
+## analyses. This means that tasks must be run in series.
 ###########################
 
 ## Analysis, results and figures for main text (Fig 1) and
 ## SI Secs 2 & 4
-
+## This task cleans and formats the incidence data from France and England
+## for use in downstream analysis.
 a <- orderly_run("clean_french_england_data")
+## orderly_commit moves the task from 'draft' folder to 'archive' folder.
+## Refer to orderly documentation on CRAN for more details.
+## Please ensure that you run orderly_commit after each task
+## so that the outputs are available for use by downstream tasks.
 orderly_commit(a)
 
+## This task will produce the non-parameteric estimates of the
+## effective transmission advantage.
 a <- orderly_run("naive_epsilon_estimates")
 orderly_commit(a)
 
+## This task estimates the transmission advantage of the VOcs
+## (a) using only the latest 7 days of data, and (b) using the entire time
+## series up to the point of estimation.
+## Output RDS files containing estimatines from weekly windows are prefixed with 'nonoverlapping'.
+## The window over which
+## epsilon is estimated can be modfied by changing the variable
+## "window" (Line 105) of the script weekly_estimates.R
 a <- orderly_run("mv_epiestim_weekly_estimates")
 orderly_commit(a)
+## Same as above but using 50\% of cases of Alpha
+## and Wildtype. This is only done for Alpha and in England.
+a <- orderly_run("mv_epiestim_weekly_estimates_underrep")
+orderly_commit(a)
 
-a <- orderly_run("src/produce_realdata_figures/")
-
+## This task estimates the transmission advantage of VOC
+## independently for each region, assuming first that there is no
+## temporal variability. That is estimates are based on all the data available
+## for the region up to the point of estimation. Next, we assume that
+## that the effective transmission advantage also varies over time and
+## use only the latest 7 days of data for estimation.
 a <- orderly_run("mv_epiestim_regional_estimates")
 orderly_commit(a)
 
+## The following tasks produce summary figures and use the
+## outputs from the tasks above.
+
+## Panel A in Fig 1 and SI Figs S6, S8, and S10.
+orderly_run("src/produce_incid_figures")
+
+## Panel B in Fig 1 and SI Figs S6, S8, and S10.
+orderly_run("src/produce_naive_estim_figures")
+
+## Panel C in Fig 1 and SI Figs S6, S8, and S10.
+a <- orderly_run("src/produce_realdata_figures/")
+
+## Panel D in Fig 1 and SI Figs S6, S8, and S10.
+## Figs S4, S7, S9, and S11.
 a <- orderly_run("src/produce_regional_eps_figures/")
+
+
 
 
 
@@ -41,20 +83,20 @@ a <- orderly_run("src/produce_regional_eps_figures/")
 # 3) summary of MV-EpiEstim output
 
 scenario_tasks <- function(scenario_name) {
-  
+
   sim_task <- paste0("sims_", scenario_name)
   estimation_task <- scenario_name
   summary_task <- paste0("summarise_", scenario_name)
-  
+
   a <- orderly_run(sim_task, parameters = list(short_run = FALSE))
   orderly_commit(a)
-  
+
   a <- orderly_run(estimation_task, parameters = list(short_run = FALSE))
   orderly_commit(a)
-  
+
   a <- orderly_run(summary_task)
   orderly_commit(a)
-  
+
 }
 
 # (NOTE: due to estimating the transmission advantage across 100
@@ -124,11 +166,11 @@ orderly_commit(a)
 window <- c(10, 7) #, "standard")
 
 walk(window, function(w) {
-  
+
   a <- orderly_run("sims_one_location_changing_advantage",
                    parameters = list(short_run = TRUE))
   orderly_commit(a)
-  
+
   a <- orderly_run("one_location_changing_advantage",
                    parameters = list(short_run = TRUE,
                                      estimation_window = w))
