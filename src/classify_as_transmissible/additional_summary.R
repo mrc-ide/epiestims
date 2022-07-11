@@ -1,4 +1,4 @@
-## orderly::orderly_develop_start()
+## orderly::orderly_develop_start(use_draft = "newer")
 ## df is a summary data.frame with columns
 ## 2.5% and 97.5%
 classify_epsilon <- function(df) {
@@ -67,6 +67,15 @@ infiles <- list(
 )
 
 eps_summary <- map(infiles, readRDS)
+eps_summary$wrong_si <-
+  eps_summary$wrong_si[eps_summary$wrong_si$si_mu_variant != 5.4, ]
+
+eps_summary$vary_cv <-
+  eps_summary$vary_cv[eps_summary$vary_cv$si_cv_variant != 1.5 / 5.4, ]
+
+eps_summary$wrong_cv <-
+  eps_summary$wrong_cv[eps_summary$wrong_cv$si_cv_variant != 1.5 / 5.4, ]
+
 
 classified <- map(
   eps_summary, function(x) {
@@ -94,6 +103,14 @@ x <- spread(x, est_class, n)
 write_csv(x, "classification_by_scenario_by_tmax_eps1.csv")
 
 x <- count(eps1, scenario, est_class, wt = n)
+x <- spread(x, est_class, n)
+x$total <- x$Unclear + x$`Variant less transmissible` +
+  x$`Variant more transmissible`
+x <- mutate_at(
+  x, c("Unclear", "Variant less transmissible", "Variant more transmissible"),
+  ~ . / total
+)
+
 write_csv(
   x, "classification_by_scenario_eps1.csv"
 )

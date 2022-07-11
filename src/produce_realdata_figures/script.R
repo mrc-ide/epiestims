@@ -1,7 +1,6 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("R/fig_utils.R")
 dir.create("figures")
-mypercent <- function(x) scales::percent(x)
 
 whole_cnty_time <- readRDS("epsilon_qntls_whole_country.rds")
 x <- whole_cnty_time[["french"]]
@@ -67,10 +66,10 @@ plots2axis <- pmap(
     w = whole_cnty_time,
     ## column = c("proportion_alpha", "proportion_alpha",
     ##             "proportion_delta", "proportion_betagamma"),
-    y2label =  c("Cumulative proportion of Alpha",
-                 "Cumulative proportion of Alpha",
-                 "Cumulative proportion of Delta",
-                 "Cumulative proportion of Beta/Gamma"),
+    y2label =  c("Weekly proportion of Alpha",
+                 "Weekly proportion of Alpha",
+                 "Weekly proportion of Delta",
+                 "Weekly proportion of Beta/Gamma"),
     xmin = xaxis_breaks,
     col = palette[c("alpha", "alpha", "delta", "betagamma")]
   ),
@@ -273,22 +272,24 @@ plots2axis <- pmap(
 )
 
 
+whole_cnty_time$uk_alpha_wild$date <-
+  as.Date(tail(eps_over_time$uk_alpha_wild$date, 1)) + 5
 
 iwalk(
   plots2axis, function(p, name) {
     if (name == "uk_alpha_wild") {
+      w <- whole_cnty_time$uk_alpha_wild
       p <- p +
-        geom_point(
-          data = volzetal, aes(date, y),
-          size = 4,
-          position = position_nudge(x = 2)
-        ) +
-        geom_linerange(
-          data = volzetal,
-          aes(date, ymin = ymin, ymax = ymax),
-          size = 1.1,
-          position = position_nudge(x = 2)
+      geom_point(
+        data = w,
+        aes(x = date, y = `50%`), fill = palette[["alpha"]], size = 2,
+        shape = 23, col = "black", stroke = 2
+      ) +
+      geom_linerange(
+        data = w, aes(x = date, ymin = `2.5%`, ymax = `97.5%`),
+        size = 1.1, colour = palette[["alpha"]]
       )
+
     }
     save_multiple(p, glue("figures/{name}_2axis"))
   }

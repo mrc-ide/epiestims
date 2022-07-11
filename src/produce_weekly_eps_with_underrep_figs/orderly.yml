@@ -1,0 +1,44 @@
+script: script.R
+
+packages:
+- broom
+- cowplot
+- dplyr
+- ggplot2
+- ggpubr
+- glue
+- Hmisc
+- lubridate
+- purrr
+- RColorBrewer
+- scales
+- slider
+- snakecase
+- tidyr
+
+artefacts:
+  staticgraph:
+    description: Figures from real data
+    filenames:
+      - figures/underrep_uk_alpha_wild_2axis.pdf
+      
+global_resources:
+  R/fig_utils.R: fig_utils.R
+
+depends:
+  - clean_french_england_data:
+      id: latest
+      use:
+        england_na_not_adjusted.rds: england_na_not_adjusted.rds
+  - mv_epiestim_regional_estimates:
+      id: latest
+      use:
+        epsilon_qntls_whole_country.rds: epsilon_qntls_whole_country.rds
+  - mv_epiestim_weekly_estimates_underrep:
+      id: latest
+      use:
+        epsilon_qntls_over_time_underep.rds: epsilon_qntls_over_time.rds
+  - mv_epiestim_weekly_estimates:
+      id: latest
+      use:
+        epsilon_qntls_over_time.rds: epsilon_qntls_over_time.rds
