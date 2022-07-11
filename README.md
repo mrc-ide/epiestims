@@ -11,3 +11,24 @@ The code to perform the analysis for this work is set up as an [`orderly`](https
 * `data`: copies of data used in the reports
 
 Each step of the analysis is an orderly task and corresponds to a directory within the src directory. To reproduce the analysis, run the tasks included in the script [`workflow.R`](https://github.com/mrc-ide/epiestims/blob/main/workflow.R) in order. 
+
+The incidence data from England and France are available in the
+directory `clean_french_england_data`.
+A complete description of the French data set is
+available
+[here](https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-indicateurs-sur-les-variants/).
+
+
+For the data for England, we used the daily number of positive tests
+from England's community SARS-CoV-2 testing system stratified by NHS
+region. The relevant columns are:
+
+- specimen_date: Date of the specimen
+- nhser_name: NHS England region
+- s_positive_adj1: Number of cases with S-gene target positive.
+- s_negative_adj1: Number of cases with S-gene target failure.
+- s_na_adj1: Number of cases where the S-gene target failure was not
+  available.
+
+Further details are available in the Supplementary Material
+accompanying the manuscript.
