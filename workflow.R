@@ -53,19 +53,21 @@ orderly_commit(a)
 ## outputs from the tasks above.
 
 ## Panel A in Fig 1 and SI Figs S6, S8, and S10.
+## Figs S1 and S2
 orderly_run("src/produce_incid_figures")
 
 ## Panel B in Fig 1 and SI Figs S6, S8, and S10.
 orderly_run("src/produce_naive_estim_figures")
 
+## Figure S4
+orderly_run("src/produce_weekly_eps_with_underrep_figs")
+
 ## Panel C in Fig 1 and SI Figs S6, S8, and S10.
 a <- orderly_run("src/produce_realdata_figures/")
 
 ## Panel D in Fig 1 and SI Figs S6, S8, and S10.
-## Figs S4, S7, S9, and S11.
+## Figs S5, S7, S9, and S11.
 a <- orderly_run("src/produce_regional_eps_figures/")
-
-
 
 
 
@@ -99,11 +101,16 @@ scenario_tasks <- function(scenario_name) {
 
 }
 
-# (NOTE: due to estimating the transmission advantage across 100
-# epidemic trajectories for each scenario and across a range of
-# parameter values, the estimation_task step can take a long
-# time to run. We reduced the run time of our analysis by using
-# parallel computing on a cluster.)
+## NOTE: due to estimating the transmission advantage across 100
+## epidemic trajectories for each scenario and across a range of
+## parameter values, the estimation_task step can take a long
+## time to run. We reduced the run time of our analysis by using
+## parallel computing on a cluster.
+## You can edit the default parameters of the simulation, including the number
+## of simulated data set for each parameter combination here
+## https://github.com/mrc-ide/epiestims/blob/228ba44f0a12fb4e16346ddfaf1cee4dc9ab24b2/helper-scripts/sim_utils.R#L84
+## Alternatively, you can edit the tasks that simulate data set.
+## These begin with the word 'sims' e.g., sims_one_location_vary_cv
 
 
 ## Apply scenario_tasks function to scenarios featured in our analysis
