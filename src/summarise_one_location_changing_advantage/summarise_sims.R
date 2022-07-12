@@ -69,6 +69,7 @@ eps_summary <- map(
   }
 )
 
+
 x <- as.list(sim_params)
 x <- append(x, list(summary = eps_summary))
 
@@ -84,6 +85,14 @@ eps_summary_df <- pmap_dfr(
     summary
   }
 )
+
+# Simulations 14, 65, 77 did not converge
+# Manually exclude these
+# If creating future summaries, should do this programmatically
+
+exclude <- c("14", "65", "77")
+
+eps_summary_df <- filter(eps_summary_df, !(sim %in% exclude))
 
 eps_summary_df <- mutate_at(
   eps_summary_df, vars(`2.5%`:`sd`), round, 3
@@ -125,6 +134,7 @@ eps_err_summary <- map(
     names(res) <- tmax_all
     map2_dfr(
       res, names(res), function(res_tmax, t) {
+        res_tmax <- res_tmax[-c(14, 65, 77)]
         true_eps <- epsilon$true_eps[epsilon$time == t]
         map_dfr(
           res_tmax, function(res_sim) {
@@ -203,3 +213,35 @@ by_all_vars <-  eps_summary_df %>%
   summarise_sims
 
 saveRDS(by_all_vars, "eps_summary_by_all_vars.rds")
+
+
+
+## Additional summary of aggregated posterior distribution
+
+estimate_joint_1 <- readRDS("outputs/estimate_joint_1.rds")
+
+# remove elements where sims didn;t converge (manually)
+
+posterior_eps <- map(
+  estimate_joint_1, function(res_tmax) {
+    res_tmax <- res_tmax[-c(14, 65, 77)]
+    out <- map(
+      res_tmax, function(res_sim) {
+        eps <- as.vector(res_sim[[1]][["epsilon"]])
+        eps
+      }
+    )
+    out <- unlist(out)
+  }
+)
+
+posterior_eps_summary <- map_dfr(posterior_eps, function(tmax){
+  
+  out <- data.frame(median = NA)
+  out$median <- median(tmax, na.rm = TRUE)
+  out$`2.5%` <- quantile(tmax, probs = 0.025, na.rm = TRUE)
+  out$`97.5%` <- quantile(tmax, probs = 0.975, na.rm = TRUE) 
+  out
+}, .id = "tmax")
+
+saveRDS(posterior_eps_summary, "posterior_eps_summary.rds")
