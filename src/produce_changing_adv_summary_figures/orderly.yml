@@ -42,6 +42,7 @@ depends:
         err_sd_summary_10.rds: err_sd_summary_by_all_vars.rds
         err_summary_10.rds: err_summary_by_all_vars.rds
         incid_summary_10.rds: incid_summary.rds
+        posterior_eps_summary_10.rds: posterior_eps_summary.rds
   - summarise_one_location_changing_advantage:
       id: latest(parameter:estimation_window == "7")
       use:
@@ -50,6 +51,7 @@ depends:
         err_sd_summary_7.rds: err_sd_summary_by_all_vars.rds
         err_summary_7.rds: err_summary_by_all_vars.rds
         incid_summary_7.rds: incid_summary.rds
+        posterior_eps_summary_7.rds: posterior_eps_summary.rds
   - summarise_one_location_changing_advantage:
       id: latest(parameter:estimation_window == "standard")
       use:
@@ -58,3 +60,4 @@ depends:
         err_sd_summary_standard.rds: err_sd_summary_by_all_vars.rds
         err_summary_standard.rds: err_summary_by_all_vars.rds
         incid_summary_standard.rds: incid_summary.rds
+        posterior_eps_summary_standard.rds: posterior_eps_summary.rds
