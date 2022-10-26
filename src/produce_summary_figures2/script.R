@@ -132,8 +132,43 @@ classified <- map(
   }
 )
 
+## Table for classification
+ss <- classified[["vary_offs"]]
+## Here we vary both true_eps and tmax, we want to summarise along
+## 1 one those two. We summarise along true_eps
+## Desired output: for a given tmax, rt_ref, and kappa, when the true
+## label was 'more transmissible', how many times did we call it wrong
+## as 'less transmissble'.
+ss_summary <- group_by(
+  ss, tmax, rt_ref, kappa, est_class, true_label
+) |> summarise(
+  nsims = sum(nsims), n = sum(n)
+  ) |> ungroup()
 
+ci <- broom::tidy(Hmisc::binconf(x = ss_summary$n, n = ss_summary$nsims))
+ci$x <- as.data.frame(ci$x)
+ss_summary <- cbind(ss_summary, ci$x)
+x <- ss_summary[ss_summary$true_label != "No transmission advantage", ]
+ggplot(x, aes(tmax, PointEst, col = est_class)) +
+  geom_point() +
+  facet_grid(rt_ref~kappa) +
+  theme(legend.position = "top")
 
+round_and_format <- function(x, digits = 2) {
+  format(round(x, digits), nsmall = digits)
+}
+
+ss <- mutate_at(ss, vars(PointEst:Upper), round_and_format)
+ss$est_label <- glue(
+  "{ss$PointEst} ({ss$Lower}-{ss$Upper})"
+)
+ss <- select(
+  ss, tmax, rt_ref, true_eps, scenario_type, true_label,
+  est_class, est_label
+)
+
+out <- spread(ss, est_class, est_label)
+out <- arrange(out, rt_ref, true_eps, scenario_type)
 
 infiles <- list(
   vary_si = "vary_si_eps_summary_by_all_vars.rds",
@@ -197,6 +232,34 @@ together <- map(
     rbind(x1, x2, x3, x4)
   }
 )
+
+## Change of metrics over time for scenarios with and without superspreading
+with_ss <- together[["same_si"]]
+without_ss <- together[["vary_offs"]]
+## Alpha Rt and epsilon
+with_ss <- with_ss[with_ss$rt_ref == 1.1, ]
+with_ss <- with_ss[with_ss$true_eps == 1.5, ]
+with_ss$superspreading <- "No superspreading"
+without_ss <- without_ss[without_ss$rt_ref == 1.1, ]
+without_ss <- without_ss[without_ss$true_eps == 1.5, ]
+without_ss <- without_ss[without_ss$kappa == 0.1, ]
+without_ss$superspreading <- "Superspreading"
+common <- intersect(colnames(with_ss), colnames(without_ss))
+x <- rbind(with_ss[ , common], without_ss[ , common])
+##x <- gather(x, var, val, low:high)
+x <- x[x$qntl %in% c("fake", "95%"), ]
+
+ggplot(x) +
+  geom_point(
+    aes(tmax, med, col = superspreading),
+    size = 1.5, position = position_dodge2(width = dodge_width)
+  ) +
+  geom_linerange(
+    aes(x = tmax, ymin = low, ymax = high, col = superspreading),
+    position = position_dodge2(width = dodge_width)
+  ) +
+  facet_wrap(~metric, scales = "free_y") +
+  theme(legend.position = "top")
 
 ## Change of metrics over time
 baseline <- together[["same_si"]]
