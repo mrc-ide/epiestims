@@ -32,8 +32,8 @@ round_to <- 3 ## Number of digits to round to
 
 values <- c(
   "10 days" = "#ffa500",
-  "All data" = "#005900",
-  "7 days" = "#b20000")
+  "All data" = "#b20000",
+  "7 days" = "#005900")
 
 
 infiles <- list(
@@ -262,7 +262,7 @@ eps_summary_df <- group_by(eps_summary_df, estimation_window, tmax, true_eps) %>
 
 # recreate the epsilon values used in the simulations
 sim_params <- expand.grid(
-  rt_ref = 2,
+  rt_ref = 1.1,
   epsilon_init = 1.1,
   epsilon_final = 1.5,
   epsilon_change = 30,
@@ -302,5 +302,79 @@ p <- ggplot(eps_summary_df) +
 p
 
 save_multiple(p, "figures/one_loc_changing_adv_epsilon_est")
+
+########################
+## Create figure showing how the estimated epsilon varies over the scenario
+## Use the aggregated posterior distribution
+
+infiles <- list(
+  "10" = "posterior_eps_summary_10.rds",
+  "7" = "posterior_eps_summary_7.rds",
+  "standard" = "posterior_eps_summary_standard.rds"
+)
+
+post_summary_df <- map(infiles, readRDS)
+post_summary_df <- bind_rows(post_summary_df, .id = "estimation_window")
+
+post_summary_df$tmax <- as.numeric(post_summary_df$tmax)
+post_summary_df <- arrange(post_summary_df, tmax) %>% 
+  filter(tmax < 90)
+
+levels <- c("standard", "10", "7")
+labels <- c("All data", "10 days", "7 days")
+post_summary_df$estimation_window <- factor(post_summary_df$estimation_window,
+                                           levels = levels, labels = labels)
+
+# summarise across all sims for each tmax and window value
+# # post_summary_df <- group_by(post_summary_df, estimation_window, tmax) %>%
+#   summarise(
+#     low = mu - sd, med = mu,
+#     high = mu + sd
+#   )
+
+# recreate the epsilon values used in the simulations
+sim_params <- expand.grid(
+  rt_ref = 1.1,
+  epsilon_init = 1.1,
+  epsilon_final = 1.5,
+  epsilon_change = 30,
+  si_mu_variant = 1 * si_mu_ref,
+  si_std_variant = si_std_ref
+)
+ndays <- 100
+epsilon_all <- c(rep(sim_params$epsilon_init, sim_params$epsilon_change),
+                 seq(sim_params$epsilon_init, sim_params$epsilon_final, length.out = 30),
+                 rep(sim_params$epsilon_final, ndays - 30 - sim_params$epsilon_change))
+
+epsilon_all <- data.frame(time = c(1:9, (19:100) - 9),
+                          epsilon = c(rep(1.1, 9), epsilon_all[19:100]))
+
+# create plot
+p <- ggplot(post_summary_df) +
+  geom_line(data = epsilon_all,
+            aes(x = time, y = epsilon), linetype = "dashed") +
+  geom_point(aes(x = tmax, y = median, colour = estimation_window),
+             size = 1.5,
+             position = position_dodge(width = 3)) +
+  geom_linerange(aes(x = tmax, ymax = `97.5%`, ymin = `2.5%`, colour = estimation_window),
+                 size = 1,
+                 position = position_dodge(width = 3)) +
+  geom_point(data = eps_summary_df, aes(x = tmax, y = true_eps),
+             size = 1.5, shape = 0) +
+  scale_y_continuous(limits = c(0, 2.4)) +
+  scale_color_manual(name = "Window length",
+                     values = values,
+                     breaks = c("All data", "10 days", "7 days")) +
+  xlab("Time (days)") +
+  ylab("Effective transmission advantage") +
+  theme_manuscript() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5))
+
+p
+
+p
+
+save_multiple(p, "figures/one_loc_changing_adv_posterior_summary")
 
 if (! is.null(dev.list())) dev.off()
