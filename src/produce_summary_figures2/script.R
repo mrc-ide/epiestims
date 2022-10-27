@@ -133,8 +133,38 @@ classified <- map(
   }
 )
 
+#######################################################################
 ## Table for classification
 ss <- classified[["vary_offs"]]
+no_ss <- classified[["same_si"]]
+## Focus on some epsilon values
+ss <- ss[ss$true_eps %in% c(1, 1.1, 1.5), ]
+no_ss <- no_ss[no_ss$true_eps %in% c(1, 1.1, 1.5), ]
+
+common <- intersect(colnames(ss), colnames(no_ss))
+x <- rbind(ss[, common], no_ss[, common])
+
+split(x, x$rt_ref) %>%
+  imap(
+    function(y, rt) {
+      y$scenario_type <- factor(
+        y$scenario_type,
+        levels = c("Baseline", "Low", "Moderate", "High"),
+        ordered = TRUE
+      )
+      p <- ggplot(
+        y, aes(x = tmax, y = PointEst, fill = est_class), col = NA) +
+        geom_col() +
+        facet_grid(scenario_type~true_eps) +
+        xlab("Days used for estimation") +
+        ylab("Probability of classification") +
+        theme_manuscript() +
+        theme(legend.position = "top", legend.title = element_blank())
+      save_multiple(p, glue("figures/classification_with_without_ss_{rt}"))
+    }
+  )
+
+
 ## Here we vary both true_eps and tmax, we want to summarise along
 ## 1 one those two. We summarise along true_eps
 ## Desired output: for a given tmax, rt_ref, and kappa, when the true
