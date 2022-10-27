@@ -14,7 +14,7 @@ affix_label <- function(x) {
  x[["wrong_cv"]]$label <- multiplier_label(
    x[["wrong_cv"]]$si_cv_variant, si_std_ref / si_mu_ref
  )
- x[["vary_offs"]]$label <- factor( x[["vary_offs"]]$kappa)
+ x[["vary_offs"]]$label <- factor(x[["vary_offs"]]$kappa)
  ## To distinguish it from vary offspring
  x[["underrep"]]$label <- paste0("p", x[["underrep"]]$p_report)
  x
@@ -140,35 +140,44 @@ ss <- classified[["vary_offs"]]
 ## label was 'more transmissible', how many times did we call it wrong
 ## as 'less transmissble'.
 ss_summary <- group_by(
-  ss, tmax, rt_ref, kappa, est_class, true_label
+  ss, tmax, rt_ref, scenario_type, est_class, true_label
 ) |> summarise(
-  nsims = sum(nsims), n = sum(n)
-  ) |> ungroup()
+  nsims = sum(nsims), n = sum(n)) |> ungroup()
 
 ci <- broom::tidy(Hmisc::binconf(x = ss_summary$n, n = ss_summary$nsims))
 ci$x <- as.data.frame(ci$x)
 ss_summary <- cbind(ss_summary, ci$x)
 x <- ss_summary[ss_summary$true_label != "No transmission advantage", ]
-ggplot(x, aes(tmax, PointEst, col = est_class)) +
-  geom_point() +
-  facet_grid(rt_ref~kappa) +
-  theme(legend.position = "top")
+labels <- c(`1.1` = "Reference Rt: 1.1", `1.6` = "Reference Rt: 1.6")
 
-round_and_format <- function(x, digits = 2) {
-  format(round(x, digits), nsmall = digits)
-}
-
-ss <- mutate_at(ss, vars(PointEst:Upper), round_and_format)
-ss$est_label <- glue(
-  "{ss$PointEst} ({ss$Lower}-{ss$Upper})"
-)
-ss <- select(
-  ss, tmax, rt_ref, true_eps, scenario_type, true_label,
-  est_class, est_label
+x$scenario_type <- factor(
+  x$scenario_type, levels = c("Low", "Moderate", "High"), ordered = TRUE
 )
 
-out <- spread(ss, est_class, est_label)
-out <- arrange(out, rt_ref, true_eps, scenario_type)
+p <- ggplot(x) +
+  geom_point(aes(tmax, PointEst, col = est_class)) +
+  geom_linerange(aes(x = tmax, ymin = Lower, ymax = Upper, col = est_class)) +
+  facet_grid(rt_ref~scenario_type, labeller = labeller(rt_ref = labels)) +
+  theme_manuscript() +
+  theme(legend.title = element_blank())
+
+ggsave("classification_with_ss.png", p)
+
+## round_and_format <- function(x, digits = 2) {
+##   format(round(x, digits), nsmall = digits)
+## }
+
+## ss <- mutate_at(ss, vars(PointEst:Upper), round_and_format)
+## ss$est_label <- glue(
+##   "{ss$PointEst} ({ss$Lower}-{ss$Upper})"
+## )
+## ss <- select(
+##   ss, tmax, rt_ref, true_eps, scenario_type, true_label,
+##   est_class, est_label
+## )
+
+## out <- spread(ss, est_class, est_label)
+## out <- arrange(out, rt_ref, true_eps, scenario_type)
 
 infiles <- list(
   vary_si = "vary_si_eps_summary_by_all_vars.rds",
