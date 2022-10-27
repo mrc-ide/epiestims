@@ -37,7 +37,8 @@ values <- c(
   "0.8" = "#005900",
   "0.2" = "#b20000"
 )
-
+metrics_order <- c("Bias", "Uncertainty", "Coverage probability",
+                   "Classification")
 ## We have run more scenarios than we want to show in the
 ## manuscript. We have to filter out each separately
 ms_vars <- list(
@@ -158,26 +159,15 @@ p <- ggplot(x) +
   geom_point(aes(tmax, PointEst, col = est_class)) +
   geom_linerange(aes(x = tmax, ymin = Lower, ymax = Upper, col = est_class)) +
   facet_grid(rt_ref~scenario_type, labeller = labeller(rt_ref = labels)) +
+  xlab("Days used for estimation") +
+  ylab("Probability of classification") +
   theme_manuscript() +
   theme(legend.title = element_blank())
 
-ggsave("classification_with_ss.png", p)
 
-## round_and_format <- function(x, digits = 2) {
-##   format(round(x, digits), nsmall = digits)
-## }
-
-## ss <- mutate_at(ss, vars(PointEst:Upper), round_and_format)
-## ss$est_label <- glue(
-##   "{ss$PointEst} ({ss$Lower}-{ss$Upper})"
-## )
-## ss <- select(
-##   ss, tmax, rt_ref, true_eps, scenario_type, true_label,
-##   est_class, est_label
-## )
-
-## out <- spread(ss, est_class, est_label)
-## out <- arrange(out, rt_ref, true_eps, scenario_type)
+save_multiple(p, "figures/classification_with_ss")
+######################################################################
+######################################################################
 
 infiles <- list(
   vary_si = "vary_si_eps_summary_by_all_vars.rds",
@@ -241,24 +231,44 @@ together <- map(
     rbind(x1, x2, x3, x4)
   }
 )
-
+#######################################################################
 ## Change of metrics over time for scenarios with and without superspreading
-with_ss <- together[["same_si"]]
-without_ss <- together[["vary_offs"]]
+#######################################################################
+without_ss <- together[["same_si"]]
+with_ss <- together[["vary_offs"]]
 ## Alpha Rt and epsilon
-with_ss <- with_ss[with_ss$rt_ref == 1.1, ]
-with_ss <- with_ss[with_ss$true_eps == 1.5, ]
-with_ss$superspreading <- "No superspreading"
 without_ss <- without_ss[without_ss$rt_ref == 1.1, ]
 without_ss <- without_ss[without_ss$true_eps == 1.5, ]
-without_ss <- without_ss[without_ss$kappa == 0.1, ]
-without_ss$superspreading <- "Superspreading"
+
+with_ss <- with_ss[with_ss$rt_ref == 1.1, ]
+with_ss <- with_ss[with_ss$true_eps == 1.5, ]
+with_ss <- with_ss[with_ss$kappa == 0.1, ]
+
+without_ss$superspreading <- "No superspreading"
+with_ss$superspreading <- "Superspreading"
 common <- intersect(colnames(with_ss), colnames(without_ss))
 x <- rbind(with_ss[ , common], without_ss[ , common])
 ##x <- gather(x, var, val, low:high)
 x <- x[x$qntl %in% c("fake", "95%"), ]
+min_bias <- -1.5
+max_bias <- 1.5
+min_sd <- -0.1
+max_sd <- 0.75
+dummy <- data.frame(
+  metric = c("Bias", "Coverage probability", "Uncertainty"),
+  ##true_eps = levels(baseline$true_eps),
+  low = c(min_bias, 0, min_sd),
+  high = c(max_bias, 1, max_sd)
+)
+dummy2 <- data.frame(
+  metric = c("Bias", "Coverage probability"),
+  y = c(0, 0.95),
+  qntl = c('fake', '95%')
+)
+dummy$metric <- factor(dummy$metric, levels = metrics_order)
+dummy2$metric <- factor(dummy2$metric, levels = metrics_order)
 
-ggplot(x) +
+p <- ggplot(x) +
   geom_point(
     aes(tmax, med, col = superspreading),
     size = 1.5, position = position_dodge2(width = dodge_width)
@@ -267,20 +277,29 @@ ggplot(x) +
     aes(x = tmax, ymin = low, ymax = high, col = superspreading),
     position = position_dodge2(width = dodge_width)
   ) +
-  facet_wrap(~metric, scales = "free_y") +
-  theme(legend.position = "top")
+  geom_blank(data = dummy, aes(y = low)) +
+  geom_blank(data = dummy, aes(y = high)) +
+  geom_hline(
+    data = dummy2, aes(yintercept = y, group = qntl),
+    linetype = "dashed"
+  ) +
+  facet_wrap(~metric, scales = "free_y", ncol = 2) +
+  theme_manuscript() +
+  theme(legend.title = element_blank()) +
+  xlab("Days used for estimation") +
+  ylab("")
 
+save_multiple(p, "figures/metrics_over_time_with_without_ss")
+#######################################################################
 ## Change of metrics over time
+#######################################################################
 baseline <- together[["same_si"]]
 baseline <- rename(
   baseline, `2.5%` = low, `50%` = med, `97.5%` = high
 )
 baseline <- gather(baseline, var, val, `2.5%`:`97.5%`)
 baseline$metric <- factor(
-  baseline$metric, levels = c("Bias", "Uncertainty",
-                              "Coverage probability",
-                              "Classification"),
-  ordered = TRUE
+  baseline$metric, levels = metrics_order, ordered = TRUE
 )
 min_bias <- -1.5
 max_bias <- 1.5
@@ -298,14 +317,13 @@ dummy2 <- data.frame(
   qntl = c('fake', '95%')
 )
 dummy$metric <- factor(dummy$metric, levels = levels(baseline$metric))
-dummy2$metric <- factor(
-  dummy2$metric, levels = levels(baseline$metric)
-)
+dummy2$metric <- factor(dummy2$metric, levels = levels(baseline$metric))
+
 baseline <- baseline[baseline$qntl %in% c('fake', '95%'), ]
 
 p <- ggplot(baseline) +
   geom_boxplot(aes(tmax, val, fill = var), alpha = 0.5) +
-  facet_wrap(~metric, scales = "free_y") +
+  ##facet_wrap(~metric, scales = "free_y") +
   geom_blank(
     data = dummy, aes(y = low)
   ) +
@@ -323,6 +341,8 @@ p <- ggplot(baseline) +
   ylab("")
 
 save_multiple(p, "figures/baseline_metrics_over_time")
+#######################################################################
+#######################################################################
 
 iwalk(
   together, function(x, scenario) {
