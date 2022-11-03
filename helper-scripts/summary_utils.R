@@ -45,7 +45,7 @@ summarise_R <- function(fit, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = T
   rbind(eps_df, r_estdf)
 }
 
-summarise_vec <- function(vec, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE) {
+summarise_vec <- function(vec, probs = seq(from = 0.025, to = 0.975, by = 0.025), na.rm = TRUE) {
   vec_est <- quantile(vec, probs = probs, na.rm = na.rm)
   ## Tall. make wide
   eps_df <- rownames_to_column(data.frame(vec_est, check.names = FALSE))

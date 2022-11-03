@@ -5,9 +5,10 @@ packages:
   - EpiEstim
   - Hmisc
   - purrr
-  - ggforce
-  - ggplot2
   - glue
+  - tibble
+  - tidyr
+  - zip
   
 artefacts:
   data:

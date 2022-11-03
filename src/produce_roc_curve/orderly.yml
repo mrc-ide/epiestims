@@ -1,0 +1,28 @@
+script: roc.R
+packages:
+- broom
+- dplyr
+- ggplot2
+- Hmisc
+- janitor
+- purrr
+- readr
+- tidyr
+
+artefacts:
+  data:
+    description: Classified for cases where 95% CrI does not contain true value
+    filenames:
+      - classification_by_scenario.rds
+      - classification_by_scenario.csv
+      - classification_by_scenario_eps1.csv
+      - classification_by_scenario_by_tmax_eps1.csv
+
+global_resources:
+  R/classify_utils.R: classify_utils.R
+      
+depends:
+  summarise_one_location_vary_offspring:
+    id: latest
+    use:
+      vary_offs_eps_summary_df.rds: eps_summary_df.rds

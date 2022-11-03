@@ -6,6 +6,8 @@ packages:
   - Hmisc
   - purrr
   - glue
+  - tibble
+  - tidyr
   - zip
   
 artefacts:
