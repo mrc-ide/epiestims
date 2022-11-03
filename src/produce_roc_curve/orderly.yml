@@ -20,6 +20,7 @@ artefacts:
 
 global_resources:
   R/classify_utils.R: classify_utils.R
+  R/fig_utils.R: fig_utils.R
       
 depends:
   summarise_one_location_vary_offspring:

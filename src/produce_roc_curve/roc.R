@@ -1,5 +1,6 @@
 ## orderly::orderly_develop_start(use_draft = "newer")
 source("R/classify_utils.R")
+source("R/fig_utils.R")
 summary_tmax_eps <- function(x) {
   ## This method has the advantage
   ## that numbers across the three
@@ -69,7 +70,23 @@ epsy <- group_by(epsy, tmax, rt_ref, true_eps, kappa, true_label, threshold) |>
 
 ## Now put them together
 out <- left_join(epsy, eps1, by = c("tmax", "rt_ref", "kappa", "threshold"))
+out <- split(out, out$rt_ref)
 
-out10 <- out[out$tmax == 50, ]
-ggplot(out10, aes(specificity, sensitivity, col = true_eps.x)) + geom_point() +
-  facet_grid(rt_ref~kappa)
+iwalk(out, function(x, rt) {
+  labels <- c(`0.1` = "High", `0.5` = "Moderate", `1` = "Low")
+  x$kappa <- factor(x$kappa, levels = c(1, 0.5, 0.1), ordered = TRUE)
+  p <- ggplot(x, aes(specificity, sensitivity, col = `true_eps.x`)) +
+    geom_point() +
+  facet_grid(kappa~tmax, labeller = labeller(kappa = labels)) +
+    geom_abline(slope = 1, intercept = 0, alpha = 0.1) +
+    xlab("Specificity") +
+    ylab("Sensitivity") +
+    scale_colour_viridis_c(
+      option = "viridis", name = "Transmission Advantage"
+    ) +
+      theme_manuscript() +
+    theme(legend.position = "top")
+
+  save_multiple(p, glue("roc_{rt}"))
+})
+
