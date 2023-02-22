@@ -164,3 +164,53 @@ iwalk(
     )
   }
 )
+
+
+# Same plots with 'free' y axis (reviewer suggestion)
+
+plots_free <- pmap(
+  list(
+    x = nonovl, row = c(3, 2, 2, 3), z = palette2, breaks = xaxis_breaks
+  ),
+  function(x, row, z, breaks) {
+    x$date <- as.Date(x$date)
+    x$location_short <- region_short_names(x$location)
+    p <- ggplot(x) +
+      geom_linerange(
+        aes(
+          x = date, ymin = `2.5%`, ymax = `97.5%`
+        ),
+        size = 1.1, colour = z
+      ) +
+      geom_point(
+        aes(x = date, y = `50%`),
+        colour = z
+      )  +
+      geom_hline(
+        yintercept = 1, linetype = "dashed", color = "red",
+        size = 1.2
+      ) +
+      facet_wrap(
+        ~location_short, nrow = row, strip.position = "top", scales = "free_y"
+      ) +
+      scale_x_date(breaks = breaks, date_labels = date_labels) +
+      ylab("Effective transmission advantage") +
+      theme_manuscript() +
+      theme(
+        axis.title.x = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        ##ggh4x.axis.nesttext.x = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)
+      )
+    p
+    
+  })
+
+
+iwalk(
+  plots_free, function(p, name) {
+    save_multiple(
+      p, glue("figures/nonovl_{name}_regional_freey")
+    )
+  }
+)
