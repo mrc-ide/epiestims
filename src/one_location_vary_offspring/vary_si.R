@@ -26,7 +26,7 @@ iwalk(
           t_min <- EpiEstim::compute_t_min(x, si_for_est)
           t_max <- as.integer(t_min + tmax)
           t_max <- min(t_max, nrow(x))
-          out <- estimate_joint(
+          out <- estimate_advantage(
             x, si_for_est, priors, seed = 1,
             t_min = t_min,
             t_max = t_max,
@@ -40,7 +40,7 @@ iwalk(
             mcmc_controls <- lapply(
               mcmc_controls, function(x) x * 2L
             )
-            out <- estimate_joint(
+            out <- estimate_advantage(
               x, si_for_est, priors, seed = 1,
               t_min = t_min,
               t_max = t_max,
